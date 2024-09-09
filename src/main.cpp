@@ -1,10 +1,15 @@
 #include <iostream>
-#include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
+#include <QApplication>
+#include <memory>
 
-int main()
+#include "MainWindow.hpp"
+
+int main(int argc, char* argv[])
 {
     std::cout << "Hello World! ~ GameBoyWeb by Jakub Jaśków" << std::endl;
-    return 0;
+    QApplication app(argc, argv);
+    auto window = std::make_unique<MainWindow>();
+    window->show();
+    return app.exec();
 }
