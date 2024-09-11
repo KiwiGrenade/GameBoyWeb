@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <array>
 
+#include <QByteArray>
+
 class Memory {
 public:
     Memory();
@@ -11,7 +13,7 @@ public:
     
     inline uint8_t read(uint16_t idx) { return memory_->at(idx); }
     inline void write(uint8_t byte, uint16_t idx) { memory_->at(idx) = byte; }
-    void loadFromFile();
+    void load(const QByteArray& rom);
 
 private:
     static constexpr uint16_t size_ = 0xFFFF;

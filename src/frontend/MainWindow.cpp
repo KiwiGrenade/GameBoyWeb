@@ -1,15 +1,20 @@
 #include "MainWindow.hpp"
 #include "ui_MainWindow.h"
-#include "utils.hpp"
+
+#include <memory>
+
 #include <QFileDialog>
+
+#include "utils.hpp"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , gameBoy_(std::make_shared<GameBoy>())
 {
     ui->setupUi(this);
-    QString str = "kurwa";
-    ui->plainTextEdit->appendPlainText(str);
+    /*QString str = "kurwa";*/
+    /*ui->plainTextEdit->appendPlainText(str);*/
 }
 
 MainWindow::~MainWindow()
@@ -23,6 +28,7 @@ void MainWindow::on_actionLoad_triggered() {
         {
             error("No file was selected! Exiting!");
         }
+        gameBoy_->loadROM(fileContent);
     };
 
     QFileDialog::getOpenFileContent(" ROMs (*.ch8)", fileContentReady);
