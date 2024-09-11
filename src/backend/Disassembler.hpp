@@ -6,8 +6,6 @@ class Disassembler {
     public:
     Disassembler() = default;
     ~Disassembler() = default;
-
-    
 };
 
 
