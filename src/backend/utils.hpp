@@ -2,8 +2,7 @@
 
 #include <iostream>
 #include <cfloat>
-/*#include <cstdint>*/
-/*#include <memory>*/
+#include <cstdint>
 #include <string>
 
 const std::string YELLOW = "\e[36m";
@@ -14,23 +13,31 @@ inline void warning(const std::string& str) { std::cerr << YELLOW << "[WRN]: " <
 inline void error(const std::string& str) { std::cerr << RED << "[ERR]: " << str << END << std::endl; exit(2); }
 
 
-/*enum Flag {*/
-/*    zero,*/
-/*    one,*/
-/*    flag,*/
-/*    none*/
-/*};*/
-/**/
-/*struct Assembly {*/
-/*    std::string mnemonic;*/
-/*    std::shared_ptr<void> arg1;*/
-/*    std::shared_ptr<void> arg2;*/
-/**/
-/*    uint16_t length;*/
-/*    uint16_t duration;*/
-/*    Flag Z;*/
-/*    Flag N;*/
-/*    Flag H;*/
-/*    Flag C;*/
-/*};*/
+enum Flag {
+    reset,
+    set,
+    none
+};
+
+struct Argument {
+    std::string name;
+    bool immediate;
+};
+
+struct Assembly {
+    std::string mnemonic;
+
+    Argument arg1;
+    Argument arg2;
+
+    uint16_t length;
+    std::pair<uint8_t, uint8_t> duration;
+
+    Flag Z;
+    Flag N;
+    Flag H;
+    Flag C;
+
+    /*std::string toString();*/
+};
 

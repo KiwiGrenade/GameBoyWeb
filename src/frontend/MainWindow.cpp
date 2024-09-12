@@ -1,6 +1,7 @@
 #include "MainWindow.hpp"
 #include "ui_MainWindow.h"
 
+#include <cstdint>
 #include <memory>
 
 #include <QFileDialog>
@@ -11,6 +12,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , gameBoy_(std::make_shared<GameBoy>())
+    , disassembler_(std::make_shared<Disassembler>())
 {
     ui->setupUi(this);
     /*QString str = "kurwa";*/
@@ -32,6 +34,7 @@ void MainWindow::on_actionLoad_triggered() {
     };
 
     QFileDialog::getOpenFileContent(" ROMs (*.ch8)", fileContentReady);
+    // TODO: Turn this into signal
 }
 
 

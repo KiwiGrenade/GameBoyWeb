@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "GameBoy.hpp"
+#include "Disassembler.hpp"
 
 namespace Ui {
 class MainWindow;
@@ -24,4 +25,5 @@ private slots:
 private:
     Ui::MainWindow *ui;
     std::shared_ptr<GameBoy> gameBoy_;
+    std::shared_ptr<Disassembler> disassembler_;
 };
