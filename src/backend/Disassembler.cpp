@@ -1,7 +1,7 @@
 #include "Disassembler.hpp"
 
-#include <cinttypes>
 #include <cstdint>
+#include <iomanip>
 #include <qjsonobject.h>
 #include <qjsonvalue.h>
 #include <qlogging.h>
@@ -24,7 +24,7 @@ Disassembler::Disassembler()
 
 std::string uint8_tToHexString(const uint8_t& byte) {
     std::stringstream ss;
-    ss << std::hex << std::showbase << static_cast<int>(byte);
+    ss << "0x" << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(byte);
     return ss.str();
 }
 
@@ -32,7 +32,6 @@ QJsonObject getJsonObjectFromFile(std::string& filePath) {
     QString jsonFilePath = QString::fromStdString(filePath);
 
     QFile file(jsonFilePath);
-    // check for errors
     if(!file.open(QIODevice::ReadOnly))
         error("Could not open file: " + jsonFilePath.toStdString());
 
@@ -41,19 +40,18 @@ QJsonObject getJsonObjectFromFile(std::string& filePath) {
 
     QJsonParseError jsonError;
     QJsonDocument document = QJsonDocument::fromJson(data, &jsonError);
-    // check for errors
     if(jsonError.error)
         error("Json parsing error: " + jsonError.errorString().toStdString());
 
     if(!document.isObject())
-        error("Document does not have and object!");
+        error("Document does not have any object!");
 
     return document.object();
 }
 
 Assembly Disassembler::disassembleOneOpcode(uint8_t* byte) {
 
-    std::string jsonFilePath = "../../res/opcodes.json";
+    std::string jsonFilePath = "/home/desktop/GameBoyWeb/res/opcodes.json";
 
     QJsonObject obj = getJsonObjectFromFile(jsonFilePath);
 
@@ -62,7 +60,12 @@ Assembly Disassembler::disassembleOneOpcode(uint8_t* byte) {
         prefix_ = true;
         return disassembleOneOpcode(byte + 1);
     }
-    std::string opcode = uint8_tToHexString(*byte);
+
+    const QString opcode = QString::fromStdString(uint8_tToHexString(0));
+
+    qDebug() << opcode;
+
+    qDebug() << obj.value("unprefixed").toObject().value(opcode).toObject().value("mnemonic").toString();
 
     return result;
 }
