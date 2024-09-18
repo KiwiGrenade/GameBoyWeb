@@ -12,6 +12,11 @@
 #include <qobject.h>
 #include <string>
 
+typedef uint8_t u8;
+typedef uint16_t u16;
+
+#define U16_MAX 0xFFFF
+
 namespace Utils {
 
 const std::string YELLOW = "\e[36m";
