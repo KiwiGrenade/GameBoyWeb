@@ -15,8 +15,6 @@ MainWindow::MainWindow(QWidget *parent)
     , disassembler_(std::make_shared<Disassembler>())
 {
     ui->setupUi(this);
-    /*QString str = "kurwa";*/
-    /*ui->plainTextEdit->appendPlainText(str);*/
 }
 
 MainWindow::~MainWindow()
@@ -28,13 +26,13 @@ void MainWindow::on_actionLoad_triggered() {
     auto fileContentReady = [this](const QString& fileName, const QByteArray& fileContent) {
         if(fileName.isEmpty())
         {
-            error("No file was selected! Exiting!");
+            Utils::error("No file was selected! Exiting!");
         }
         gameBoy_->loadROM(fileContent);
+        /*disassembler_->disassemble(*gameBoy_->getMemory(), *ui->plainTextEdit);*/
     };
 
-    QFileDialog::getOpenFileContent(" ROMs (*.ch8)", fileContentReady);
-    // TODO: Turn this into signal
+    QFileDialog::getOpenFileContent(" ROMs (*.gb)", fileContentReady);
 }
 
 
