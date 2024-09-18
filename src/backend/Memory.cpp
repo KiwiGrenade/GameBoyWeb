@@ -1,5 +1,5 @@
 #include "Memory.hpp"
-
+#include <iostream>
 Memory::Memory()
     : memory_(std::make_shared<std::array<uint8_t, size_>>()) {
 
@@ -7,8 +7,10 @@ Memory::Memory()
 
 void Memory::load(const QByteArray& rom) {
     // omit /0 at end of QByteArray
-    for(size_t i = 0; i < rom.size() - 1; i++) {
-        memory_->at(i) = rom[i];
+    // TODO: FIX THIS
+    std::cout << rom.size() << std::endl;
+    for(size_t i = 0; i < rom.size()-1; i++) {
+        write(rom[i], i);
     }
 }
 

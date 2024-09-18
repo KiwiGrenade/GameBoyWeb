@@ -1,19 +1,24 @@
 #pragma once
 
-#include "utils.hpp"
+
 #include <cstdint>
-#include <vector>
+
+#include "utils.hpp"
+#include "Memory.hpp"
+
+#include <QPlainTextEdit>
 
 class Disassembler {
 public:
     Disassembler();
     ~Disassembler() = default;
 
-    /*std::vector<Assembly> disassemble();*/
+    void disassemble(const Memory& memory, QPlainTextEdit& plainTextEdit);
 
 private:
     
-    Assembly disassembleOneOpcode(uint8_t* byte);
+    Utils::Assembly disassembleOneOpcode(const uint8_t& byte);
+    QJsonObject getJsonObjectFromFile(std::string& filePath);
     bool prefix_;
 };
 

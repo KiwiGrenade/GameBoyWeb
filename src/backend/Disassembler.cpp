@@ -1,7 +1,9 @@
 #include "Disassembler.hpp"
+#include "utils.hpp"
 
 #include <cstdint>
 #include <iomanip>
+#include <memory>
 #include <qjsonobject.h>
 #include <qjsonvalue.h>
 #include <qlogging.h>
@@ -18,9 +20,13 @@ Disassembler::Disassembler()
 
 }
 
-/*std::vector<Assembly> Disassembler::disassemble() {*/
-/**/
-/*}*/
+void Disassembler::disassemble(const Memory& memory, QPlainTextEdit& plainTextEdit) {
+    for(uint32_t i = 0; i < 300;) {
+        Utils::Assembly ass = disassembleOneOpcode(memory.read(i));
+        i += ass.bytes_;
+        plainTextEdit.appendPlainText(ass.toString());
+    }
+}
 
 std::string uint8_tToHexString(const uint8_t& byte) {
     std::stringstream ss;
@@ -28,12 +34,12 @@ std::string uint8_tToHexString(const uint8_t& byte) {
     return ss.str();
 }
 
-QJsonObject getJsonObjectFromFile(std::string& filePath) {
+QJsonObject Disassembler::getJsonObjectFromFile(std::string& filePath) {
     QString jsonFilePath = QString::fromStdString(filePath);
 
     QFile file(jsonFilePath);
     if(!file.open(QIODevice::ReadOnly))
-        error("Could not open file: " + jsonFilePath.toStdString());
+        Utils::error("Could not open file: " + jsonFilePath.toStdString());
 
     QByteArray data = file.readAll();
     file.close();
@@ -41,32 +47,23 @@ QJsonObject getJsonObjectFromFile(std::string& filePath) {
     QJsonParseError jsonError;
     QJsonDocument document = QJsonDocument::fromJson(data, &jsonError);
     if(jsonError.error)
-        error("Json parsing error: " + jsonError.errorString().toStdString());
+        Utils::error("Json parsing error: " + jsonError.errorString().toStdString());
 
     if(!document.isObject())
-        error("Document does not have any object!");
+        Utils::error("Document does not have any object!");
 
     return document.object();
 }
 
-Assembly Disassembler::disassembleOneOpcode(uint8_t* byte) {
-
+Utils::Assembly Disassembler::disassembleOneOpcode(const uint8_t& byte) {
     std::string jsonFilePath = "/home/desktop/GameBoyWeb/res/opcodes.json";
 
     QJsonObject obj = getJsonObjectFromFile(jsonFilePath);
 
-    Assembly result;
-    if(*byte == 0xCB) {
-        prefix_ = true;
-        return disassembleOneOpcode(byte + 1);
-    }
+    const QString opcodeType = prefix_ ? "prefixed" : "unprefixed";
+    const QString opcode = QString::fromStdString(uint8_tToHexString(byte));
+    QJsonObject jsonOpcode = obj.value(opcodeType).toObject().constFind(opcode)->toObject();
 
-    const QString opcode = QString::fromStdString(uint8_tToHexString(0));
-
-    qDebug() << opcode;
-
-    qDebug() << obj.value("unprefixed").toObject().value(opcode).toObject().value("mnemonic").toString();
-
-    return result;
+    return Utils::Assembly(jsonOpcode, prefix_);
 }
 
