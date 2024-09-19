@@ -5,6 +5,7 @@
 #include <QByteArray>
 
 #include "Memory.hpp"
+#include "CPU.hpp"
 
 class GameBoy {
     public:
@@ -16,4 +17,5 @@ class GameBoy {
 
     private:
         std::shared_ptr<Memory> memory_;
+        std::shared_ptr<CPU> cpu_;
 };
