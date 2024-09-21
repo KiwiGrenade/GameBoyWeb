@@ -1,9 +1,9 @@
 #pragma once
 
+#include "Instruction.hpp"
 #include "utils.hpp"
 #include "RegisterPair.hpp"
 #include "Memory.hpp"
-#include <functional>
 #include <qjsonobject.h>
 #include <unordered_map>
 
@@ -19,35 +19,32 @@ public:
 
 private:
     Memory& memory_;
-
-    struct InstrInfo {
-        InstrInfo(const QJsonObject& obj)
-        : bytes_(getBytesFromJsonObject(obj))
-        , cycles_(getCyclesFromJson(obj))
-        , flags_(getFlagsFromJsonObject(obj)) {
-        }
-
-        u8 bytes_;
-        std::pair<u8, u8> cycles_;
-        std::array<Utils::Flag, 4> flags_;
-
-        static u8 getBytesFromJsonObject(const QJsonObject& obj);
-        static std::pair<u8, u8> getCyclesFromJson(const QJsonObject& obj);
-        static std::array<Utils::Flag, 4> getFlagsFromJsonObject(const QJsonObject& obj);
-    };
-
-    std::unordered_map<u8, InstrInfo> unprefInstrMap_;
-    std::unordered_map<u8, InstrInfo> prefInstrMap_;
-
     uint64_t    cycles_; // T-cycles
-    bool        isPrefixed_;
+    // instruction booleans - move them somewhere???
+    bool isPrefixed_;
+    bool isCondMet_;
+
+    std::unordered_map<u8, Instruction::Info> unprefInstrInfoMap_;
+    std::unordered_map<u8, Instruction::Info> prefInstrInfoMap_;
 
     // memory access
     /*u8 fetchByte();*/
     /*u16 fetchWord();*/
 
     // returns true if opcode condition was met
-    [[nodiscard]] bool executeOpcode(u8);
+    void executeOpcode(u8);
+    inline bool getFlagZ() {
+        return Utils::getBit(flags_, 7);
+    }
+    inline bool getFlagN() {
+        return Utils::getBit(flags_, 6);
+    }
+    inline bool getFlagH() {
+        return Utils::getBit(flags_, 5);
+    }
+    inline bool getFlagC() {
+        return Utils::getBit(flags_, 4);
+    }
     
 
     r16 AF_; // Accumulator and flags
@@ -71,7 +68,8 @@ private:
     // instructions
         // info
         // miscallaneous
-    void handleFlags();
+    // set or reset flags
+    void handleFlags(const Utils::flagArray& flags);
     void ccf();
     void cpl();
     void daa();

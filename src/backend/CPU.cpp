@@ -1,10 +1,14 @@
 #include "CPU.hpp"
-#include "utils.hpp"
-#include <QtLogging>
+
+#include <string>
 #include <array>
+
+#include <QtLogging>
 #include <qjsonobject.h>
 #include <qlogging.h>
-#include <string>
+
+#include "utils.hpp"
+#include "Instruction.hpp"
 
 CPU::CPU(Memory& memory)
     : memory_(memory)
@@ -16,65 +20,52 @@ CPU::CPU(Memory& memory)
     , E_(DE_.lo_)
     , H_(HL_.hi_)
     , L_(HL_.lo_) {
-    std::string jsonFilePath = "/home/desktop/GameBoyWeb/res/opcodes.json";
-    QJsonObject obj = Utils::getJsonObjectFromFile(jsonFilePath);
+    QJsonObject obj = Utils::getJsonObjectFromFile(Utils::jsonFilePath);
     QJsonObject unprefixed = obj.value("unprefixed").toObject();
     QJsonObject prefixed = obj.value("cbprefixed").toObject();
+    
+    // add instruction info to maps
+    for(QString opcode : unprefixed.keys()) {
+        QJsonObject unprefOpcodeJsonObj = unprefixed.value(opcode).toObject();
+        QJsonObject prefOpcodeJsonObj = prefixed.value(opcode).toObject();
 
-    for(u8 i = 0; i < 0xFF; ++i) {
-        std::string opcode = Utils::uint8_tToHexString(i);
-
-
-        QJsonObject unprefOpcodeJsonObj = 
-            unprefixed.value(QString::fromStdString(opcode)).toObject();
-
-        QJsonObject prefOpcodeJsonObj = 
-            prefixed.value(QString::fromStdString(opcode)).toObject();
-
-
-        unprefInstrMap_.emplace(
-            std::make_pair(i, InstrInfo(unprefOpcodeJsonObj))
+        unprefInstrInfoMap_.emplace(
+            std::make_pair(opcode.toUShort(), Instruction::Info(unprefOpcodeJsonObj))
         );
-
-        prefInstrMap_.emplace(
-            std::make_pair(i, InstrInfo(prefOpcodeJsonObj))
+        prefInstrInfoMap_.emplace(
+            std::make_pair(opcode.toUShort(), Instruction::Info(prefOpcodeJsonObj))
         );
     }
 }
 
-u8 CPU::InstrInfo::getBytesFromJsonObject(const QJsonObject& obj) {
-    return obj.value("bytes").toInt();
-}
-
-std::pair<u8, u8> CPU::InstrInfo::getCyclesFromJson(const QJsonObject& obj) {
-    QJsonArray cyclesJson = obj.value("cycles").toArray();
-
-    return std::pair<u8, u8> {
-        cyclesJson[0].toInt(),
-        cyclesJson[1].toInt()
-    };
-}
-
-std::array<Utils::Flag, 4> CPU::InstrInfo::getFlagsFromJsonObject(const QJsonObject& obj) {
-    QJsonArray flagsJson = obj.value("flags").toArray();
-
-    return std::array<Utils::Flag, 4> {
-        Utils::Flag(flagsJson.at(0).toString().toStdString()[0]),
-        Utils::Flag(flagsJson.at(1).toString().toStdString()[0]),
-        Utils::Flag(flagsJson.at(2).toString().toStdString()[0]),
-        Utils::Flag(flagsJson.at(3).toString().toStdString()[0]),
-    };
-}
-
 void CPU::step() {
     u8 opcode = memory_.read(pc_);
+    
+    // deduce from which map to pick
+    Instruction::Info info = 
+        isPrefixed_ ? prefInstrInfoMap_[opcode] : unprefInstrInfoMap_[opcode];
 
-    ccf();
-    bool conditionSatisfied = executeOpcode(opcode);
+    executeOpcode(opcode);
 
-    handleFlags();
+    // set flags
+    handleFlags(info.getFlags());
 
-    /*cycles_ += conditionSatisfied ? bytes.first : bytes.second;*/
+    // add instruction length (in bytes) to program counter
+    pc_ += info.getBytes();
+
+    // determine number of cycles that went by while executing instruction
+    std::pair <u8, u8> cycles = info.getCycles();
+    cycles_ += isCondMet_ ? cycles.first : cycles.second;
+}
+
+void CPU::handleFlags(const Utils::flagArray& flags) {
+    for(u8 i = 0; i < flags.size(); i++) {
+        u8 nBit = 7 - i;
+        if (flags[i] == Utils::Flag::set)
+            Utils::setBit(flags_, nBit);
+        else if (flags[i] == Utils::Flag::reset)
+            Utils::resetBit(flags_, nBit);
+    }
 }
 
 

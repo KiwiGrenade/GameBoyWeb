@@ -33,4 +33,37 @@ QJsonObject getJsonObjectFromFile(std::string& filePath) {
 
     return document.object();
 }
+
+u8 getBytesFromJsonObject(const QJsonObject& obj) {
+    return obj.value("bytes").toInt();
 }
+
+std::pair<u8, u8> getCyclesFromJsonObject(const QJsonObject& obj) {
+    QJsonArray cyclesJson = obj.value("cycles").toArray();
+
+    return std::pair<u8, u8> {
+        cyclesJson[0].toInt(),
+        cyclesJson[1].toInt()
+    };
+}
+
+flagArray getFlagsFromJsonObject(const QJsonObject& obj) {
+    QJsonArray flagsJson = obj.value("flags").toArray();
+    flagArray flags;
+
+    for (u8 i = 0; i < flags.size(); ++i) {
+        char c = flagsJson.at(i).toString().toStdString()[0];
+        if(c == '0')
+            flags[i] = Utils::Flag::reset;
+        else if(c == '1')
+            flags[i] = Utils::Flag::set;
+        else if(c == '-')
+            flags[i] = Utils::Flag::nothing;
+        else
+            flags[i] = Utils::Flag::setOrReset;
+    }
+
+    return flags; 
+}
+
+} // Utils

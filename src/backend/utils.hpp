@@ -26,16 +26,37 @@ const std::string END = "\e[0m";
 inline void warning(const std::string& str) { std::cerr << YELLOW << "[WRN]: " << str << END << std::endl; }
 inline void error(const std::string& str) { std::cerr << RED << "[ERR]: " << str << END << std::endl; exit(2); }
 
-enum Flag : char {
-    nothing = '-',
-    reset = '0',
-    set = '1',
-    setOrReset = '2'
+static std::string jsonFilePath = "/home/desktop/GameBoyWeb/res/opcodes.json";
+
+enum class Flag : char {
+    reset,
+    set,
+    nothing,
+    setOrReset
 };
+
+typedef std::array<Flag, 4> flagArray;
 
 std::string uint8_tToHexString(const uint8_t& byte);
 
+// json object extraction
 QJsonObject getJsonObjectFromFile(std::string& filePath);
+u8 getBytesFromJsonObject(const QJsonObject& obj);
+std::pair<u8, u8> getCyclesFromJsonObject(const QJsonObject& obj);
+Utils::flagArray getFlagsFromJsonObject(const QJsonObject& obj);
+
+// bits
+inline static u8 setBit(u8& byte, u8 n) {
+    return byte | ((u8) 1 << n);
+}
+
+inline static u8 resetBit(u8& byte, u8 n) {
+    return byte & ~((u8) 1 << n);
+}
+
+inline static bool getBit(const u8& byte, u8 n) {
+    return (byte >> n) & (u8)1;
+}
 
 } // Utils
 
