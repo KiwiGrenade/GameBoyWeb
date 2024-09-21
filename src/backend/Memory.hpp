@@ -11,8 +11,8 @@ public:
     Memory();
     ~Memory() = default;
     
-    inline uint8_t& read(uint16_t idx) const { return memory_->at(idx); }
-    inline void write(uint8_t byte, uint16_t idx) { memory_->at(idx) = byte; }
+    inline uint8_t read(uint16_t idx) const { return memory_->at(idx); }
+    inline void write(const uint8_t byte, const uint16_t idx) { memory_->at(idx) = byte; }
     void load(const QByteArray& rom);
 
     static constexpr uint16_t size_ = 0xFFFF;
