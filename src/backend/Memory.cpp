@@ -1,8 +1,9 @@
 #include "Memory.hpp"
+
 #include <iostream>
+
 Memory::Memory()
     : memory_(std::make_shared<std::array<uint8_t, size_>>()) {
-
 }
 
 void Memory::load(const QByteArray& rom) {

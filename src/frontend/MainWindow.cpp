@@ -29,7 +29,6 @@ void MainWindow::on_actionLoad_triggered() {
             Utils::error("No file was selected! Exiting!");
         }
         gameBoy_->loadROM(fileContent);
-        /*disassembler_->disassemble(*gameBoy_->getMemory(), *ui->plainTextEdit);*/
     };
 
     QFileDialog::getOpenFileContent(" ROMs (*.gb)", fileContentReady);
