@@ -1,10 +1,7 @@
 #include "CPU.hpp"
+#include "utils.hpp"
 
-bool CPU::executeOpcode(u8) {
-    return true;
-}
-
-void CPU::handleFlags() {
+void CPU::executeOpcode(u8) {
 
 }
 
