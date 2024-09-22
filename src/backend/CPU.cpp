@@ -29,11 +29,11 @@ CPU::CPU(Memory& memory)
         QJsonObject unprefOpcodeJsonObj = unprefixed.value(opcode).toObject();
         QJsonObject prefOpcodeJsonObj = prefixed.value(opcode).toObject();
 
-        unprefInstrInfoMap_.emplace(
-            std::make_pair(opcode.toUShort(), Instruction::Info(unprefOpcodeJsonObj))
+        unprefInstrMap_.emplace(
+            std::make_pair(opcode.toUShort(), Instruction(unprefOpcodeJsonObj))
         );
-        prefInstrInfoMap_.emplace(
-            std::make_pair(opcode.toUShort(), Instruction::Info(prefOpcodeJsonObj))
+        prefInstrMap_.emplace(
+            std::make_pair(opcode.toUShort(), Instruction(prefOpcodeJsonObj))
         );
     }
 }
@@ -42,19 +42,17 @@ void CPU::step() {
     u8 opcode = memory_.read(pc_);
     
     // deduce from which map to pick
-    Instruction::Info info = 
-        isPrefixed_ ? prefInstrInfoMap_[opcode] : unprefInstrInfoMap_[opcode];
-
-    executeOpcode(opcode);
+    Instruction instr = 
+        isPrefixed_ ? prefInstrMap_[opcode] : unprefInstrMap_[opcode];
 
     // set flags
-    handleFlags(info.getFlags());
+    handleFlags(instr.info_.getFlags());
 
     // add instruction length (in bytes) to program counter
-    pc_ += info.getBytes();
+    pc_ += instr.info_.getBytes();
 
     // determine number of cycles that went by while executing instruction
-    std::pair <u8, u8> cycles = info.getCycles();
+    std::pair <u8, u8> cycles = instr.info_.getCycles();
     cycles_ += isCondMet_ ? cycles.first : cycles.second;
 }
 
