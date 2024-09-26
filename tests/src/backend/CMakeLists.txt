@@ -1,5 +1,5 @@
 add_executable(RegisterPairTests RegisterPairTests.cpp)
-add_executable(UtilsTests utils.cpp)
+add_executable(UtilsTests UtilsTests.cpp)
 
 target_include_directories(RegisterPairTests PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
 target_include_directories(UtilsTests PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
