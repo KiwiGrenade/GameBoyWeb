@@ -21,9 +21,9 @@ struct Instruction {
     struct Info {
         Info() = default;
         Info(const QJsonObject& obj)
-        : bytes_(Utils::getBytesFromJsonObject(obj))
-        , cycles_(Utils::getCyclesFromJsonObject(obj))
-        , flags_(Utils::getFlagsFromJsonObject(obj)) {
+        : bytes_(Utils::getBytesFromInstrJsonObject(obj))
+        , cycles_(Utils::getCyclesFromInstrJsonObject(obj))
+        , flags_(Utils::getFlagsFromInstrJsonObject(obj)) {
         }
 
         inline u8 getBytes() { return bytes_; }
@@ -38,26 +38,4 @@ struct Instruction {
 
     std::function<bool()> instr_;
     Info info_;
-
-    // Find a way to move instructions somewhere else
-    // instructions
-        // info
-        // miscallaneous
-    // set or reset flags
-    void ccf();
-    void cpl();
-    void daa();
-    void di();
-    void ei();
-    void halt();
-    void nop();
-    void scf();
-    void stop();
-        // jump and subroutines
-        // 8 bit arithmetic and logic
-        // 16 bit arithmetic
-        // bit operation
-        // bit shift
-        // load
-        // stack operations
 };
