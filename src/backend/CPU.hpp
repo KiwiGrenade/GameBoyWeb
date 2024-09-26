@@ -34,7 +34,7 @@ private:
     std::unordered_map<u8, Instruction> unprefInstrMap_;
     std::unordered_map<u8, Instruction> prefInstrMap_;
     
-    std::unordered_map<u8, Instruction> getInstrMapFromJsonObject(const bool prefixed);
+    std::unordered_map<u8, Instruction> getInstrMap(const bool prefixed);
     void handleFlags(const Utils::flagArray& flags);
 
     u16 sp_; // Stack pointer

@@ -10,8 +10,8 @@
 
 CPU::CPU(Memory& memory)
     : memory_(memory)
-    , prefInstrMap_(getInstrMapFromJsonObject(true))
-    , unprefInstrMap_(getInstrMapFromJsonObject(false))
+    , prefInstrMap_(getInstrMap(true))
+    , unprefInstrMap_(getInstrMap(false))
     , A_(AF_.hi_)
     , flags_(AF_.lo_)
     , B_(BC_.hi_)
@@ -22,7 +22,7 @@ CPU::CPU(Memory& memory)
     , L_(HL_.lo_) {
 }
 
-std::unordered_map<u8, Instruction> CPU::getInstrMapFromJsonObject(const bool prefixed) {
+std::unordered_map<u8, Instruction> CPU::getInstrMap(const bool prefixed) {
     QJsonObject instrMapJsonObj = Utils::getInstrMapJsonObjectFromFile(Utils::jsonFilePath, prefixed);
     
     std::unordered_map<u8, Instruction> instrMap;
