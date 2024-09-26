@@ -33,7 +33,8 @@ private:
 
     std::unordered_map<u8, Instruction> unprefInstrMap_;
     std::unordered_map<u8, Instruction> prefInstrMap_;
-
+    
+    std::unordered_map<u8, Instruction> getInstrMapFromJsonObject(const bool prefixed);
     void handleFlags(const Utils::flagArray& flags);
 
     u16 sp_; // Stack pointer
@@ -54,4 +55,27 @@ private:
     r8 L_;
 
     r8 flags_;
+
+// Find a way to move instructions somewhere else
+    // instructions
+        // info
+        // miscallaneous
+    // set or reset flags
+    void ccf();
+    void cpl();
+    void daa();
+    void di();
+    void ei();
+    void halt();
+    void nop();
+    void scf();
+    void stop();
+        // jump and subroutines
+        // 8 bit arithmetic and logic
+        // 16 bit arithmetic
+        // bit operation
+        // bit shift
+        // load
+        // stack operations
+
 };

@@ -13,7 +13,8 @@ std::string uint8_tToHexString(const uint8_t& byte) {
     return res;
 }
 
-QJsonObject getJsonObjectFromFile(std::string& filePath) {
+
+QJsonObject getInstrMapJsonObjectFromFile(const std::string& filePath, const bool prefixed) {
     QString jsonFilePath = QString::fromStdString(filePath);
 
     QFile file(jsonFilePath);
@@ -31,14 +32,17 @@ QJsonObject getJsonObjectFromFile(std::string& filePath) {
     if(!document.isObject())
         Utils::error("Document does not have any object!");
 
-    return document.object();
+    QString str = prefixed ? "cbprefixed" : "unprefixed";
+
+    // document -> document Json Object -> opcode map Json Object
+    return document.object().value(str).toObject();
 }
 
-u8 getBytesFromJsonObject(const QJsonObject& obj) {
+u8 getBytesFromInstrJsonObject(const QJsonObject& obj) {
     return obj.value("bytes").toInt();
 }
 
-std::pair<u8, u8> getCyclesFromJsonObject(const QJsonObject& obj) {
+std::pair<u8, u8> getCyclesFromInstrJsonObject(const QJsonObject& obj) {
     QJsonArray cyclesJson = obj.value("cycles").toArray();
 
     return std::pair<u8, u8> {
@@ -47,20 +51,23 @@ std::pair<u8, u8> getCyclesFromJsonObject(const QJsonObject& obj) {
     };
 }
 
-flagArray getFlagsFromJsonObject(const QJsonObject& obj) {
-    QJsonArray flagsJson = obj.value("flags").toArray();
+flagArray getFlagsFromInstrJsonObject(const QJsonObject& obj) {
+    QJsonObject flagsJson = obj.value("flags").toObject();
     flagArray flags;
 
     for (u8 i = 0; i < flags.size(); ++i) {
-        char c = flagsJson.at(i).toString().toStdString()[0];
-        if(c == '0')
-            flags[i] = Utils::Flag::reset;
-        else if(c == '1')
-            flags[i] = Utils::Flag::set;
-        else if(c == '-')
-            flags[i] = Utils::Flag::nothing;
-        else
-            flags[i] = Utils::Flag::setOrReset;
+        // acces array in reverse order (apparently values are stored in reverse)
+        char c = (flagsJson.end()-i-1)->toString().toStdString()[0];
+        switch (c) {
+            case '0':
+                flags[i] = Utils::Flag::reset; break;
+            case '1':
+                flags[i] = Utils::Flag::set; break;
+            case '-':
+                flags[i] = Utils::Flag::nothing; break;
+            default:
+                flags[i] = Utils::Flag::setOrReset; break;
+        }
     }
 
     return flags; 
