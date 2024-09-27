@@ -1,8 +1,8 @@
 #pragma once
 
 #include <memory>
-#include <cstdint>
 #include <array>
+#include "utils.hpp"
 
 #include <QByteArray>
 
@@ -11,11 +11,11 @@ public:
     Memory();
     ~Memory() = default;
     
-    inline uint8_t read(uint16_t idx) const { return memory_->at(idx); }
-    inline void write(const uint8_t byte, const uint16_t idx) { memory_->at(idx) = byte; }
-    void load(const QByteArray& rom);
+    inline u8 read(u16 idx) const { return memory_->at(idx); }
+    inline void write(const u16 byte, const u16 idx) { memory_->at(idx) = byte; }
+    void loadSimpleROM(const QByteArray& rom);
 
-    static constexpr uint16_t size_ = 0xFFFF;
+    static constexpr u16 size_ = 0xFFFF;
 private:
-    std::shared_ptr<std::array<uint8_t, size_>> memory_;
+    std::shared_ptr<std::array<u8, size_>> memory_;
 };
