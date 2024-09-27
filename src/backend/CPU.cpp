@@ -1,13 +1,5 @@
 #include "CPU.hpp"
 
-#include <QtLogging>
-#include <qjsonobject.h>
-#include <qlogging.h>
-#include <unordered_map>
-
-#include "utils.hpp"
-#include "Instruction.hpp"
-
 CPU::CPU(Memory& memory)
     : memory_(memory)
     , prefInstrMap_(getInstrMap(true))
@@ -19,22 +11,33 @@ CPU::CPU(Memory& memory)
     , D_(DE_.hi_)
     , E_(DE_.lo_)
     , H_(HL_.hi_)
-    , L_(HL_.lo_) {
+    , L_(HL_.lo_)
+    , pc_(0) {
 }
 
 std::unordered_map<u8, Instruction> CPU::getInstrMap(const bool prefixed) {
     QJsonObject instrMapJsonObj = Utils::getInstrMapJsonObjectFromFile(Utils::jsonFilePath, prefixed);
+    std::unordered_map<u8, std::function<bool()>> procMap = getProcMap(prefixed); 
     
     std::unordered_map<u8, Instruction> instrMap;
 
     // add instruction info to maps
     for(QString opcode : instrMapJsonObj.keys()) {
         QJsonObject opcodeJsonObj = instrMapJsonObj.value(opcode).toObject();
+        u8 op = opcode.toUShort();
         instrMap.emplace(
-            std::make_pair(opcode.toUShort(), Instruction(opcodeJsonObj))
+            std::make_pair(op, Instruction(opcodeJsonObj, procMap[op]))
         );
     }
+
     return instrMap;
+}
+
+std::unordered_map<u8, std::function<bool()>> CPU::getProcMap(const bool prefixed) {
+    std::unordered_map<u8, std::function<bool()>> procMap = {
+            {0x00, []{ return false; }}
+        };
+    return procMap;
 }
 
 void CPU::step() {
@@ -43,6 +46,8 @@ void CPU::step() {
     // deduce from which map to pick
     Instruction instr = 
         isPrefixed_ ? prefInstrMap_[opcode] : unprefInstrMap_[opcode];
+
+    instr.proc_();
 
     // set flags
     handleFlags(instr.info_.getFlags());

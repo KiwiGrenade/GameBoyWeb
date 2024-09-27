@@ -1,11 +1,13 @@
 #pragma once
 
-#include "Instruction.hpp"
+#include <unordered_map>
+
 #include "utils.hpp"
+#include "Instruction.hpp"
 #include "RegisterPair.hpp"
 #include "Memory.hpp"
-#include <qjsonobject.h>
-#include <unordered_map>
+
+#include <QJsonObject>
 
 typedef RegisterPair    r16;
 typedef Register&        r8;
@@ -35,6 +37,7 @@ private:
     std::unordered_map<u8, Instruction> prefInstrMap_;
     
     std::unordered_map<u8, Instruction> getInstrMap(const bool prefixed);
+    std::unordered_map<u8, std::function<bool()>> getProcMap(const bool prefixed);
     void handleFlags(const Utils::flagArray& flags);
 
     u16 sp_; // Stack pointer
