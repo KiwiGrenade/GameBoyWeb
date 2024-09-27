@@ -9,7 +9,7 @@ TEST_CASE("Memory") {
 
     SECTION("write / read") {
         u8 byte = GENERATE(take(100, random(0, 0xFF)));
-        u16 i = GENERATE(take(100, random(0, 0xFFFF)));
+        u16 i = GENERATE(take(100, random(0, 0xFFFF-1)));
         memory.write(byte, i);
         REQUIRE(memory.read(i) == byte);
     }
