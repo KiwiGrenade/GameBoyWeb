@@ -1,13 +1,13 @@
 #include "Instruction.hpp"
 
 Instruction::Instruction(const QJsonObject& obj)
-        : info_(Info(obj)) {
+    : info_(Info(obj)) {
 }
 
     // should there be reference to a function or just function object?
 Instruction::Instruction(const QJsonObject& obj, std::function<bool()> func)
-        : info_(Info(obj))
-        , instr_(func) {
+    : info_(Info(obj))
+    , proc_(func) {
 }
 
 Instruction::Info::Info(const QJsonObject& obj)

@@ -24,6 +24,6 @@ struct Instruction {
         Utils::flagArray flags_;
     };
 
-    std::function<bool()> instr_;
+    std::function<bool()> proc_;
     Info info_;
 };
