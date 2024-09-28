@@ -1,15 +1,24 @@
 #include "CPU.hpp"
 
 #include <catch2/catch_test_macros.hpp>
-#include <catch2/generators/catch_generators_adapters.hpp>
-#include <catch2/generators/catch_generators_random.hpp>
 
-TEST_CASE("CPU") {
+struct CPUTests : CPU {
+    CPUTests()
+    :   CPU(memory) {
 
-    SECTION("constructor") {
-        Memory memory;
-        CPU cpu(memory);
-        cpu.step();
-        REQUIRE(true);
+    }
+    Memory memory;
+};
+
+TEST_CASE_METHOD(CPUTests, "CPU") {
+    SECTION("handleFlags") {
+        Utils::flagArray flags = {Utils::Flag::set, Utils::Flag::set, Utils::Flag::set, Utils::Flag::set};
+        handleFlags(flags);
+        REQUIRE(F_ == u8(0b11110000));
+
+        flags = {Utils::Flag::setOrReset, Utils::Flag::reset, Utils::Flag::nothing, Utils::Flag::reset};
+        handleFlags(flags);
+        REQUIRE(F_ == u8(0b10100000));
     }
 }
+
