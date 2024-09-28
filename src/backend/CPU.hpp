@@ -1,7 +1,5 @@
 #pragma once
 
-#include <unordered_map>
-
 #include "utils.hpp"
 #include "Instruction.hpp"
 #include "RegisterPair.hpp"
@@ -10,7 +8,9 @@
 #include <QJsonObject>
 
 typedef RegisterPair    r16;
-typedef Register&        r8;
+typedef Register        r8;
+typedef std::array<Instruction, 256> InstrArray;
+typedef std::array<std::function<bool()>, 256> ProcArray;
 
 class CPU {
 public:
@@ -19,29 +19,23 @@ public:
     
     void step();
 
-    // getters
-    inline bool getFlagZ() { return Utils::getBit(flags_, 7); }
-    inline bool getFlagN() { return Utils::getBit(flags_, 6); }
-    inline bool getFlagH() { return Utils::getBit(flags_, 5); }
-    inline bool getFlagC() { return Utils::getBit(flags_, 4); }
-
-private:
+protected:
     Memory&     memory_;
     uint64_t    cycles_; // T-cycles
 
     // move this somewhere else???
     bool isPrefixed_;
-    bool isCondMet_;
 
-    std::unordered_map<u8, Instruction> unprefInstrMap_;
-    std::unordered_map<u8, Instruction> prefInstrMap_;
+    InstrArray unprefInstrArray_;
+    InstrArray prefInstrArray_;
     
-    std::unordered_map<u8, Instruction> getInstrMap(const bool prefixed);
-    std::unordered_map<u8, std::function<bool()>> getProcMap(const bool prefixed);
+    InstrArray getInstrArray(const bool prefixed);
+    ProcArray getUnprefProcArray();
+    ProcArray getPrefProcArray();
     void handleFlags(const Utils::flagArray& flags);
 
-    u16 sp_; // Stack pointer
-    u16 pc_; // Program Counter
+    u16 SP_; // Stack pointer
+    u16 PC_; // Program Counter
 
     // registers
     r16 AF_; // Accumulator and flags
@@ -49,21 +43,58 @@ private:
     r16 DE_;
     r16 HL_;
 
-    r8 A_;
-    r8 B_;
-    r8 C_;
-    r8 D_;
-    r8 E_;
-    r8 H_;
-    r8 L_;
+    r8& A_;
+    r8& F_;
+    r8& B_;
+    r8& C_;
+    r8& D_;
+    r8& E_;
+    r8& H_;
+    r8& L_;
 
-    r8 flags_;
+
+    class Flag {
+    public:
+        Flag(r8& flags, const u8 bitPos)
+            : flagsRegister_(flags)
+            , bitPos_(bitPos) {
+        }
+
+        inline bool val() const { return Utils::getBit(flagsRegister_, bitPos_); }
+        inline void set() { Utils::setBit(flagsRegister_, bitPos_); }
+        inline void clear() { Utils::clearBit(flagsRegister_, bitPos_); }
+        inline void handle(const Utils::Flag flag) {
+            switch(flag) {
+                case Utils::Flag::set:
+                    set();
+                    break;
+                case Utils::Flag::reset:
+                    clear();
+                    break;
+                default:
+                    break;
+            }
+        }
+        inline void complement() {
+            if(val())
+                clear();
+            else
+                set();
+        }
+
+    private:
+        u8 bitPos_;
+        r8& flagsRegister_;
+    };
+
+    Flag FlagZ_;
+    Flag FlagN_;
+    Flag FlagH_;
+    Flag FlagC_;
 
 // Find a way to move instructions somewhere else
     // instructions
-        // info
         // miscallaneous
-    // set or reset flags
     void ccf();
     void cpl();
     void daa();

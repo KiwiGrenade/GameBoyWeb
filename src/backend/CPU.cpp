@@ -1,75 +1,66 @@
 #include "CPU.hpp"
+#include "utils.hpp"
 
 CPU::CPU(Memory& memory)
     : memory_(memory)
-    , prefInstrMap_(getInstrMap(true))
-    , unprefInstrMap_(getInstrMap(false))
+    , prefInstrArray_(getInstrArray(true))
+    , unprefInstrArray_(getInstrArray(false))
     , A_(AF_.hi_)
-    , flags_(AF_.lo_)
+    , F_(AF_.lo_)
     , B_(BC_.hi_)
     , C_(BC_.lo_)
     , D_(DE_.hi_)
     , E_(DE_.lo_)
     , H_(HL_.hi_)
     , L_(HL_.lo_)
-    , pc_(0) {
+    , FlagZ_(Flag(F_, 7))
+    , FlagN_(Flag(F_, 6))
+    , FlagH_(Flag(F_, 5))
+    , FlagC_(Flag(F_, 4))
+    , PC_(0)
+    , cycles_(0){
 }
 
-std::unordered_map<u8, Instruction> CPU::getInstrMap(const bool prefixed) {
+InstrArray CPU::getInstrArray(const bool prefixed) {
     QJsonObject instrMapJsonObj = Utils::getInstrMapJsonObjectFromFile(Utils::jsonFilePath, prefixed);
-    std::unordered_map<u8, std::function<bool()>> procMap = getProcMap(prefixed); 
+    ProcArray procArray = prefixed ? getPrefProcArray() : getUnprefProcArray(); 
     
-    std::unordered_map<u8, Instruction> instrMap;
+    InstrArray instrArray;
 
     // add instruction info to maps
-    for(QString opcode : instrMapJsonObj.keys()) {
-        QJsonObject opcodeJsonObj = instrMapJsonObj.value(opcode).toObject();
-        u8 op = opcode.toUShort();
-        instrMap.emplace(
-            std::make_pair(op, Instruction(opcodeJsonObj, procMap[op]))
-        );
+    for(u16 op = 0; op < 256; ++op) {
+        QString key = instrMapJsonObj.keys().at(op);
+        QJsonObject opcodeJsonObj = instrMapJsonObj.value(key).toObject();
+
+        instrArray[op] = Instruction(opcodeJsonObj, procArray[op]);
     }
 
-    return instrMap;
-}
-
-std::unordered_map<u8, std::function<bool()>> CPU::getProcMap(const bool prefixed) {
-    std::unordered_map<u8, std::function<bool()>> procMap = {
-            {0x00, []{ return false; }}
-        };
-    return procMap;
+    return instrArray;
 }
 
 void CPU::step() {
-    u8 opcode = memory_.read(pc_);
+    u8 opcode = memory_.read(PC_);
     
     // deduce from which map to pick
     Instruction instr = 
-        isPrefixed_ ? prefInstrMap_[opcode] : unprefInstrMap_[opcode];
+        isPrefixed_ ? prefInstrArray_[opcode] : unprefInstrArray_[opcode];
 
-    instr.proc_();
+    bool cond = instr.proc_();
 
     // set flags
     handleFlags(instr.info_.getFlags());
 
     // add instruction length (in bytes) to program counter
-    pc_ += instr.info_.getBytes();
+    PC_ += instr.info_.getBytes();
 
     // determine number of cycles that went by while executing instruction
     std::pair <u8, u8> cycles = instr.info_.getCycles();
-    cycles_ += isCondMet_ ? cycles.first : cycles.second;
+    cycles_ += cond ? cycles.first : cycles.second;
 }
 
 void CPU::handleFlags(const Utils::flagArray& flags) {
-    for(u8 i = 0; i < flags.size(); i++) {
-        u8 nBit = 7 - i;
-        if (flags[i] == Utils::Flag::set)
-            Utils::setBit(flags_, nBit);
-        else if (flags[i] == Utils::Flag::reset)
-            Utils::resetBit(flags_, nBit);
-    }
+    FlagZ_.handle(flags[0]);
+    FlagN_.handle(flags[1]);
+    FlagH_.handle(flags[2]);
+    FlagC_.handle(flags[3]);
 }
-
-
-
-

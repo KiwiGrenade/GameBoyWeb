@@ -50,7 +50,7 @@ inline static u8 setBit(u8& byte, const u8 n) {
     return byte |= ((u8) 1 << n);
 }
 
-inline static u8 resetBit(u8& byte, const u8 n) {
+inline static u8 clearBit(u8& byte, const u8 n) {
     return byte &= ~((u8) 1 << n);
 }
 
