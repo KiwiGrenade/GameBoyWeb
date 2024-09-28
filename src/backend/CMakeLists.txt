@@ -2,7 +2,7 @@ qt_add_library(Utils STATIC utils.cpp)
 qt_add_library(Memory STATIC Memory.cpp)
 qt_add_library(GameBoy STATIC GameBoy.cpp)
 # qt_add_library(Disassembler STATIC Disassembler.cpp)
-qt_add_library(CPU STATIC CPU.cpp)
+qt_add_library(CPU STATIC CPU.cpp ProceduresPrefixed.cpp ProceduresUnprefixed.cpp)
 qt_add_library(RegisterPair STATIC RegisterPair.hpp)
 qt_add_library(Instruction STATIC Instruction.cpp)
 

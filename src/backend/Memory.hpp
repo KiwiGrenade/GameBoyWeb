@@ -12,7 +12,7 @@ public:
     ~Memory() = default;
     
     inline u8 read(u16 idx) const { return memory_->at(idx); }
-    inline void write(const u16 byte, const u16 idx) { memory_->at(idx) = byte; }
+    inline void write(const u8 byte, const u16 idx) { memory_->at(idx) = byte; }
     void loadSimpleROM(const QByteArray& rom);
 
     static constexpr u16 size_ = 0xFFFF;
