@@ -1,4 +1,7 @@
 #include "CPU.hpp"
+#include "utils.hpp"
+
+void notImplemented() { Utils::warning("Opcode not implemented!"); }
 
 ProcArray CPU::getUnprefProcArray() {
     return {
@@ -18,7 +21,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0x0D*/ { nop(); return false; },
         [this] /*0x0E*/ { nop(); return false; },
         [this] /*0x0F*/ { nop(); return false; },
-        [this] /*0x10*/ { nop(); return false; },
+        [this] /*0x10*/ { stop(); return false; },
         [this] /*0x11*/ { nop(); return false; },
         [this] /*0x12*/ { nop(); return false; },
         [this] /*0x13*/ { nop(); return false; },
@@ -41,7 +44,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0x24*/ { nop(); return false; },
         [this] /*0x25*/ { nop(); return false; },
         [this] /*0x26*/ { nop(); return false; },
-        [this] /*0x27*/ { nop(); return false; },
+        [this] /*0x27*/ { daa(); return false; },
         [this] /*0x28*/ { nop(); return false; },
         [this] /*0x29*/ { nop(); return false; },
         [this] /*0x2A*/ { nop(); return false; },
@@ -57,7 +60,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0x34*/ { nop(); return false; },
         [this] /*0x35*/ { nop(); return false; },
         [this] /*0x36*/ { nop(); return false; },
-        [this] /*0x37*/ { nop(); return false; },
+        [this] /*0x37*/ { return false; }, // handleFlags does the job
         [this] /*0x38*/ { nop(); return false; },
         [this] /*0x39*/ { nop(); return false; },
         [this] /*0x3A*/ { nop(); return false; },
@@ -120,8 +123,8 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0x73*/ { nop(); return false; },
         [this] /*0x74*/ { nop(); return false; },
         [this] /*0x75*/ { nop(); return false; },
-        [this] /*0x76*/ { nop(); return false; },
-        [this] /*0x77*/ { ccf(); return false; },
+        [this] /*0x76*/ { halt(); return false; },
+        [this] /*0x77*/ { nop(); return false; },
         [this] /*0x78*/ { nop(); return false; },
         [this] /*0x79*/ { nop(); return false; },
         [this] /*0x7A*/ { nop(); return false; },
@@ -245,7 +248,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0xF0*/ { nop(); return false; },
         [this] /*0xF1*/ { nop(); return false; },
         [this] /*0xF2*/ { nop(); return false; },
-        [this] /*0xF3*/ { nop(); return false; },
+        [this] /*0xF3*/ { di(); return false; },
         [this] /*0xF4*/ { nop(); return false; },
         [this] /*0xF5*/ { nop(); return false; },
         [this] /*0xF6*/ { nop(); return false; },
@@ -253,15 +256,51 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0xF8*/ { nop(); return false; },
         [this] /*0xF9*/ { nop(); return false; },
         [this] /*0xFA*/ { nop(); return false; },
-        [this] /*0xFB*/ { nop(); return false; },
+        [this] /*0xFB*/ { ei(); return false; },
         [this] /*0xFC*/ { nop(); return false; },
         [this] /*0xFD*/ { nop(); return false; },
         [this] /*0xFE*/ { nop(); return false; },
-        [this] /*0xFF*/ { nop(); return false; }
+        [this] /*0xFF*/ { notImplemented(); return false; }
     };
 }
 
 void CPU::ccf() { FlagC_.complement(); }
 void CPU::scf() { /* done by handleFlags */ }
-void CPU::nop() { return; }
+void CPU::nop() { /* do nothing */ }
+void CPU::halt() {
+    if(IME_)
+        isHalted_ = true;
+    else {
+        if(IE_ & IF_) {
+            isHaltBug_ = true;
+        }
+        else
+            isHalted_ = true;
+    }
+}
 void CPU::cpl() { A_=~A_; }
+void CPU::ei() { isEISet_ = true; }
+void CPU::di() { isDISet_ = true; }
+void CPU::daa() {
+    if(!FlagN_.val()) {
+        if(FlagC_.val() || A_ > 0x99) {
+            A_ += 0x60;
+            FlagC_.set();
+        }
+        if(FlagH_.val() || (A_ & 0x0F) > 0x09)
+            A_ += 0x6;
+    }
+    else {
+        if(FlagC_.val())
+            A_ -= 0x60;
+        if(FlagH_.val())
+            A_ -=0x6;
+    }
+    checkFlagZ();
+}
+void CPU::stop() {
+    isStopped_ = true;
+}
+
+
+

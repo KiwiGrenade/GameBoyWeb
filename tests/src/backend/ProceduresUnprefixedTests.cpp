@@ -85,10 +85,10 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0x10") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0x10") {
+        execute(0x10);
+        REQUIRE(isStopped_);
+    }
     /*SECTION("0x11") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -177,10 +177,13 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0x27") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0x27") {
+        FlagC_.clear();
+        A_ = 0x9B;
+        execute(0x27);
+        REQUIRE(FlagC_.val());
+        REQUIRE(A_ == 1);
+    }
     /*SECTION("0x28") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -209,7 +212,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    SECTION("0x2F") {
+    SECTION("0x2F", "[CPL]") {
         A_ = u8(0b11010100);
         execute(0x2f);
         REQUIRE(A_ == u8(0b00101011));
@@ -242,9 +245,8 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    SECTION("0x37") {
+    SECTION("0x37", "[SCF]") {
         execute(0x37);
-        REQUIRE_FALSE(FlagZ_.val());
         REQUIRE_FALSE(FlagN_.val());
         REQUIRE_FALSE(FlagH_.val());
         REQUIRE(FlagC_.val());
@@ -279,9 +281,9 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*}*/
     SECTION("0x3F", "[CCF]") {
         execute(0x3f);
-        REQUIRE(FlagC_.val());
+        REQUIRE(oldFlagC != FlagC_.val());
         execute(0x3f);
-        REQUIRE_FALSE(FlagC_.val());
+        REQUIRE(oldFlagC == FlagC_.val());
     }
     /*SECTION("0x40") {*/
     /*    step();*/
@@ -499,10 +501,26 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0x76") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0x76") {
+        isHalted_ = false;
+        IME_ = true;
+        execute(0x76);
+        REQUIRE(isHalted_);
+
+        isHalted_ = false;
+        IME_ = false;
+        IE_ = 0;
+        IF_ = 1;
+        execute(0x76);
+        REQUIRE(isHalted_);
+
+        isHalted_ = false;
+        IME_ = false;
+        IE_ = 1;
+        IF_ = 1;
+        execute(0x76);
+        REQUIRE(isHaltBug_);
+    }
     /*SECTION("0x77") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -999,10 +1017,19 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0xF3") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xF3", "[DI]") {
+        IME_ = true;
+        REQUIRE_FALSE(isDISet_);
+
+        execute(0xF3);
+
+        REQUIRE(IME_);
+        REQUIRE(isDISet_);
+
+        execute(0x00);
+
+        REQUIRE_FALSE(IME_);
+    }
     /*SECTION("0xF4") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -1031,10 +1058,19 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0xFB") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xFB", "[EI]") {
+        IME_ = false;
+        isEISet_ = false;
+
+        execute(0xFB);
+
+        REQUIRE_FALSE(IME_);
+        REQUIRE(isEISet_);
+
+        execute(0x00);
+
+        REQUIRE(IME_);
+    }
     /*SECTION("0xFC") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
