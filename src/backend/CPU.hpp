@@ -6,6 +6,7 @@
 #include "Memory.hpp"
 
 #include <QJsonObject>
+#include <memory>
 
 typedef RegisterPair    r16;
 typedef Register        r8;
@@ -23,8 +24,15 @@ protected:
     Memory&     memory_;
     uint64_t    cycles_; // T-cycles
 
-    // move this somewhere else???
+
+    // helper flags 
     bool isPrefixed_;
+    bool isHalted_;
+    bool isHaltBug_;
+    bool isEISet_;
+    bool isDISet_;
+    bool is2xSpeed_;
+    bool isStopped_;
 
     InstrArray unprefInstrArray_;
     InstrArray prefInstrArray_;
@@ -32,7 +40,9 @@ protected:
     InstrArray getInstrArray(const bool prefixed);
     ProcArray getUnprefProcArray();
     ProcArray getPrefProcArray();
+    void handleIME();
     void handleFlags(const Utils::flagArray& flags);
+    void reset();
 
     u16 SP_; // Stack pointer
     u16 PC_; // Program Counter
@@ -43,15 +53,20 @@ protected:
     r16 DE_;
     r16 HL_;
 
+    // half-registers
     r8& A_;
-    r8& F_;
+    r8& F_; // flags register
     r8& B_;
     r8& C_;
     r8& D_;
     r8& E_;
     r8& H_;
     r8& L_;
-
+    
+    // interrupts
+    bool IME_;
+    u8& IE_; // memory[0xFFFF]
+    u8& IF_; // memory[0xFF0F]
 
     class Flag {
     public:
@@ -91,6 +106,10 @@ protected:
     Flag FlagN_;
     Flag FlagH_;
     Flag FlagC_;
+
+    inline void checkFlagZ() {
+        A_ ? FlagZ_.clear() : FlagZ_.set(); 
+    }
 
 // Find a way to move instructions somewhere else
     // instructions

@@ -17,8 +17,27 @@ CPU::CPU(Memory& memory)
     , FlagN_(Flag(F_, 6))
     , FlagH_(Flag(F_, 5))
     , FlagC_(Flag(F_, 4))
-    , PC_(0)
-    , cycles_(0){
+    , IE_(memory_.getIE())
+    , IF_(memory_.getIF()) {
+    reset();
+}
+
+void CPU::reset() {
+    AF_.setVal(0x11B0);
+    BC_.setVal(0x0013);
+    DE_.setVal(0x00D8);
+    HL_.setVal(0x014D);
+    SP_ = 0xFFFE;
+    PC_ = 0X100;
+    cycles_ = 0;
+    IME_ = false;
+    // helper flags
+    isStopped_ = false;
+    isHalted_ = false;
+    isHaltBug_ = false;
+    is2xSpeed_ = false;
+    isEISet_ = false;
+    isDISet_ = false;
 }
 
 InstrArray CPU::getInstrArray(const bool prefixed) {
@@ -39,6 +58,13 @@ InstrArray CPU::getInstrArray(const bool prefixed) {
 }
 
 void CPU::step() {
+    handleIME();
+    if(isHalted_) {
+        // assume nop
+        cycles_ += 4;
+        return;
+    }
+
     u8 opcode = memory_.read(PC_);
     
     // deduce from which map to pick
@@ -63,4 +89,11 @@ void CPU::handleFlags(const Utils::flagArray& flags) {
     FlagN_.handle(flags[1]);
     FlagH_.handle(flags[2]);
     FlagC_.handle(flags[3]);
+}
+
+void CPU::handleIME() {
+    if(isEISet_)
+        IME_ = true;
+    else if(isDISet_)
+        IME_ = false;
 }
