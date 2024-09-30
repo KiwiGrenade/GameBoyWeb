@@ -8,8 +8,8 @@
 
 
 TEST_CASE("JsonGetters", "[utils]") {
-    QJsonObject prefInstrMapJsonObj = Utils::getInstrMapJsonObjectFromFile(Utils::jsonFilePath, true);
-    QJsonObject unprefInstrMapJsonObj = Utils::getInstrMapJsonObjectFromFile(Utils::jsonFilePath, false);
+    QJsonObject prefInstrMapJsonObj = Utils::getInstrMapJsonObjectFromFile(true);
+    QJsonObject unprefInstrMapJsonObj = Utils::getInstrMapJsonObjectFromFile(false);
 
     std::vector<u8> opcodesu8 = { 
         0,

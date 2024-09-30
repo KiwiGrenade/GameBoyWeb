@@ -14,12 +14,12 @@ std::string uint8_tToHexString(const uint8_t& byte) {
 }
 
 
-QJsonObject getInstrMapJsonObjectFromFile(const std::string& filePath, const bool prefixed) {
-    QString jsonFilePath = QString::fromStdString(filePath);
+QJsonObject getInstrMapJsonObjectFromFile(const bool prefixed) {
+    QString jsonFilePathQStr = QString::fromStdString(jsonFilePath);
 
-    QFile file(jsonFilePath);
+    QFile file(jsonFilePathQStr);
     if(!file.open(QIODevice::ReadOnly))
-        Utils::error("Could not open file: " + jsonFilePath.toStdString());
+        Utils::error("Could not open file: " + jsonFilePathQStr.toStdString());
 
     QByteArray data = file.readAll();
     file.close();
