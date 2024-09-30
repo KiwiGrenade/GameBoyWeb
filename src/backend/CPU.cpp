@@ -41,7 +41,7 @@ void CPU::reset() {
 }
 
 InstrArray CPU::getInstrArray(const bool prefixed) {
-    QJsonObject instrMapJsonObj = Utils::getInstrMapJsonObjectFromFile(Utils::jsonFilePath, prefixed);
+    QJsonObject instrMapJsonObj = Utils::getInstrMapJsonObjectFromFile(prefixed);
     ProcArray procArray = prefixed ? getPrefProcArray() : getUnprefProcArray(); 
     
     InstrArray instrArray;

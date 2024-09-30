@@ -40,7 +40,7 @@ typedef std::array<Flag, 4> flagArray;
 std::string uint8_tToHexString(const uint8_t& byte);
 
 // json object extraction
-QJsonObject getInstrMapJsonObjectFromFile(const std::string& filePath, const bool prefixed);
+QJsonObject getInstrMapJsonObjectFromFile(const bool prefixed);
 u8 getBytesFromInstrJsonObject(const QJsonObject& obj);
 std::pair<u8, u8> getCyclesFromInstrJsonObject(const QJsonObject& obj);
 Utils::flagArray getFlagsFromInstrJsonObject(const QJsonObject& obj);
