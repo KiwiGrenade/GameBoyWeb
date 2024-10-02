@@ -6,7 +6,6 @@
 #include "Memory.hpp"
 
 #include <QJsonObject>
-#include <memory>
 
 typedef RegisterPair    r16;
 typedef Register        r8;
@@ -129,6 +128,9 @@ protected:
         // bit operation
         // bit shift
         // load
+    void ld(r8&, const r8);
+    /*void LD(r8, u8);*/
+    /*void LD(r16, n16);*/
         // stack operations
 
 };

@@ -26,7 +26,7 @@ const std::string END = "\e[0m";
 inline void warning(const std::string& str) { std::cerr << YELLOW << "[WRN]: " << str << END << std::endl; }
 inline void error(const std::string& str) { std::cerr << RED << "[ERR]: " << str << END << std::endl; exit(2); }
 
-static std::string jsonFilePath = "/home/desktop/GameBoyWeb/res/opcodes.json";
+static std::string jsonFilePath = "/home/jaskow/GameBoyWeb/res/opcodes.json";
 
 enum class Flag : char {
     reset,
