@@ -285,111 +285,78 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         execute(0x3f);
         REQUIRE(oldFlagC == FlagC_.val());
     }
-    SECTION("0x40-0x45, 0x47-0x4D, 0x4F-0x55, 0x57-0x5D, 0x5F-0x65, 0x67-0x6D, 0x6F, 0x78-0x7D, 0x7F", "[LD]") {
+    SECTION("0x40-0x7F", "[LD], [LDD], [HALT]") {
+        SECTION("0x76", "[HALT]") {
+            isHalted_ = false;
+            IME_ = true;
+            execute(0x76);
+            REQUIRE(isHalted_);
+
+            isHalted_ = false;
+            IME_ = false;
+            IE_ = 0;
+            IF_ = 1;
+            execute(0x76);
+            REQUIRE(isHalted_);
+
+            isHalted_ = false;
+            IME_ = false;
+            IE_ = 1;
+            IF_ = 1;
+            execute(0x76);
+            REQUIRE(isHaltBug_);
+        }
         std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
-        u16 k = 0x40;
-        for(u8 i = 0; i < 8; i++, k += 8) {
-            if(k == 0x70)
-                continue;
-            for(u8 j = 0; j < 8; j++) {
-                if(j == 6) 
+        u8 k;
+        u8 op;
+        SECTION("0x40-0x45, 0x47-0x4D, 0x4F-0x55, 0x57-0x5D, 0x5F-0x65, 0x67-0x6D, 0x6F, 0x78-0x7D, 0x7F", "[LD]") {
+            k = 0x40;
+            for(u8 i = 0; i < 8; i++, k += 8) {
+                if(k == 0x70)
                     continue;
-                u16 op = k + j;
-                u8* to = i == 7 ? reg[i-1] : reg[i];
-                u8* from = j == 7 ? reg[j-1] : reg[j];
+                for(u8 j = 0; j < 8; j++) {
+                    if(j == 6) 
+                        continue;
+                    op = k + j;
+                    u8* to = i == 7 ? reg[i-1] : reg[i];
+                    u8* from = j == 7 ? reg[j-1] : reg[j];
+                    *from = op;
+                    execute(op);
+                    REQUIRE(*to == *from);
+                }
+            }
+        }
+        SECTION("0x70-0x75, 0x77", "[LDD]") {
+            k = 0x70;
+            for(u8 i = 0; i < 8; i++) {
+                if(i == 6)
+                    continue;
+                op = k + i;
+                u8* from = i == 7 ? reg[i-1] : reg[i];
                 *from = op;
+                HL_.setVal(op);
                 execute(op);
-                REQUIRE(*to == *from);
+                REQUIRE(memory_.read(HL_) == *from);
+            }
+            REQUIRE(memory_.read(0x77) == 0x77);
+        }
+        SECTION("0x46, 0x4E, 0x56, 0x5E, 0x66, 0x6E, 0x77, 0x7E") {
+
+            k = 0x46;
+            for(u8 i = 0; i < 8; i++, k +=8) {
+                if(i == 6)
+                    continue;
+                op = k;
+                u8* to = i == 7 ? reg[i-1] : reg[i];
+                HL_.setVal(op);
+                std::cout << op << std::endl;
+                memory_.write(op, HL_);
+                u16 prevHL_ = HL_; // execute changes H_ and L_ registers
+                execute(op);
+                REQUIRE(memory_.read(prevHL_) == *to);
             }
         }
     }
-    SECTION("0x70-0x75, 0x77", "[LDD]") {
-         std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
-        u16 k = 0x70;
-        for(u8 i = 0; i < 8; i++) {
-            if(i == 6)
-                continue;
-            u16 op = k + i;
-            u8* from = i == 7 ? reg[i-1] : reg[i];
-            *from = op;
-            HL_.setVal(op);
-            execute(op);
-            REQUIRE(memory_.read(HL_) == *from);
-        }
-        REQUIRE(memory_.read(0x77) == 0x77);
-    }
-    /*SECTION("0x46") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x4E") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x56") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x5E") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x66") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x6E") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x70") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x71") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x72") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x73") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x74") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x75") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    SECTION("0x76", "[HALT]") {
-        isHalted_ = false;
-        IME_ = true;
-        execute(0x76);
-        REQUIRE(isHalted_);
-
-        isHalted_ = false;
-        IME_ = false;
-        IE_ = 0;
-        IF_ = 1;
-        execute(0x76);
-        REQUIRE(isHalted_);
-
-        isHalted_ = false;
-        IME_ = false;
-        IE_ = 1;
-        IF_ = 1;
-        execute(0x76);
-        REQUIRE(isHaltBug_);
-    }
-    /*SECTION("0x7E") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
     /*SECTION("0x80") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
