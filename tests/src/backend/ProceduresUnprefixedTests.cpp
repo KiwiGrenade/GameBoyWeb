@@ -303,6 +303,21 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             }
         }
     }
+    SECTION("0x70-0x75, 0x77", "[LDD]") {
+         std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
+        u16 k = 0x70;
+        for(u8 i = 0; i < 8; i++) {
+            if(i == 6)
+                continue;
+            u16 op = k + i;
+            u8* from = i == 7 ? reg[i-1] : reg[i];
+            *from = op;
+            HL_.setVal(op);
+            execute(op);
+            REQUIRE(memory_.read(HL_) == *from);
+        }
+        REQUIRE(memory_.read(0x77) == 0x77);
+    }
     /*SECTION("0x46") {*/
     /*    step();*/
     /*    REQUIRE(true);*/

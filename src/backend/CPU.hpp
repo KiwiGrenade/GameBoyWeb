@@ -113,22 +113,23 @@ protected:
 // Find a way to move instructions somewhere else
     // instructions
         // miscallaneous
-    void ccf();
-    void cpl();
+    void inline ccf();
+    void inline cpl();
     void daa();
-    void di();
-    void ei();
+    void inline di();
+    void inline ei();
     void halt();
-    void nop();
-    void scf();
-    void stop();
+    void inline nop();
+    void inline scf();
+    void inline stop();
         // jump and subroutines
         // 8 bit arithmetic and logic
         // 16 bit arithmetic
         // bit operation
         // bit shift
         // load
-    void ld(r8&, const r8);
+    void inline ld(r8& to, const r8 from);
+    void inline ldd(u16 addr, u8 byte);
     /*void LD(r8, u8);*/
     /*void LD(r16, n16);*/
         // stack operations
