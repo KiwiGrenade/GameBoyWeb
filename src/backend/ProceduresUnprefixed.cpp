@@ -117,14 +117,14 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0x6D*/ { ld(L_, L_); return false; },
         [this] /*0x6E*/ { notImplemented(); return false; },
         [this] /*0x6F*/ { ld(L_, A_); return false; },
-        [this] /*0x70*/ { notImplemented(); return false; },
-        [this] /*0x71*/ { notImplemented(); return false; },
-        [this] /*0x72*/ { notImplemented(); return false; },
-        [this] /*0x73*/ { notImplemented(); return false; },
-        [this] /*0x74*/ { notImplemented(); return false; },
-        [this] /*0x75*/ { notImplemented(); return false; },
+        [this] /*0x70*/ { ldd(HL_, B_); return false; },
+        [this] /*0x71*/ { ldd(HL_, C_); return false; },
+        [this] /*0x72*/ { ldd(HL_, D_); return false; },
+        [this] /*0x73*/ { ldd(HL_, E_); return false; },
+        [this] /*0x74*/ { ldd(HL_, H_); return false; },
+        [this] /*0x75*/ { ldd(HL_, L_); return false; },
         [this] /*0x76*/ { halt(); return false; },
-        [this] /*0x77*/ { notImplemented(); return false; },
+        [this] /*0x77*/ { ldd(HL_, A_); return false; },
         [this] /*0x78*/ { ld(A_, B_); return false; },
         [this] /*0x79*/ { ld(A_, C_); return false; },
         [this] /*0x7A*/ { ld(A_, D_); return false; },
@@ -300,6 +300,7 @@ void CPU::daa() {
 }
 void CPU::stop() { isStopped_ = true; }
 void CPU::ld(r8& l, const r8 r) { l = r; }
+void CPU::ldd(u16 addr, u8 byte) { memory_.write(byte, addr); }
 
 
 
