@@ -29,10 +29,12 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    execute(0x01);*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0x02") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0x02", "LDD") {
+        BC_ = 11;
+        A_ = 12;
+        execute(0x02);
+        REQUIRE(memory_.read(BC_) == A_);
+    }
     /*SECTION("0x03") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -71,10 +73,13 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0x0A") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0x0A", "[LD]") {
+        BC_ = 13;
+        u8 val = 14;
+        memory.write(val, BC_);
+        execute(0x0A);
+        REQUIRE(A_ == val);
+    }
     /*SECTION("0x0B") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -99,10 +104,12 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0x12") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0x12", "[LDD]") {
+        DE_ = 15;
+        A_ = 16;
+        execute(0x12);
+        REQUIRE(memory_.read(DE_) == A_);
+    }
     /*SECTION("0x13") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -127,10 +134,13 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0x1A") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0x1A") {
+        DE_ = 17;
+        u8 val = 18;
+        memory_.write(val, DE_);
+        execute(0x1A);
+        REQUIRE(A_ == val);
+    }
     /*SECTION("0x1B") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -155,10 +165,14 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0x22") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0x22") {
+        HL_ = 17;
+        u16 oldHL = HL_;
+        A_ = 18;
+        execute(0x22);
+        REQUIRE(oldHL + 1 == HL_);
+        REQUIRE(memory_.read(oldHL) == A_);
+    }
     /*SECTION("0x23") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -186,10 +200,15 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0x2A") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0x2A") {
+        HL_ = 19;
+        u16 oldHL = HL_;
+        u8 val = 20;
+        memory.write(val, HL_);
+        execute(0x2A);
+        REQUIRE(oldHL + 1 == HL_);
+        REQUIRE(A_ == val);
+    }
     /*SECTION("0x2B") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -215,10 +234,14 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0x32") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0x32") {
+        HL_ = 21;
+        u16 oldHL = HL_;
+        A_ = 22;
+        execute(0x32);
+        REQUIRE(oldHL - 1 == HL_);
+        REQUIRE(memory_.read(oldHL) == A_);
+    }
     /*SECTION("0x33") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -252,10 +275,15 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0x3A") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0x3A") {
+        HL_ = 23;
+        u16 oldHL = HL_;
+        u8 val = 24;
+        memory.write(val, HL_);
+        execute(0x3A);
+        REQUIRE(oldHL - 1 == HL_);
+        REQUIRE(A_ == val);
+    }
     /*SECTION("0x3B") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -338,7 +366,6 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
                 op = k;
                 u8* to = i == 7 ? reg[i-1] : reg[i];
                 HL_.setVal(op);
-                std::cout << op << std::endl;
                 memory_.write(op, HL_);
                 u16 prevHL_ = HL_; // execute changes H_ and L_ registers
                 execute(op);
