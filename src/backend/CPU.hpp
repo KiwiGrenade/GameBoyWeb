@@ -95,6 +95,12 @@ protected:
             else
                 set();
         }
+        static inline bool checkH(const u8 a, const u8 b, const u8 res) {
+            return ((a ^ b ^ res) & 0x10);
+        }
+        static inline bool checkH16(const u16 a, const u16 b, const u16 res) {
+            return ((a ^ b ^ res) & 0x1000);
+        }
 
     private:
         u8 bitPos_;
@@ -138,6 +144,7 @@ protected:
     void inline ldd(u16 const addr, const u8 byte);
     void inline ld16(r16&, const u16);
     void ldd16(u16 const addr, const r16 word);
+    void ldhl_sp(const int8_t d);
     /*void LD(r8, u8);*/
     /*void LD(r16, n16);*/
         // stack operations
