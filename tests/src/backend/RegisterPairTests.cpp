@@ -121,13 +121,24 @@ TEST_CASE("operators", "[RegisterPair]") {
     RegisterPair resReg;
     u16 resU16;
     SECTION("operator+") {
-        resReg = reg1 + reg2;
-        resU16 = val1 + val2;
-        REQUIRE(resReg.getVal() == resU16);
+        SECTION("RegisterPair") {
+            resReg = reg1 + reg2;
+            resU16 = val1 + val2;
+            REQUIRE(resReg.getVal() == resU16);
 
-        resReg = reg2 + reg1 + reg3;
-        resU16 = val2 + val1 + val3;
-        REQUIRE(resReg.getVal() == resU16);
+            resReg = reg2 + reg1 + reg3;
+            resU16 = val2 + val1 + val3;
+            REQUIRE(resReg.getVal() == resU16);
+        }
+        SECTION("Int") {
+            resReg = reg1 + 40;
+            resU16 = val1 + 40;
+            REQUIRE(resReg.getVal() == resU16);
+
+            resReg = reg1 + (-40);
+            resU16 = val1 + (-40);
+            REQUIRE(resReg.getVal() == resU16);
+        }
     }
 
     SECTION("operator-") {
