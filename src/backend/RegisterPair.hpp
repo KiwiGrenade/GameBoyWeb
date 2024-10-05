@@ -65,6 +65,11 @@ struct RegisterPair {
         return lhs;
     }
 
+    friend RegisterPair operator+(RegisterPair lhs, const int rhs) {
+        lhs += rhs;
+        return lhs;
+    }
+
     friend RegisterPair operator-(RegisterPair lhs, const RegisterPair rhs) {
         lhs -= rhs;
         return lhs;
