@@ -76,7 +76,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         memory_.write(0x0010, PC_+1);
         memory_.write(0x0000, PC_+2);
         execute(0x08);
-        REQUIRE(memory.read(0x00000010) == SP_);
+        REQUIRE(fetch8(0x00000010) == SP_);
     }
     /*SECTION("0x09") {*/
     /*    step();*/
@@ -776,10 +776,12 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0xE2") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xE2", "[LDD]") {
+        A_ = 20;
+        C_ = 3;
+        execute(0xE2);
+        REQUIRE(fetch8(0xFF00 + C_) == A_);
+    }
     /*SECTION("0xE3") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -808,10 +810,11 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0xEA") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xEA", "[LDD]") {
+        A_ = 20;
+        execute(0xEA);
+        REQUIRE(fetch8(fetch16(oldPC+1)) == A_);
+    }
     /*SECTION("0xEB") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -832,18 +835,25 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0xF0") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xF0", "[LD]") {
+        u8 val = 20;
+        memory_.write(val, PC_+1);
+        memory_.write(val, 0xFF00 + fetch8(PC_+1));
+        execute(0xF0);
+        REQUIRE(A_ == val);
+    }
     /*SECTION("0xF1") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0xF2") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xF2", "[LD]") {
+        u8 val = 40;
+        C_ = 4;
+        memory_.write(val, 0xFF00 + C_);
+
+        execute(0xF2);
+        REQUIRE(A_ == val);
+    }
     SECTION("0xF3", "[DI]") {
         IME_ = true;
         REQUIRE_FALSE(isDISet_);
@@ -873,19 +883,115 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0xF8") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xF8") {
+        int8_t val;
+        SECTION("positive") {
+            SECTION("shouldSetHalfCarryFlag") {
+                val = 8;
+                SP_ = 8;
+                memory_.write(val, PC_+1);
+                execute(0xF8);
+                REQUIRE(HL_ == SP_ + val);
+                REQUIRE(FlagH_.val());
+            }
+            SECTION("shouldNotSetHalfCarryFlag") {
+                val = 64;
+                SP_ = 32;
+                memory_.write(val, PC_+1);
+                execute(0xF8);
+                REQUIRE(HL_ == SP_ + val);
+                REQUIRE_FALSE(FlagH_.val());
+            }
+            SECTION("shouldSetCarryFlag") {
+                val = 0b11111111;
+                SP_ = 1;
+                memory_.write(val, PC_+1);
+                execute(0xF8);
+                REQUIRE(HL_ == SP_ + val);
+                REQUIRE(FlagC_.val());
+            }
+            SECTION("shouldNotSetCarryFlag") {
+                val = 0b01111111;
+                SP_ = 1;
+                memory_.write(val, PC_+1);
+                execute(0xF8);
+                REQUIRE(HL_ == SP_ + val);
+                REQUIRE_FALSE(FlagC_.val());
+            }
+        }
+        SECTION("negative") {
+            SECTION("shouldSetHalfCarryFlag") {
+                val = 0b10001000;
+                SP_ = 0b00001000;
+                memory_.write(val, PC_+1);
+                execute(0xF8);
+                REQUIRE(HL_ == SP_ + val);
+                REQUIRE(FlagH_.val());
+            }
+            SECTION("shouldNotSetHalfCarryFlag") {
+                val = 64;
+                SP_ = 32;
+                memory_.write(val, PC_+1);
+                execute(0xF8);
+                REQUIRE(HL_ == SP_ + val);
+                REQUIRE_FALSE(FlagH_.val());
+            }
+            SECTION("shouldSetCarryFlag") {
+                val = -3;
+                SP_ = 0xFFFF;
+                memory_.write(val, PC_+1);
+                execute(0xF8);
+                REQUIRE(HL_ == SP_ + val);
+                REQUIRE(FlagC_.val());
+            }
+            SECTION("shouldNotSetCarryFlag") {
+                val = 0;
+                SP_ = -1;
+                memory_.write(val, PC_+1);
+                execute(0xF8);
+                REQUIRE(HL_ == SP_ + val);
+                REQUIRE_FALSE(FlagC_.val());
+            }
+            val = -1;
+            SP_ = 2;
+            memory_.write(val, PC_+1);
+            execute(0xF8);
+            REQUIRE(HL_ == 1);
+
+            val = -3;
+            SP_ = 2;
+            memory_.write(val, PC_+1);
+            execute(0xF8);
+            REQUIRE(HL_ == 0xFFFF);
+        }
+
+        /*val = 0b10000010;*/
+        /*std::cout << val << std::endl;*/
+        /**/
+        /*memory_.write(val, PC_+1);*/
+        /*execute(0xF8);*/
+        /*REQUIRE(HL_ == SP_ + val);*/
+
+
+        //TODO: Add flag testing 
+        execute(0xF8);
+        REQUIRE_FALSE(FlagZ_.val());
+        REQUIRE_FALSE(FlagN_.val());
+    }
     SECTION("0xF9", "[LD16]") {
         HL_ = 0b1101110111001101;
         execute(0xF9);
         REQUIRE(SP_ == HL_);
     }
-    /*SECTION("0xFA") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xFA", "[LD]") {
+        u8 val = 20;
+        memory_.write(0xFA, PC_+1);
+        memory_.write(0x01, PC_+2);
+        memory_.write(val, 0x01FA);
+
+        execute(0xFA);
+        REQUIRE(A_ == val);
+    }
     SECTION("0xFB", "[EI]") {
         IME_ = false;
         isEISet_ = false;

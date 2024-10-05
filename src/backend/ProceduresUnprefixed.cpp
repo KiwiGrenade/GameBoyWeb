@@ -231,7 +231,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0xDF*/ { notImplemented(); return false; },
         [this] /*0xE0*/ { ldd(0xFF00 + fetch8(PC_+1), A_); return false; },
         [this] /*0xE1*/ { notImplemented(); return false; },
-        [this] /*0xE2*/ { notImplemented(); return false; },
+        [this] /*0xE2*/ { ldd(0xFF00 + C_, A_); return false; },
         [this] /*0xE3*/ { notImplemented(); return false; },
         [this] /*0xE4*/ { notImplemented(); return false; },
         [this] /*0xE5*/ { notImplemented(); return false; },
@@ -239,23 +239,23 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0xE7*/ { notImplemented(); return false; },
         [this] /*0xE8*/ { notImplemented(); return false; },
         [this] /*0xE9*/ { notImplemented(); return false; },
-        [this] /*0xEA*/ { notImplemented(); return false; },
+        [this] /*0xEA*/ { ldd(fetch16(PC_+1), A_); return false; },
         [this] /*0xEB*/ { notImplemented(); return false; },
         [this] /*0xEC*/ { notImplemented(); return false; },
         [this] /*0xED*/ { notImplemented(); return false; },
         [this] /*0xEE*/ { notImplemented(); return false; },
         [this] /*0xEF*/ { notImplemented(); return false; },
-        [this] /*0xF0*/ { notImplemented(); return false; },
+        [this] /*0xF0*/ { ld(A_, fetch8(0xFF00 + fetch8(PC_+1))); return false; },
         [this] /*0xF1*/ { notImplemented(); return false; },
-        [this] /*0xF2*/ { notImplemented(); return false; },
+        [this] /*0xF2*/ { ld(A_, fetch8(0xFF00 + C_)); return false; },
         [this] /*0xF3*/ { di(); return false; },
         [this] /*0xF4*/ { notImplemented(); return false; },
         [this] /*0xF5*/ { notImplemented(); return false; },
         [this] /*0xF6*/ { notImplemented(); return false; },
         [this] /*0xF7*/ { notImplemented(); return false; },
-        [this] /*0xF8*/ { notImplemented(); return false; },
+        [this] /*0xF8*/ { ldhl_sp(fetch8(PC_+1)); return false; },
         [this] /*0xF9*/ { ld16(SP_, HL_); return false; },
-        [this] /*0xFA*/ { notImplemented(); return false; },
+        [this] /*0xFA*/ { ld(A_, fetch8(fetch16(PC_+1))); return false; },
         [this] /*0xFB*/ { ei(); return false; },
         [this] /*0xFC*/ { notImplemented(); return false; },
         [this] /*0xFD*/ { notImplemented(); return false; },
@@ -306,5 +306,16 @@ void CPU::ldd16(u16 const addr, const r16 word) {
     memory_.write(word.lo_, addr);
     memory_.write(word.hi_, addr+1);
 }
-
+void CPU::ldhl_sp(const int8_t d) {
+    u16 res = SP_ + static_cast<u16>(d);
+    if(d >= 0) {
+        ((SP_ & 0xFF) + d > 0xFF) ? FlagC_.set() : FlagC_.clear();
+        Flag::checkH(SP_.lo_, static_cast<u16>(d), res & 0xff) ? FlagH_.set() : FlagH_.clear();
+    }
+    else {
+        ((res & 0xFF) <= (SP_ & 0xFF)) ? FlagC_.set() : FlagC_.clear();
+        ((res & 0xF) <= (SP_ & 0xF)) ? FlagH_.set() : FlagH_.clear();
+    }
+    HL_ = res;
+}
 
