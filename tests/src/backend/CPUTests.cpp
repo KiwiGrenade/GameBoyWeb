@@ -20,5 +20,10 @@ TEST_CASE_METHOD(CPUTests, "CPU") {
         handleFlags(flags);
         REQUIRE(F_ == u8(0b10100000));
     }
+    SECTION("fetch16") {
+        memory.write(0b11001100, PC_+1);
+        memory.write(0b00001111, PC_+2);
+        REQUIRE(fetch16(PC_+1) == 0b0000111111001100);
+    }
 }
 

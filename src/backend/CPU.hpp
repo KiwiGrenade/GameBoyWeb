@@ -43,8 +43,8 @@ protected:
     void handleFlags(const Utils::flagArray& flags);
     void reset();
 
-    u16 SP_; // Stack pointer
-    u16 PC_; // Program Counter
+    r16 SP_; // Stack pointer
+    r16 PC_; // Program Counter
 
     // registers
     r16 AF_; // Accumulator and flags
@@ -110,6 +110,12 @@ protected:
         A_ ? FlagZ_.clear() : FlagZ_.set(); 
     }
 
+    u8 inline fetch8(const u16 addr) { return memory_.read(addr); };
+    u16 fetch16(const u16 addr) {
+        u8 lo = fetch8(addr);
+        u8 hi = fetch8(addr+1);
+        return static_cast<u16>(hi << 8 | lo);
+    };
 // Find a way to move instructions somewhere else
     // instructions
         // miscallaneous
@@ -129,7 +135,9 @@ protected:
         // bit shift
         // load
     void inline ld(r8& to, const r8 from);
-    void inline ldd(u16 addr, u8 byte);
+    void inline ldd(u16 const addr, const u8 byte);
+    void inline ld16(r16&, const u16);
+    void ldd16(u16 const addr, const r16 word);
     /*void LD(r8, u8);*/
     /*void LD(r16, n16);*/
         // stack operations
