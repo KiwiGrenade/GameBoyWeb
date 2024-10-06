@@ -159,5 +159,6 @@ protected:
         // stack operations
     void pop(r16&);
     void popAF();
+    void push(const r16 rp);
 
 };
