@@ -5,6 +5,9 @@
 
 struct ProceduresUnprefixedTests : CPU {
     ProceduresUnprefixedTests() : CPU(memory) {
+        /*for(size_t i = 0; i < memory.size_; i++) {*/
+        /*    memory.write(u8(i), i);*/
+        /*}*/
         F_ = 0;
     };
     Memory memory;
@@ -20,12 +23,12 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     r16 oldBC = BC_;
     r16 oldDE = DE_;
     r16 oldHL = HL_;
-    u16 oldSP = SP_;
-    u16 oldPC = PC_;
-    bool oldFlagZ = FlagZ_.val();
-    bool oldFlagN = FlagN_.val();
-    bool oldFlagH = FlagH_.val();
-    bool oldFlagC = FlagC_.val();
+    r16 oldSP = SP_;
+    r16 oldPC = PC_;
+    bool oldFlagZ = FlagZ_;
+    bool oldFlagN = FlagN_;
+    bool oldFlagH = FlagH_;
+    bool oldFlagC = FlagC_;
 
     SECTION("0x01, 0x11, 0x21, 0x31", "[LD16]") {
         std::vector<r16*> regPairs {&BC_, &DE_, &HL_, &SP_};
@@ -66,12 +69,12 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         SECTION("shouldSetHalfCarryFlag") {
             B_ = 0x0F;
             execute(0x04);
-            REQUIRE(FlagH_.val());
+            REQUIRE(FlagH_);
         }
         SECTION("shouldSetZeroFlag") {
             B_ = 0xFF;
             execute(0x04);
-            REQUIRE(FlagZ_.val());
+            REQUIRE(FlagZ_);
         }
     }
     SECTION("0x05, 0x0D, 0x15, 0x1D, 0x25, 0x2D, 0x3D", "[DEC]") {
@@ -88,12 +91,12 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         SECTION("shouldSetHalfCarryFlag") {
             B_ = 0;
             execute(0x05);
-            REQUIRE(FlagH_.val());
+            REQUIRE(FlagH_);
         }
         SECTION("shouldSetZeroFlag") {
             B_ = 1;
             execute(0x05);
-            REQUIRE(FlagZ_.val());
+            REQUIRE(FlagZ_);
         }
     }
     SECTION("0x06, 0x0E, 0x16, 0x1E, 0x26, 0x2E, 0x3E", "[LD]") {
@@ -171,7 +174,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    SECTION("0x18") {
+    SECTION("0x18", "[JR]") {
         SECTION("positive") {
             memory_.write(int8_t(20), PC_+1);
             execute(0x18);
@@ -180,7 +183,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         SECTION("negative") {
             memory_.write(int8_t(-20), PC_+1);
             execute(0x18);
-            REQUIRE(PC_ == oldPC+2-20);
+            REQUIRE(PC_ == oldPC.getVal()+2-20);
         }
     }
     /*SECTION("0x19") {*/
@@ -206,35 +209,19 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    SECTION("0x20") {
+    SECTION("0x20", "[JR]") {
         int8_t val = 20;
         u8 op = 0x20;
-        SECTION("positive") {
-            SECTION("shouldJump") {
-                memory_.write(int8_t(val), PC_+1);
-                execute(op);
-                REQUIRE(PC_ == oldPC+2+val);
-            }
-            SECTION("shouldNotJump") {
-                FlagZ_.set(true);
-                memory_.write(int8_t(val), PC_+1);
-                execute(op);
-                REQUIRE(PC_ == oldPC+2);
-            }
+        SECTION("shouldJump") {
+            memory_.write(int8_t(val), PC_+1);
+            execute(op);
+            REQUIRE(PC_ == oldPC+2+val);
         }
-        SECTION("negative") {
-            val = -20;
-            SECTION("shouldJump") {
-                memory_.write(int8_t(val), PC_+1);
-                execute(op);
-                REQUIRE(PC_ == oldPC+2+val);
-            }
-            SECTION("shouldNotJump") {
-                FlagZ_.set(true);
-                memory_.write(int8_t(val), PC_+1);
-                execute(op);
-                REQUIRE(PC_ == oldPC+2);
-            }
+        SECTION("shouldNotJump") {
+            FlagZ_.set(true);
+            memory_.write(int8_t(val), PC_+1);
+            execute(op);
+            REQUIRE(PC_ == oldPC+2);
         }
     }
     /*SECTION("0x21") {*/
@@ -252,38 +239,22 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     SECTION("0x27", "[DAA]") {
         A_ = 0x9B;
         execute(0x27);
-        REQUIRE(FlagC_.val());
+        REQUIRE(FlagC_);
         REQUIRE(A_ == 1);
     }
     SECTION("0x28", "[JR]") {
         int8_t val = 20;
         u8 op = 0x28;
-        SECTION("positive") {
-            SECTION("shouldJump") {
-                FlagZ_.set(true);
-                memory_.write(int8_t(val), PC_+1);
-                execute(op);
-                REQUIRE(PC_ == oldPC+2+val);
-            }
-            SECTION("shouldNotJump") {
-                memory_.write(int8_t(val), PC_+1);
-                execute(op);
-                REQUIRE(PC_ == oldPC+2);
-            }
+        SECTION("shouldJump") {
+            FlagZ_.set(true);
+            memory_.write(int8_t(val), PC_+1);
+            execute(op);
+            REQUIRE(PC_ == oldPC+2+val);
         }
-        SECTION("negative") {
-            val = -20;
-            SECTION("shouldJump") {
-                FlagZ_.set(true);
-                memory_.write(int8_t(val), PC_+1);
-                execute(op);
-                REQUIRE(PC_ == oldPC+2+val);
-            }
-            SECTION("shouldNotJump") {
-                memory_.write(int8_t(val), PC_+1);
-                execute(op);
-                REQUIRE(PC_ == oldPC+2);
-            }
+        SECTION("shouldNotJump") {
+            memory_.write(int8_t(val), PC_+1);
+            execute(op);
+            REQUIRE(PC_ == oldPC+2);
         }
     }
     /*SECTION("0x29") {*/
@@ -315,32 +286,16 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     SECTION("0x30", "[JR]") {
         int8_t val = 20;
         u8 op = 0x30;
-        SECTION("positive") {
-            SECTION("shouldJump") {
-                memory_.write(int8_t(val), PC_+1);
-                execute(op);
-                REQUIRE(PC_ == oldPC+2+val);
-            }
-            SECTION("shouldNotJump") {
-                FlagC_.set(true);
-                memory_.write(int8_t(val), PC_+1);
-                execute(op);
-                REQUIRE(PC_ == oldPC+2);
-            }
+        SECTION("shouldJump") {
+            memory_.write(int8_t(val), PC_+1);
+            execute(op);
+            REQUIRE(PC_ == oldPC+2+val);
         }
-        SECTION("negative") {
-            val = -20;
-            SECTION("shouldJump") {
-                memory_.write(int8_t(val), PC_+1);
-                execute(op);
-                REQUIRE(PC_ == oldPC+2+val);
-            }
-            SECTION("shouldNotJump") {
-                FlagC_.set(true);
-                memory_.write(int8_t(val), PC_+1);
-                execute(op);
-                REQUIRE(PC_ == oldPC+2);
-            }
+        SECTION("shouldNotJump") {
+            FlagC_.set(true);
+            memory_.write(int8_t(val), PC_+1);
+            execute(op);
+            REQUIRE(PC_ == oldPC+2);
         }
     }
     /*SECTION("0x31") {*/
@@ -380,39 +335,23 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     }
     SECTION("0x37", "[SCF]") {
         execute(0x37);
-        REQUIRE_FALSE(FlagN_.val());
-        REQUIRE_FALSE(FlagH_.val());
-        REQUIRE(FlagC_.val());
+        REQUIRE_FALSE(FlagN_);
+        REQUIRE_FALSE(FlagH_);
+        REQUIRE(FlagC_);
     }
     SECTION("0x38", "[JR]") {
         int8_t val = 20;
         u8 op = 0x38;
-        SECTION("positive") {
-            SECTION("shouldJump") {
-                FlagC_.set(true);
-                memory_.write(int8_t(val), PC_+1);
-                execute(op);
-                REQUIRE(PC_ == oldPC+2+val);
-            }
-            SECTION("shouldNotJump") {
-                memory_.write(int8_t(val), PC_+1);
-                execute(op);
-                REQUIRE(PC_ == oldPC+2);
-            }
+        SECTION("shouldJump") {
+            FlagC_.set(true);
+            memory_.write(int8_t(val), PC_+1);
+            execute(op);
+            REQUIRE(PC_ == oldPC+2+val);
         }
-        SECTION("negative") {
-            val = -20;
-            SECTION("shouldJump") {
-                FlagC_.set(true);
-                memory_.write(int8_t(val), PC_+1);
-                execute(op);
-                REQUIRE(PC_ == oldPC+2+val);
-            }
-            SECTION("shouldNotJump") {
-                memory_.write(int8_t(val), PC_+1);
-                execute(op);
-                REQUIRE(PC_ == oldPC+2);
-            }
+        SECTION("shouldNotJump") {
+            memory_.write(int8_t(val), PC_+1);
+            execute(op);
+            REQUIRE(PC_ == oldPC+2);
         }
     }
     /*SECTION("0x39") {*/
@@ -438,9 +377,9 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*}*/
     SECTION("0x3F", "[CCF]") {
         execute(0x3f);
-        REQUIRE(oldFlagC != FlagC_.val());
+        REQUIRE(oldFlagC != FlagC_);
         execute(0x3f);
-        REQUIRE(oldFlagC == FlagC_.val());
+        REQUIRE(oldFlagC == FlagC_);
     }
     SECTION("0x40-0x7F", "[LD], [LDD], [HALT]") {
         SECTION("0x76", "[HALT]") {
@@ -769,26 +708,70 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0xC0") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xC0, 0xC4, 0xC8, 0xC9, 0xCC, 0xCD, 0xD0, 0xD8, 0xD9, 0xDA, 0xDC", "[RET]") {
+        SP_ = 0xFF82;
+        PC_ = 0x0130;
+        oldPC = PC_;
+        oldSP = SP_;
+        memory_.write(0x12, PC_+1);
+        memory_.write(0x02, PC_+2);
+
+        execute(0xCD);
+        SECTION("shouldReturn") {
+            execute(0xC0);
+            REQUIRE(PC_ == oldPC);
+        }
+        SECTION("shouldNotReturn") {
+            FlagZ_.set(true);
+            execute(0xC0);
+            REQUIRE_FALSE(PC_ == oldPC);
+        }
+    }
     /*SECTION("0xC1") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0xC2") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xC3") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xC4") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xC2", "[JP]") {
+        memory_.write(0xF0, PC_+1);
+        memory_.write(0xF1, PC_+2);
+        SECTION("shouldJump") {
+            execute(0xC2);
+            REQUIRE(PC_ == 0xF1F0);
+        }
+        SECTION("shouldNotJump") {
+            FlagZ_.set(true);
+            execute(0xC2);
+            REQUIRE_FALSE(PC_ == 0xF1F0);
+        }
+    }
+    SECTION("0xC3", "[JP]") {
+        memory_.write(0xF0, PC_+1);
+        memory_.write(0xF1, PC_+2);
+        execute(0xC3);
+        REQUIRE(PC_ == 0xF1F0);
+    }
+    SECTION("0xC4", "[CALL]") {
+            SP_ = 0xFF82;
+            PC_ = 0x0130;
+            oldPC = PC_;
+            oldSP = SP_;
+            memory_.write(0x12, PC_+1);
+            memory_.write(0x02, PC_+2);
+        SECTION("shouldCall") {
+            execute(0xC4);
+
+            REQUIRE(SP_ == 0xFF80);
+            REQUIRE(PC_ == 0x0212);
+            REQUIRE(fetch8(--oldSP) == oldPC.hi_);
+            REQUIRE(fetch8(--oldSP) == oldPC.lo_);
+        }
+        SECTION("shouldNotCall") {
+            FlagZ_.set(true);
+            execute(0xC4);
+
+            REQUIRE(SP_ == oldSP);
+        }
+    }
     /*SECTION("0xC5") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -797,34 +780,110 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0xC7") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xC8") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xC9") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xCA") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xC7", "[RST]") {
+        u8 op = 0xC7;
+        u8 k = 0;
+
+        for(u8 i = 0; i < 8; ++i, k+=8, op+=8) {
+            SP_ = 0xFF82;
+            PC_ = 0x0130;
+            oldPC = PC_;
+            oldSP = SP_;
+
+            execute(op);
+            REQUIRE(SP_ == 0xFF80);
+            REQUIRE(PC_.hi_ == 0x00);
+            REQUIRE(PC_.lo_ == k);
+            REQUIRE(fetch8(--oldSP) == oldPC.hi_);
+            REQUIRE(fetch8(--oldSP) == oldPC.lo_);
+        }
+    }
+    SECTION("0xC8", "[RET]") {
+        SP_ = 0xFF82;
+        PC_ = 0x0130;
+        oldPC = PC_;
+        oldSP = SP_;
+        memory_.write(0x12, PC_+1);
+        memory_.write(0x02, PC_+2);
+
+        execute(0xCD);
+        SECTION("shouldReturn") {
+            FlagZ_.set(true);
+            execute(0xC8);
+            REQUIRE(PC_ == oldPC);
+        }
+        SECTION("shouldNotReturn") {
+            execute(0xC8);
+            REQUIRE_FALSE(PC_ == oldPC);
+        }
+    }
+    SECTION("0xC9", "[RET]") {
+        SP_ = 0xFF82;
+        PC_ = 0x0130;
+        oldPC = PC_;
+        oldSP = SP_;
+        memory_.write(0x12, PC_+1);
+        memory_.write(0x02, PC_+2);
+
+        execute(0xCD);
+        execute(0xC9);
+
+        REQUIRE(PC_ == oldPC);
+    }
+    SECTION("0xCA", "[JP]") {
+        memory_.write(0xF0, PC_+1);
+        memory_.write(0xF1, PC_+2);
+        SECTION("shouldJump") {
+            FlagZ_.set(true);
+            execute(0xCA);
+            REQUIRE(PC_ == 0xF1F0);
+        }
+        SECTION("shouldNotJump") {
+            execute(0xCA);
+            REQUIRE_FALSE(PC_ == 0xF1F0);
+        }
+    }
     /*SECTION("0xCB") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0xCC") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xCD") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xCC", "[CALL]") {
+            SP_ = 0xFF82;
+            PC_ = 0x0130;
+            oldPC = PC_;
+            oldSP = SP_;
+            memory_.write(0x12, PC_+1);
+            memory_.write(0x02, PC_+2);
+        SECTION("shouldCall") {
+            FlagZ_.set(true);
+            execute(0xCC);
+
+            REQUIRE(SP_ == 0xFF80);
+            REQUIRE(PC_ == 0x0212);
+            REQUIRE(fetch8(--oldSP) == oldPC.hi_);
+            REQUIRE(fetch8(--oldSP) == oldPC.lo_);
+        }
+        SECTION("shouldNotCall") {
+            execute(0xCC);
+
+            REQUIRE(SP_ == oldSP);
+        }
+    }
+    SECTION("0xCD", "[CALL]") {
+        SP_ = 0xFF82;
+        PC_ = 0x0130;
+        oldPC = PC_;
+        oldSP = SP_;
+        memory_.write(0x12, PC_+1);
+        memory_.write(0x02, PC_+2);
+
+        execute(0xCD);
+
+        REQUIRE(SP_ == 0xFF80);
+        REQUIRE(PC_ == 0x0212);
+        REQUIRE(fetch8(--oldSP) == oldPC.hi_);
+        REQUIRE(fetch8(--oldSP) == oldPC.lo_);
+    }
     /*SECTION("0xCE") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -833,10 +892,25 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0xD0") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xD0", "[RET]") {
+        SP_ = 0xFF82;
+        PC_ = 0x0130;
+        oldPC = PC_;
+        oldSP = SP_;
+        memory_.write(0x12, PC_+1);
+        memory_.write(0x02, PC_+2);
+
+        execute(0xCD);
+        SECTION("shouldReturn") {
+            execute(0xD0);
+            REQUIRE(PC_ == oldPC);
+        }
+        SECTION("shouldNotReturn") {
+            FlagC_.set(true);
+            execute(0xD0);
+            REQUIRE_FALSE(PC_ == oldPC);
+        }
+    }
     /*SECTION("0xD1") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -849,10 +923,19 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0xD4") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xD4", "[JP]") {
+        memory_.write(0xF0, PC_+1);
+        memory_.write(0xF1, PC_+2);
+        SECTION("shouldJump") {
+            execute(0xD4);
+            REQUIRE(PC_ == 0xF1F0);
+        }
+        SECTION("shouldNotJump") {
+            FlagC_.set(true);
+            execute(0xD4);
+            REQUIRE_FALSE(PC_ == 0xF1F0);
+        }
+    }
     /*SECTION("0xD5") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -865,26 +948,87 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0xD8") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xD9") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xDA") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xD8", "[RET]") {
+        SP_ = 0xFF82;
+        PC_ = 0x0130;
+        oldPC = PC_;
+        oldSP = SP_;
+        memory_.write(0x12, PC_+1);
+        memory_.write(0x02, PC_+2);
+
+        execute(0xCD);
+        SECTION("shouldReturn") {
+            FlagC_.set(true);
+            execute(0xD8);
+            REQUIRE(PC_ == oldPC);
+        }
+        SECTION("shouldNotReturn") {
+            execute(0xD8);
+            REQUIRE_FALSE(PC_ == oldPC);
+        }
+    }
+    SECTION("0xD9", "[RETI]") {
+        SP_ = 0xFF82;
+        PC_ = 0x0130;
+        oldPC = PC_;
+        oldSP = SP_;
+        memory_.write(0x12, PC_+1);
+        memory_.write(0x02, PC_+2);
+
+        execute(0xCD);
+        execute(0xD9);
+        REQUIRE(PC_ == oldPC);
+        REQUIRE(IME_);
+    }
+    SECTION("0xDA", "[CALL]") {
+        SP_ = 0xFF82;
+        PC_ = 0x0130;
+        oldPC = PC_;
+        oldSP = SP_;
+        memory_.write(0x12, PC_+1);
+        memory_.write(0x02, PC_+2);
+        SECTION("shouldCall") {
+            execute(0xDA);
+
+            REQUIRE(SP_ == 0xFF80);
+            REQUIRE(PC_ == 0x0212);
+            REQUIRE(fetch8(--oldSP) == oldPC.hi_);
+            REQUIRE(fetch8(--oldSP) == oldPC.lo_);
+        }
+        SECTION("shouldNotCall") {
+            FlagC_.set(true);
+            execute(0xDA);
+
+            REQUIRE(SP_ == oldSP);
+        }
+    }
     /*SECTION("0xDB") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0xDC") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xDC", "[CALL]") {
+        SP_ = 0xFF82;
+        PC_ = 0x0130;
+        oldPC = PC_;
+        oldSP = SP_;
+        memory_.write(0x12, PC_+1);
+        memory_.write(0x02, PC_+2);
+        SECTION("shouldCall") {
+            FlagC_.set(true);
+
+            execute(0xDC);
+
+            REQUIRE(SP_ == 0xFF80);
+            REQUIRE(PC_ == 0x0212);
+            REQUIRE(fetch8(--oldSP) == oldPC.hi_);
+            REQUIRE(fetch8(--oldSP) == oldPC.lo_);
+        }
+        SECTION("shouldNotCall") {
+            execute(0xDC);
+
+            REQUIRE(SP_ == oldSP);
+        }
+    }
     /*SECTION("0xDD") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -897,7 +1041,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    SECTION("0xE0", "[LDD]") {
+    SECTION("0xDF", "[LDD]") {
         A_ = 20;
         memory_.write(A_, PC_+1);
         execute(0xE0);
@@ -937,10 +1081,11 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0xE9") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xE9", "[JP]") {
+        HL_ = 0xF1F0;
+        execute(0xE9);
+        REQUIRE(PC_ == 0xF1F0);
+    }
     SECTION("0xEA", "[LDD]") {
         A_ = 20;
         execute(0xEA);
@@ -1023,7 +1168,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
                 memory_.write(val, PC_+1);
                 execute(0xF8);
                 REQUIRE(HL_ == SP_ + val);
-                REQUIRE(FlagH_.val());
+                REQUIRE(FlagH_);
             }
             SECTION("shouldNotSetHalfCarryFlag") {
                 val = 64;
@@ -1031,7 +1176,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
                 memory_.write(val, PC_+1);
                 execute(0xF8);
                 REQUIRE(HL_ == SP_ + val);
-                REQUIRE_FALSE(FlagH_.val());
+                REQUIRE_FALSE(FlagH_);
             }
             SECTION("shouldSetCarryFlag") {
                 val = 0b11111111;
@@ -1039,7 +1184,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
                 memory_.write(val, PC_+1);
                 execute(0xF8);
                 REQUIRE(HL_ == SP_ + val);
-                REQUIRE(FlagC_.val());
+                REQUIRE(FlagC_);
             }
             SECTION("shouldNotSetCarryFlag") {
                 val = 0b01111111;
@@ -1047,7 +1192,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
                 memory_.write(val, PC_+1);
                 execute(0xF8);
                 REQUIRE(HL_ == SP_ + val);
-                REQUIRE_FALSE(FlagC_.val());
+                REQUIRE_FALSE(FlagC_);
             }
         }
         SECTION("negative") {
@@ -1057,7 +1202,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
                 memory_.write(val, PC_+1);
                 execute(0xF8);
                 REQUIRE(HL_ == SP_ + val);
-                REQUIRE(FlagH_.val());
+                REQUIRE(FlagH_);
             }
             SECTION("shouldNotSetHalfCarryFlag") {
                 val = 64;
@@ -1065,7 +1210,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
                 memory_.write(val, PC_+1);
                 execute(0xF8);
                 REQUIRE(HL_ == SP_ + val);
-                REQUIRE_FALSE(FlagH_.val());
+                REQUIRE_FALSE(FlagH_);
             }
             SECTION("shouldSetCarryFlag") {
                 val = -3;
@@ -1073,7 +1218,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
                 memory_.write(val, PC_+1);
                 execute(0xF8);
                 REQUIRE(HL_ == SP_ + val);
-                REQUIRE(FlagC_.val());
+                REQUIRE(FlagC_);
             }
             SECTION("shouldNotSetCarryFlag") {
                 val = 0;
@@ -1081,7 +1226,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
                 memory_.write(val, PC_+1);
                 execute(0xF8);
                 REQUIRE(HL_ == SP_ + val);
-                REQUIRE_FALSE(FlagC_.val());
+                REQUIRE_FALSE(FlagC_);
             }
             val = -1;
             SP_ = 2;

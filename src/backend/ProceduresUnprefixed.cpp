@@ -37,7 +37,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0x1D*/ { dec(E_); },
         [this] /*0x1E*/ { ld(E_, fetch8(PC_+1)); },
         [this] /*0x1F*/ { notImplemented(); },
-        [this] /*0x20*/ { jr(!FlagZ_.val(), static_cast<int8_t>(fetch8(PC_+1))); },
+        [this] /*0x20*/ { jr(!FlagZ_, static_cast<int8_t>(fetch8(PC_+1))); },
         [this] /*0x21*/ { ld16(HL_, fetch16(PC_+1)); },
         [this] /*0x22*/ { ldd(HL_++, A_); },
         [this] /*0x23*/ { inc(HL_); },
@@ -45,7 +45,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0x25*/ { dec(H_); },
         [this] /*0x26*/ { ld(H_, fetch8(PC_+1)); },
         [this] /*0x27*/ { daa(); },
-        [this] /*0x28*/ { jr(FlagZ_.val(), static_cast<int8_t>(fetch8(PC_+1))); },
+        [this] /*0x28*/ { jr(FlagZ_, static_cast<int8_t>(fetch8(PC_+1))); },
         [this] /*0x29*/ { notImplemented(); },
         [this] /*0x2A*/ { ld(A_, fetch8(HL_++)); },
         [this] /*0x2B*/ { dec(HL_); },
@@ -53,7 +53,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0x2D*/ { dec(L_); },
         [this] /*0x2E*/ { ld(L_, fetch8(PC_+1)); },
         [this] /*0x2F*/ { cpl(); },
-        [this] /*0x30*/ { jr(!FlagC_.val(), static_cast<int8_t>(fetch8(PC_+1))); },
+        [this] /*0x30*/ { jr(!FlagC_, static_cast<int8_t>(fetch8(PC_+1))); },
         [this] /*0x31*/ { ld16(SP_, fetch16(PC_+1)); },
         [this] /*0x32*/ { ldd(HL_--, A_); },
         [this] /*0x33*/ { inc(SP_); },
@@ -61,7 +61,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0x35*/ { decd(HL_); },
         [this] /*0x36*/ { ldd(HL_, fetch8(PC_+1)); },
         [this] /*0x37*/ { }, // handleFlags does the job
-        [this] /*0x38*/ { jr(FlagC_.val(), static_cast<int8_t>(fetch8(PC_+1))); },
+        [this] /*0x38*/ { jr(FlagC_, static_cast<int8_t>(fetch8(PC_+1))); },
         [this] /*0x39*/ { notImplemented(); },
         [this] /*0x3A*/ { ld(A_, fetch8(HL_--)); },
         [this] /*0x3B*/ { dec(SP_); },
@@ -197,38 +197,38 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0xBD*/ { notImplemented(); },
         [this] /*0xBE*/ { notImplemented(); },
         [this] /*0xBF*/ { notImplemented(); },
-        [this] /*0xC0*/ { notImplemented(); },
+        [this] /*0xC0*/ { ret(!FlagZ_); },
         [this] /*0xC1*/ { notImplemented(); },
-        [this] /*0xC2*/ { notImplemented(); },
-        [this] /*0xC3*/ { notImplemented(); },
-        [this] /*0xC4*/ { notImplemented(); },
+        [this] /*0xC2*/ { jp(!FlagZ_, fetch16(PC_+1)); },
+        [this] /*0xC3*/ { jp(true, fetch16(PC_+1)); },
+        [this] /*0xC4*/ { call(!FlagZ_, fetch16(PC_+1)); },
         [this] /*0xC5*/ { notImplemented(); },
         [this] /*0xC6*/ { notImplemented(); },
-        [this] /*0xC7*/ { notImplemented(); },
-        [this] /*0xC8*/ { notImplemented(); },
-        [this] /*0xC9*/ { notImplemented(); },
-        [this] /*0xCA*/ { notImplemented(); },
+        [this] /*0xC7*/ { rst(0x00); },
+        [this] /*0xC8*/ { ret(FlagZ_); },
+        [this] /*0xC9*/ { ret(true); },
+        [this] /*0xCA*/ { jp(FlagZ_, fetch16(PC_+1)); },
         [this] /*0xCB*/ { notImplemented(); },
-        [this] /*0xCC*/ { notImplemented(); },
-        [this] /*0xCD*/ { notImplemented(); },
+        [this] /*0xCC*/ { call(FlagZ_, fetch16(PC_+1)); },
+        [this] /*0xCD*/ { call(true, fetch16(PC_+1)); },
         [this] /*0xCE*/ { notImplemented(); },
-        [this] /*0xCF*/ { notImplemented(); },
-        [this] /*0xD0*/ { notImplemented(); },
+        [this] /*0xCF*/ { rst(0x08); },
+        [this] /*0xD0*/ { ret(!FlagC_); },
         [this] /*0xD1*/ { notImplemented(); },
         [this] /*0xD2*/ { notImplemented(); },
         [this] /*0xD3*/ { notImplemented(); },
-        [this] /*0xD4*/ { notImplemented(); },
+        [this] /*0xD4*/ { jp(!FlagC_, fetch16(PC_+1)); },
         [this] /*0xD5*/ { notImplemented(); },
         [this] /*0xD6*/ { notImplemented(); },
-        [this] /*0xD7*/ { notImplemented(); },
-        [this] /*0xD8*/ { notImplemented(); },
-        [this] /*0xD9*/ { notImplemented(); },
-        [this] /*0xDA*/ { notImplemented(); },
+        [this] /*0xD7*/ { rst(0x10); },
+        [this] /*0xD8*/ { ret(FlagC_); },
+        [this] /*0xD9*/ { reti(); },
+        [this] /*0xDA*/ { call(!FlagC_, fetch16(PC_+1)); },
         [this] /*0xDB*/ { notImplemented(); },
-        [this] /*0xDC*/ { notImplemented(); },
+        [this] /*0xDC*/ { call(FlagC_, fetch16(PC_+1)); },
         [this] /*0xDD*/ { notImplemented(); },
         [this] /*0xDE*/ { notImplemented(); },
-        [this] /*0xDF*/ { notImplemented(); },
+        [this] /*0xDF*/ { rst(0x18); },
         [this] /*0xE0*/ { ldd(0xFF00 + fetch8(PC_+1), A_); },
         [this] /*0xE1*/ { notImplemented(); },
         [this] /*0xE2*/ { ldd(0xFF00 + C_, A_); },
@@ -236,15 +236,15 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0xE4*/ { notImplemented(); },
         [this] /*0xE5*/ { notImplemented(); },
         [this] /*0xE6*/ { notImplemented(); },
-        [this] /*0xE7*/ { notImplemented(); },
+        [this] /*0xE7*/ { rst(0x20); },
         [this] /*0xE8*/ { notImplemented(); },
-        [this] /*0xE9*/ { notImplemented(); },
+        [this] /*0xE9*/ { jp(true, HL_); },
         [this] /*0xEA*/ { ldd(fetch16(PC_+1), A_); },
         [this] /*0xEB*/ { notImplemented(); },
         [this] /*0xEC*/ { notImplemented(); },
         [this] /*0xED*/ { notImplemented(); },
         [this] /*0xEE*/ { notImplemented(); },
-        [this] /*0xEF*/ { notImplemented(); },
+        [this] /*0xEF*/ { rst(0x28); },
         [this] /*0xF0*/ { ld(A_, fetch8(0xFF00 + fetch8(PC_+1))); },
         [this] /*0xF1*/ { notImplemented(); },
         [this] /*0xF2*/ { ld(A_, fetch8(0xFF00 + C_)); },
@@ -252,7 +252,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0xF4*/ { notImplemented(); },
         [this] /*0xF5*/ { notImplemented(); },
         [this] /*0xF6*/ { notImplemented(); },
-        [this] /*0xF7*/ { notImplemented(); },
+        [this] /*0xF7*/ { rst(0x30); },
         [this] /*0xF8*/ { ldhl_sp(fetch8(PC_+1)); },
         [this] /*0xF9*/ { ld16(SP_, HL_); },
         [this] /*0xFA*/ { ld(A_, fetch8(fetch16(PC_+1))); },
@@ -260,7 +260,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0xFC*/ { notImplemented(); },
         [this] /*0xFD*/ { notImplemented(); },
         [this] /*0xFE*/ { notImplemented(); },
-        [this] /*0xFF*/ { notImplemented(); }
+        [this] /*0xFF*/ { rst(0x38); }
     };
 }
 
@@ -283,18 +283,18 @@ void CPU::cpl() { A_=~A_; }
 void CPU::ei() { isEISet_ = true; }
 void CPU::di() { isDISet_ = true; }
 void CPU::daa() {
-    if(!FlagN_.val()) {
-        if(FlagC_.val() || A_ > 0x99) {
+    if(!FlagN_) {
+        if(FlagC_ || A_ > 0x99) {
             A_ += 0x60;
             FlagC_.set(true);
         }
-        if(FlagH_.val() || (A_ & 0x0F) > 0x09)
+        if(FlagH_ || (A_ & 0x0F) > 0x09)
             A_ += 0x6;
     }
     else {
-        if(FlagC_.val())
+        if(FlagC_)
             A_ -= 0x60;
-        if(FlagH_.val())
+        if(FlagH_)
             A_ -=0x6;
     }
     checkFlagZ();
@@ -347,11 +347,54 @@ void CPU::decd(const u16 addr) {
 }
 
 /*################### JUMP and SUBROUTINES ###################*/
+
+void CPU::rst(const u8 n) {
+    memory_.write(PC_.hi_, --SP_);
+    memory_.write(PC_.lo_, --SP_);
+    PC_.hi_ = 0;
+    PC_.lo_ = n;
+    incrementPC_ = false;
+}
+
+void CPU::jp(const bool cond, const u16 addr) {
+    if(cond) {
+        PC_ = addr;
+        isCondMet_ = true;
+        incrementPC_ = false;
+    }
+}
+
 void CPU::jr(const bool cond, int8_t dest) {
     if(cond) {
         PC_ += dest;
         isCondMet_ = true;
     }
+}
+
+void CPU::call(const bool cond, const u16 addr) {
+    if(cond) {
+        memory_.write(PC_.hi_, --SP_);
+        memory_.write(PC_.lo_, --SP_);
+        PC_ = addr;
+        isCondMet_ = true;
+        incrementPC_ = false;
+    }
+}
+
+void CPU::ret(const bool cond) {
+    if(cond) {
+        PC_.lo_ = fetch8(SP_++);
+        PC_.hi_ = fetch8(SP_++);
+        isCondMet_ = true;
+        incrementPC_ = false;
+    }
+}
+
+void CPU::reti() {
+    PC_.lo_ = fetch8(SP_++);
+    PC_.hi_ = fetch8(SP_++);
+    IME_ = true;
+    incrementPC_ = false;
 }
 
 
