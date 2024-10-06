@@ -202,7 +202,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0xC2*/ { jp(!FlagZ_, fetch16(PC_+1)); },
         [this] /*0xC3*/ { jp(true, fetch16(PC_+1)); },
         [this] /*0xC4*/ { call(!FlagZ_, fetch16(PC_+1)); },
-        [this] /*0xC5*/ { notImplemented(); },
+        [this] /*0xC5*/ { push(BC_); },
         [this] /*0xC6*/ { notImplemented(); },
         [this] /*0xC7*/ { rst(0x00); },
         [this] /*0xC8*/ { ret(FlagZ_); },
@@ -218,7 +218,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0xD2*/ { notImplemented(); },
         [this] /*0xD3*/ { notImplemented(); },
         [this] /*0xD4*/ { jp(!FlagC_, fetch16(PC_+1)); },
-        [this] /*0xD5*/ { notImplemented(); },
+        [this] /*0xD5*/ { push(DE_); },
         [this] /*0xD6*/ { notImplemented(); },
         [this] /*0xD7*/ { rst(0x10); },
         [this] /*0xD8*/ { ret(FlagC_); },
@@ -234,7 +234,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0xE2*/ { ldd(0xFF00 + C_, A_); },
         [this] /*0xE3*/ { notImplemented(); },
         [this] /*0xE4*/ { notImplemented(); },
-        [this] /*0xE5*/ { notImplemented(); },
+        [this] /*0xE5*/ { push(HL_); },
         [this] /*0xE6*/ { notImplemented(); },
         [this] /*0xE7*/ { rst(0x20); },
         [this] /*0xE8*/ { notImplemented(); },
@@ -250,7 +250,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0xF2*/ { ld(A_, fetch8(0xFF00 + C_)); },
         [this] /*0xF3*/ { di(); },
         [this] /*0xF4*/ { notImplemented(); },
-        [this] /*0xF5*/ { notImplemented(); },
+        [this] /*0xF5*/ { push(AF_); },
         [this] /*0xF6*/ { notImplemented(); },
         [this] /*0xF7*/ { rst(0x30); },
         [this] /*0xF8*/ { ldhl_sp(fetch8(PC_+1)); },
@@ -410,3 +410,7 @@ void CPU::popAF() {
     AF_.lo_ &= 0xF0;
 }
 
+void CPU::push(const r16 rp) {
+    memory_.write(rp.hi_, --SP_);
+    memory_.write(rp.lo_, --SP_);
+}

@@ -780,10 +780,18 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE(SP_ == oldSP);
         }
     }
-    /*SECTION("0xC5") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xC5, 0xD5, 0xE5, 0xF5") {
+        std::vector<r16*> regPairs {&BC_, &DE_, &HL_, &AF_};
+        u8 k = 0xC5;
+        for(u16 i = 0; i < regPairs.size(); i++, k+=16) {
+            SP_ = 0xFFD3;
+            *regPairs[i] = SP_+i;
+            execute(k);
+            REQUIRE(SP_ == 0xFFD1);
+            REQUIRE(fetch8(SP_) == regPairs[i]->lo_);
+            REQUIRE(fetch8(SP_+1) == regPairs[i]->hi_);
+        }
+    }
     /*SECTION("0xC6") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -919,10 +927,6 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE_FALSE(PC_ == oldPC);
         }
     }
-    /*SECTION("0xD1") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
     /*SECTION("0xD2") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -1055,10 +1059,6 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         execute(0xE0);
         REQUIRE(fetch8(0xFF00 + A_) == A_);
     }
-    /*SECTION("0xE1") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
     SECTION("0xE2", "[LDD]") {
         A_ = 20;
         C_ = 3;
