@@ -46,15 +46,11 @@ std::pair<u8, u8> getCyclesFromInstrJsonObject(const QJsonObject& obj);
 Utils::flagArray getFlagsFromInstrJsonObject(const QJsonObject& obj);
 
 // bits
-inline static u8 setBit(u8& byte, const u8 n) {
-    return byte |= ((u8) 1 << n);
+inline static u8 setBit(u8& number, const u8 n, const bool x) {
+    return number = (number & ~((u8)1 << n)) | ((u8)x << n);
 }
 
-inline static u8 clearBit(u8& byte, const u8 n) {
-    return byte &= ~((u8) 1 << n);
-}
-
-inline static bool getBit(const u8& byte, u8 n) {
+inline static bool getBit(const u8& byte, const u8 n) {
     return (byte >> n) & (u8)1;
 }
 
