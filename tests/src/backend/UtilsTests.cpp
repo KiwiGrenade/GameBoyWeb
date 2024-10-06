@@ -98,27 +98,20 @@ TEST_CASE("JsonGetters", "[utils]") {
     }
 
     SECTION("setBit", "[BitManipulation]") {
-        u8 byte = 0; 
-        REQUIRE(Utils::setBit(byte, 0) == 0b00000001);
-        REQUIRE(Utils::setBit(byte, 2) == 0b00000101);
-        REQUIRE(Utils::setBit(byte, 1) == 0b00000111);
-        REQUIRE(Utils::setBit(byte, 7) == 0b10000111);
-    }
+        u8 byte = 0;
 
-    SECTION("clearBit" "[BitManipulation]") {
-        u8 byte = 0b10000111; 
-        REQUIRE(Utils::clearBit(byte, 7) == 0b00000111);
-        REQUIRE(Utils::clearBit(byte, 1) == 0b00000101);
-        REQUIRE(Utils::clearBit(byte, 2) == 0b00000001);
-        REQUIRE(Utils::clearBit(byte, 0) == 0b00000000);
-    }
-
-    SECTION("clearBit" "[BitManipulation]") {
-        u8 byte = 0b10000111; 
-        REQUIRE(Utils::clearBit(byte, 7) == 0b00000111);
-        REQUIRE(Utils::clearBit(byte, 1) == 0b00000101);
-        REQUIRE(Utils::clearBit(byte, 2) == 0b00000001);
-        REQUIRE(Utils::clearBit(byte, 0) == 0b00000000);
+        REQUIRE(Utils::setBit(byte, 0, true) == 0b00000001);
+        REQUIRE(byte == 0b00000001);
+        REQUIRE(Utils::setBit(byte, 2, true) == 0b00000101);
+        REQUIRE(Utils::setBit(byte, 1, true) == 0b00000111);
+        REQUIRE(byte == 0b00000111);
+        REQUIRE(Utils::setBit(byte, 7, true) == 0b10000111);
+        REQUIRE(Utils::setBit(byte, 7, false) == 0b00000111);
+        REQUIRE(byte == 0b00000111);
+        REQUIRE(Utils::setBit(byte, 1, false) == 0b00000101);
+        REQUIRE(byte == 0b00000101);
+        REQUIRE(Utils::setBit(byte, 2, false) == 0b00000001);
+        REQUIRE(Utils::setBit(byte, 0, false) == 0b00000000);
     }
 
     SECTION("getBit" "[BitManipulation]") {
