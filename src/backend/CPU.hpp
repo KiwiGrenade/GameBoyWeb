@@ -33,6 +33,7 @@ protected:
     bool is2xSpeed_;
     bool isStopped_;
     bool isCondMet_;
+    bool incrementPC_;
 
     InstrArray unprefInstrArray_;
     InstrArray prefInstrArray_;
@@ -74,8 +75,9 @@ protected:
             : flagsRegister_(flags)
             , bitPos_(bitPos) {
         }
-
-        inline bool val() const { return Utils::getBit(flagsRegister_, bitPos_); }
+        inline operator bool() const {
+            return Utils::getBit(flagsRegister_, bitPos_);
+        }
         inline void set(const bool arg) { Utils::setBit(flagsRegister_, bitPos_, arg); }
         inline void handle(const Utils::Flag flag) {
             switch(flag) {
@@ -89,7 +91,7 @@ protected:
                     break;
             }
         }
-        inline void complement() { set(!val()); }
+        inline void complement() { set(!Utils::getBit(flagsRegister_, bitPos_)); }
         static inline bool checkH(const u8 a, const u8 b, const u8 res) {
             return ((a ^ b ^ res) & 0x10);
         }
@@ -131,6 +133,11 @@ protected:
     void inline stop();
         // jump and subroutines
     void jr(const bool cond, int8_t dest);
+    void ret(const bool cond);
+    void jp(const bool cond, const u16 addr);
+    void call(const bool cond, const u16 addr);
+    void reti();
+    void rst(const u8 n);
         // 8 bit arithmetic and logic
         // 16 bit arithmetic
         // bit operation

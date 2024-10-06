@@ -39,6 +39,7 @@ void CPU::reset() {
     isEISet_ = false;
     isDISet_ = false;
     isCondMet_ = false;
+    incrementPC_ = true;
 }
 
 InstrArray CPU::getInstrArray(const bool prefixed) {
@@ -66,6 +67,7 @@ void CPU::step() {
         return;
     }
     isCondMet_ = false;
+    incrementPC_ = true;
 
     u8 opcode = memory_.read(PC_);
     
@@ -79,7 +81,8 @@ void CPU::step() {
     handleFlags(instr.info_.getFlags());
 
     // add instruction length (in bytes) to program counter
-    PC_ += instr.info_.getBytes();
+    if(incrementPC_)
+        PC_ += instr.info_.getBytes();
 
     // determine number of cycles that went by while executing instruction
     std::pair <u8, u8> cycles = instr.info_.getCycles();
