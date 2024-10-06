@@ -948,10 +948,6 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE_FALSE(PC_ == 0xF1F0);
         }
     }
-    /*SECTION("0xD5") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
     /*SECTION("0xD6") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -1073,10 +1069,6 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0xE5") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
     /*SECTION("0xE6") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
@@ -1159,10 +1151,6 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         REQUIRE_FALSE(IME_);
     }
     /*SECTION("0xF4") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xF5") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/

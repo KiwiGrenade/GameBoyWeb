@@ -309,18 +309,6 @@ void CPU::ldd16(u16 const addr, const r16 word) {
     memory_.write(word.lo_, addr);
     memory_.write(word.hi_, addr+1);
 }
-void CPU::ldhl_sp(const int8_t d) {
-    u16 res = SP_ + static_cast<u16>(d);
-    if(d >= 0) {
-        FlagC_.set((SP_ & 0xFF) + d > 0xFF);
-        FlagH_.set(Flag::checkH(SP_.lo_, static_cast<u16>(d), res & 0xff));
-    }
-    else {
-        FlagC_.set((res & 0xFF) <= (SP_ & 0xFF));
-        FlagH_.set((res & 0xF) <= (SP_ & 0xF));
-    }
-    HL_ = res;
-}
 
 /*################### 8bit arithmetic ###################*/
 void CPU::inc(r8& r) {
@@ -397,7 +385,7 @@ void CPU::reti() {
     incrementPC_ = false;
 }
 
-/*################### JUMP and SUBROUTINES ###################*/
+/*################### STACK ###################*/
 
 void CPU::pop(r16& rp) {
     rp.lo_ = fetch8(SP_++);
@@ -413,4 +401,17 @@ void CPU::popAF() {
 void CPU::push(const r16 rp) {
     memory_.write(rp.hi_, --SP_);
     memory_.write(rp.lo_, --SP_);
+}
+
+void CPU::ldhl_sp(const int8_t d) {
+    u16 res = SP_ + static_cast<u16>(d);
+    if(d >= 0) {
+        FlagC_.set((SP_ & 0xFF) + d > 0xFF);
+        FlagH_.set(Flag::checkH(SP_.lo_, static_cast<u16>(d), res & 0xff));
+    }
+    else {
+        FlagC_.set((res & 0xFF) <= (SP_ & 0xFF));
+        FlagH_.set((res & 0xF) <= (SP_ & 0xF));
+    }
+    HL_ = res;
 }
