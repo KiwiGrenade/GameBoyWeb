@@ -5,7 +5,7 @@ Instruction::Instruction(const QJsonObject& obj)
 }
 
     // should there be reference to a function or just function object?
-Instruction::Instruction(const QJsonObject& obj, std::function<bool()> func)
+Instruction::Instruction(const QJsonObject& obj, std::function<void()> func)
     : info_(Info(obj))
     , proc_(func) {
 }

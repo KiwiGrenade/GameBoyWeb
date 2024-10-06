@@ -10,7 +10,7 @@
 typedef RegisterPair    r16;
 typedef Register        r8;
 typedef std::array<Instruction, 256> InstrArray;
-typedef std::array<std::function<bool()>, 256> ProcArray;
+typedef std::array<std::function<void()>, 256> ProcArray;
 
 class CPU {
 public:
@@ -32,6 +32,7 @@ protected:
     bool isDISet_;
     bool is2xSpeed_;
     bool isStopped_;
+    bool isCondMet_;
 
     InstrArray unprefInstrArray_;
     InstrArray prefInstrArray_;
@@ -75,26 +76,20 @@ protected:
         }
 
         inline bool val() const { return Utils::getBit(flagsRegister_, bitPos_); }
-        inline void set() { Utils::setBit(flagsRegister_, bitPos_); }
-        inline void clear() { Utils::clearBit(flagsRegister_, bitPos_); }
+        inline void set(const bool arg) { Utils::setBit(flagsRegister_, bitPos_, arg); }
         inline void handle(const Utils::Flag flag) {
             switch(flag) {
                 case Utils::Flag::set:
-                    set();
+                    set(true);
                     break;
                 case Utils::Flag::reset:
-                    clear();
+                    set(false);
                     break;
                 default:
                     break;
             }
         }
-        inline void complement() {
-            if(val())
-                clear();
-            else
-                set();
-        }
+        inline void complement() { set(!val()); }
         static inline bool checkH(const u8 a, const u8 b, const u8 res) {
             return ((a ^ b ^ res) & 0x10);
         }
@@ -113,7 +108,7 @@ protected:
     Flag FlagC_;
 
     inline void checkFlagZ() {
-        A_ ? FlagZ_.clear() : FlagZ_.set(); 
+        FlagZ_.set(A_); 
     }
 
     u8 inline fetch8(const u16 addr) { return memory_.read(addr); };
@@ -131,16 +126,23 @@ protected:
     void inline di();
     void inline ei();
     void halt();
-    void inline nop();
+    void nop();
     void inline scf();
     void inline stop();
         // jump and subroutines
+    void jr(const bool cond, int8_t dest);
         // 8 bit arithmetic and logic
         // 16 bit arithmetic
         // bit operation
         // bit shift
         // load
     void inline ld(r8& to, const r8 from);
+    void inline inc(r8&);
+    void inline inc(r16&);
+    void incd(u16 const addr);
+    void inline dec(r8&);
+    void inline dec(r16&);
+    void decd(u16 const addr);
     void inline ldd(u16 const addr, const u8 byte);
     void inline ld16(r16&, const u16);
     void ldd16(u16 const addr, const r16 word);
