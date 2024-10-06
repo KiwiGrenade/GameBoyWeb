@@ -198,7 +198,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0xBE*/ { notImplemented(); },
         [this] /*0xBF*/ { notImplemented(); },
         [this] /*0xC0*/ { ret(!FlagZ_); },
-        [this] /*0xC1*/ { notImplemented(); },
+        [this] /*0xC1*/ { pop(BC_); },
         [this] /*0xC2*/ { jp(!FlagZ_, fetch16(PC_+1)); },
         [this] /*0xC3*/ { jp(true, fetch16(PC_+1)); },
         [this] /*0xC4*/ { call(!FlagZ_, fetch16(PC_+1)); },
@@ -214,7 +214,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0xCE*/ { notImplemented(); },
         [this] /*0xCF*/ { rst(0x08); },
         [this] /*0xD0*/ { ret(!FlagC_); },
-        [this] /*0xD1*/ { notImplemented(); },
+        [this] /*0xD1*/ { pop(DE_); },
         [this] /*0xD2*/ { notImplemented(); },
         [this] /*0xD3*/ { notImplemented(); },
         [this] /*0xD4*/ { jp(!FlagC_, fetch16(PC_+1)); },
@@ -230,7 +230,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0xDE*/ { notImplemented(); },
         [this] /*0xDF*/ { rst(0x18); },
         [this] /*0xE0*/ { ldd(0xFF00 + fetch8(PC_+1), A_); },
-        [this] /*0xE1*/ { notImplemented(); },
+        [this] /*0xE1*/ { pop(HL_); },
         [this] /*0xE2*/ { ldd(0xFF00 + C_, A_); },
         [this] /*0xE3*/ { notImplemented(); },
         [this] /*0xE4*/ { notImplemented(); },
@@ -246,7 +246,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0xEE*/ { notImplemented(); },
         [this] /*0xEF*/ { rst(0x28); },
         [this] /*0xF0*/ { ld(A_, fetch8(0xFF00 + fetch8(PC_+1))); },
-        [this] /*0xF1*/ { notImplemented(); },
+        [this] /*0xF1*/ { popAF(); },
         [this] /*0xF2*/ { ld(A_, fetch8(0xFF00 + C_)); },
         [this] /*0xF3*/ { di(); },
         [this] /*0xF4*/ { notImplemented(); },
@@ -397,4 +397,16 @@ void CPU::reti() {
     incrementPC_ = false;
 }
 
+/*################### JUMP and SUBROUTINES ###################*/
+
+void CPU::pop(r16& rp) {
+    rp.lo_ = fetch8(SP_++);
+    rp.hi_ = fetch8(SP_++);
+}
+
+void CPU::popAF() {
+    AF_.lo_ = fetch8(SP_++);
+    AF_.hi_ = fetch8(SP_++);
+    AF_.lo_ &= 0xF0;
+}
 

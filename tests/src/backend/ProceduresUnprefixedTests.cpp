@@ -727,10 +727,18 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE_FALSE(PC_ == oldPC);
         }
     }
-    /*SECTION("0xC1") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xC1, 0xD1, 0xE1") {
+        std::vector<r16*> regPairs {&BC_, &DE_, &HL_};
+        u8 k = 0xC1;
+        for(u8 i = 0; i < regPairs.size(); i++, k+=16) {
+            SP_ = 0xFFD0;
+            memory.write(0xF0, SP_);
+            memory.write(0x1F, SP_+1);
+            execute(k);
+            REQUIRE(SP_ == 0xFFD2);
+            REQUIRE(*regPairs[i] == 0x1FF0);
+        }
+    }
     SECTION("0xC2", "[JP]") {
         memory_.write(0xF0, PC_+1);
         memory_.write(0xF1, PC_+2);
@@ -1118,10 +1126,17 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         execute(0xF0);
         REQUIRE(A_ == val);
     }
-    /*SECTION("0xF1") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xF1") {
+        SP_ = 0xFFF0;
+        memory_.write(0xF0, SP_);
+        memory_.write(0xF1, SP_+1);
+        execute(0xF1);
+        REQUIRE(AF_ == 0xF1F0);
+        REQUIRE(FlagZ_);
+        REQUIRE(FlagN_);
+        REQUIRE(FlagH_);
+        REQUIRE(FlagC_);
+    }
     SECTION("0xF2", "[LD]") {
         u8 val = 40;
         C_ = 4;
