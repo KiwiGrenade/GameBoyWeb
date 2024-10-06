@@ -157,5 +157,7 @@ protected:
     /*void LD(r8, u8);*/
     /*void LD(r16, n16);*/
         // stack operations
+    void pop(r16&);
+    void popAF();
 
 };
