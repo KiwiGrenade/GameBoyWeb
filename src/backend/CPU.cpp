@@ -27,8 +27,8 @@ void CPU::reset() {
     BC_.setVal(0x0013);
     DE_.setVal(0x00D8);
     HL_.setVal(0x014D);
-    SP_ = 0xFFFE;
-    PC_ = 0X100;
+    SP_.setVal(0xFFFE);
+    PC_.setVal(0x1000);
     cycles_ = 0;
     IME_ = false;
     // helper flags
@@ -38,6 +38,7 @@ void CPU::reset() {
     is2xSpeed_ = false;
     isEISet_ = false;
     isDISet_ = false;
+    isCondMet_ = false;
 }
 
 InstrArray CPU::getInstrArray(const bool prefixed) {
@@ -64,6 +65,7 @@ void CPU::step() {
         cycles_ += 4;
         return;
     }
+    isCondMet_ = false;
 
     u8 opcode = memory_.read(PC_);
     
@@ -71,7 +73,7 @@ void CPU::step() {
     Instruction instr = 
         isPrefixed_ ? prefInstrArray_[opcode] : unprefInstrArray_[opcode];
 
-    bool cond = instr.proc_();
+    instr.proc_();
 
     // set flags
     handleFlags(instr.info_.getFlags());
@@ -81,7 +83,7 @@ void CPU::step() {
 
     // determine number of cycles that went by while executing instruction
     std::pair <u8, u8> cycles = instr.info_.getCycles();
-    cycles_ += cond ? cycles.first : cycles.second;
+    cycles_ += isCondMet_ ? cycles.first : cycles.second;
 }
 
 void CPU::handleFlags(const Utils::flagArray& flags) {

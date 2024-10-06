@@ -7,7 +7,7 @@
 struct Instruction {
     Instruction() = default;
     Instruction(const QJsonObject& obj);
-    Instruction(const QJsonObject& obj, std::function<bool()> func); // function reference or function object?
+    Instruction(const QJsonObject& obj, std::function<void()> func); // function reference or function object?
 
     struct Info {
         Info() = default;
@@ -24,6 +24,6 @@ struct Instruction {
         Utils::flagArray flags_;
     };
 
-    std::function<bool()> proc_;
+    std::function<void()> proc_;
     Info info_;
 };
