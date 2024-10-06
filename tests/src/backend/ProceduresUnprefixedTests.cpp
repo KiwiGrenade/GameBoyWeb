@@ -727,7 +727,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE_FALSE(PC_ == oldPC);
         }
     }
-    SECTION("0xC1, 0xD1, 0xE1") {
+    SECTION("0xC1, 0xD1, 0xE1", "[POP]") {
         std::vector<r16*> regPairs {&BC_, &DE_, &HL_};
         u8 k = 0xC1;
         for(u8 i = 0; i < regPairs.size(); i++, k+=16) {
@@ -780,7 +780,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE(SP_ == oldSP);
         }
     }
-    SECTION("0xC5, 0xD5, 0xE5, 0xF5") {
+    SECTION("0xC5, 0xD5, 0xE5, 0xF5", "[PUSH]") {
         std::vector<r16*> regPairs {&BC_, &DE_, &HL_, &AF_};
         u8 k = 0xC5;
         for(u16 i = 0; i < regPairs.size(); i++, k+=16) {
@@ -1118,7 +1118,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         execute(0xF0);
         REQUIRE(A_ == val);
     }
-    SECTION("0xF1") {
+    SECTION("0xF1", "[popAF]") {
         SP_ = 0xFFF0;
         memory_.write(0xF0, SP_);
         memory_.write(0xF1, SP_+1);
