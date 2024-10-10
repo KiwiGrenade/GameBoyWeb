@@ -113,10 +113,14 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE(fetch8(addrU8) == *to);
         }
     }
-    /*SECTION("0x07") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0x07", "[RLCA]") {
+        A_ = 0b10000001;
+        FlagC_.set(false);
+
+        execute(0x07);
+        REQUIRE(FlagC_);
+        REQUIRE(00000011);
+    }
     SECTION("0x08", "[LDD16]") {
         SP_ = 28;
         memory_.write(0x0010, PC_+1);
@@ -152,10 +156,14 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0x0F") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0x0F", "[RRCA]") {
+        A_ = 0b10000001;
+        FlagC_.set(false);
+        
+        execute(0x0F);
+        REQUIRE(FlagC_);
+        REQUIRE(A_ == 0b11000000);
+    }
     SECTION("0x10", "[STOP]") {
         execute(0x10);
         REQUIRE(isStopped_);
@@ -170,10 +178,21 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         execute(0x12);
         REQUIRE(fetch8(DE_) == A_);
     }
-    /*SECTION("0x17") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0x17, [RLA]") {
+        A_ = 0b11000000;
+        FlagC_.set(false);
+        
+        execute(0x17);
+        REQUIRE(FlagC_);
+        REQUIRE(A_ == 0b10000000);
+
+        A_ = 0b01000000;
+        FlagC_.set(true);
+
+        execute(0x17);
+        REQUIRE_FALSE(FlagC_);
+        REQUIRE(A_ == 0b10000001);
+    }
     SECTION("0x18", "[JR]") {
         SECTION("positive") {
             memory_.write(int8_t(20), PC_+1);
@@ -205,10 +224,17 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    step();*/
     /*    REQUIRE(true);*/
     /*}*/
-    /*SECTION("0x1F") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0x1F", "[rra]") {
+        A_ = 0b00000001;
+
+        execute(0x1F);
+        REQUIRE(FlagC_);
+        REQUIRE(A_ == 0);
+        
+        execute(0x1F);
+        REQUIRE_FALSE(FlagC_);
+        REQUIRE(A_ == 0b10000000);
+    }
     SECTION("0x20", "[JR]") {
         int8_t val = 20;
         u8 op = 0x20;
