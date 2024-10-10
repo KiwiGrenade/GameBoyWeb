@@ -160,5 +160,12 @@ protected:
     void pop(r16&);
     void popAF();
     void push(const r16 rp);
-
+    void rlc(r8& r);
+    void rlca();
+    void rrc(r8& r);
+    void rrca();
+    void rl(r8& r);
+    void rla();
+    void rr(r8& r);
+    void rra();
 };

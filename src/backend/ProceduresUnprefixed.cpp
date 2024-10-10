@@ -12,7 +12,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0x04*/ { inc(B_); },
         [this] /*0x05*/ { dec(B_); },
         [this] /*0x06*/ { ld(B_, fetch8(PC_+1)); },
-        [this] /*0x07*/ { notImplemented(); },
+        [this] /*0x07*/ { rlca(); },
         [this] /*0x08*/ { ldd16(fetch16(PC_+1), SP_); },
         [this] /*0x09*/ { notImplemented(); },
         [this] /*0x0A*/ { ld(A_, fetch8(BC_)); },
@@ -20,7 +20,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0x0C*/ { inc(C_); },
         [this] /*0x0D*/ { dec(C_); },
         [this] /*0x0E*/ { ld(C_, fetch8(PC_+1)); },
-        [this] /*0x0F*/ { notImplemented(); },
+        [this] /*0x0F*/ { rrca(); },
         [this] /*0x10*/ { stop(); },
         [this] /*0x11*/ { ld16(DE_, fetch16(PC_+1)); },
         [this] /*0x12*/ { ldd(DE_, A_); },
@@ -28,7 +28,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0x14*/ { inc(D_); },
         [this] /*0x15*/ { dec(D_); },
         [this] /*0x16*/ { ld(D_, fetch8(PC_+1)); },
-        [this] /*0x17*/ { notImplemented(); },
+        [this] /*0x17*/ { rla(); },
         [this] /*0x18*/ { jr(true, static_cast<int8_t>(fetch8(PC_+1))); },
         [this] /*0x19*/ { notImplemented(); },
         [this] /*0x1A*/ { ld(A_, fetch8(DE_)); },
@@ -36,7 +36,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0x1C*/ { inc(E_); },
         [this] /*0x1D*/ { dec(E_); },
         [this] /*0x1E*/ { ld(E_, fetch8(PC_+1)); },
-        [this] /*0x1F*/ { notImplemented(); },
+        [this] /*0x1F*/ { rra(); },
         [this] /*0x20*/ { jr(!FlagZ_, static_cast<int8_t>(fetch8(PC_+1))); },
         [this] /*0x21*/ { ld16(HL_, fetch16(PC_+1)); },
         [this] /*0x22*/ { ldd(HL_++, A_); },
@@ -415,3 +415,50 @@ void CPU::ldhl_sp(const int8_t d) {
     }
     HL_ = res;
 }
+
+/*################### STACK ###################*/
+
+void CPU::rlc(u8& r) {
+    bool msb = Utils::getBit(r, 7);
+    r <<= 1;
+    Utils::setBit(r, 0, msb);
+    FlagC_.set(msb);
+    FlagZ_.set(r == 0);
+}
+
+void CPU::rlca() { rlc(A_); }
+
+void CPU::rrc(r8& r) {
+    bool lsb = Utils::getBit(r, 0);
+    r >>= 1;
+    Utils::setBit(r, 7, lsb);
+    FlagC_.set(lsb);
+    FlagZ_.set(r == 0);
+}
+
+void CPU::rrca() { rrc(A_); }
+
+void CPU::rl(r8& r) {
+    bool msb = Utils::getBit(r, 7);
+    r <<= 1;
+    Utils::setBit(r, 0, FlagC_);
+    FlagC_.set(msb);
+    FlagZ_.set(r == 0);
+}
+
+void CPU::rla() { rl(A_); }
+
+void CPU::rr(r8& r) {
+    bool lsb = Utils::getBit(r, 0);
+    r >>= 1;
+    Utils::setBit(r, 7, FlagC_);
+    FlagC_.set(lsb);
+    FlagZ_.set(r == 0);
+}
+
+void CPU::rra() { rr(A_); }
+
+
+
+
+
