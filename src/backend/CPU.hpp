@@ -119,53 +119,127 @@ protected:
         u8 hi = fetch8(addr+1);
         return static_cast<u16>(hi << 8 | lo);
     };
-// Find a way to move instructions somewhere else
-    // instructions
-        // miscallaneous
-    void inline ccf();
-    void inline cpl();
-    void daa();
-    void inline di();
-    void inline ei();
-    void halt();
-    void nop();
-    void inline scf();
-    void inline stop();
-        // jump and subroutines
-    void jr(const bool cond, int8_t dest);
-    void ret(const bool cond);
-    void jp(const bool cond, const u16 addr);
-    void call(const bool cond, const u16 addr);
-    void reti();
-    void rst(const u8 n);
-        // 8 bit arithmetic and logic
-        // 16 bit arithmetic
-        // bit operation
-        // bit shift
-        // load
-    void inline ld(r8& to, const r8 from);
+
+    void notImplemented() { Utils::error("Opcode not implemented!"); }
+
+    /*################### 8-bit arithmetic and logic ###################*/
+
     void inline inc(r8&);
-    void inline inc(r16&);
     void incd(u16 const addr);
     void inline dec(r8&);
-    void inline dec(r16&);
     void decd(u16 const addr);
-    void inline ldd(u16 const addr, const u8 byte);
+    void addHelper(const u8, const bool);
+    void add(const u8);
+    void adc(const u8); // add with carry flag
+    void subHelper(const u8, const bool);
+    // TODO: Add tests
+    void sub(const u8);
+    // TODO: Add tests
+    void sbc(const u8); // sub with carry flag
+    // TODO: Add tests
+    void andr(const u8);
+    // TODO: Add tests
+    void xorr(const u8);
+    // TODO: Add tests
+    void orr(const u8);
+    // TODO: Add tests
+    void cp(const u8);
+
+    /*################### 16-bit arithmetic and logic ###################*/
+
+    // TODO: Add tests
+    void add16(const r16);
+    void inline inc(r16&);
+    void inline dec(r16&);
+
+    /*################### bit operations ###################*/
+
+    // TODO: Add tests
+    void bit(const u8 n, const r8 r);
+    // TODO: Add tests
+    void bitHL(const u8 n);
+    // TODO: Add tests
+    void res(const u8 n, r8& r);
+    // TODO: Add tests
+    void resHL(const u8 n);
+    // TODO: Add tests
+    void set(const u8 n, r8& r);
+    // TODO: Add tests
+    void setHL(const u8 n);
+    // TODO: Add tests
+    void swap(r8& r);
+    // TODO: Add tests
+    void swapHL();
+
+    /*################### bit shift ###################*/
+
+    // TODO: Add tests
+    void rl(r8& r);
+    void rla();
+    void rlca();
+    // TODO: Add tests
+    void rr(r8& r);
+    void rra();
+    void rrca();
+    // TODO: Add tests
+    void rlHL();
+    // TODO: Add tests
+    void rlc(r8& r);
+    // TODO: Add tests
+    void rlcHL();
+    // TODO: Add tests
+    void rrHL();
+    // TODO: Add tests
+    void rrc(r8& r);
+    // TODO: Add tests
+    void rrcHL();
+    // TODO: Add tests
+    void sla(r8& r);
+    // TODO: Add tests
+    void slaHL();
+    // TODO: Add tests
+    void sra(r8& r);
+    // TODO: Add tests
+    void sraHL();
+    // TODO: Add tests
+    void srl(r8& r);
+    // TODO: Add tests
+    void srlHL();
+
+    /*################### LOAD ###################*/
+
+    void inline ld(r8& to, const r8 from);
     void inline ld16(r16&, const u16);
+    void ldd(u16 const addr, const u8 byte);
     void ldd16(u16 const addr, const r16 word);
-    void ldhl_sp(const int8_t d);
-    /*void LD(r8, u8);*/
-    /*void LD(r16, n16);*/
-        // stack operations
+
+    /*################### JUMP and SUBROUTINES ###################*/
+
+    void jp(const bool cond, const u16 addr);
+    void jr(const bool cond, int8_t dest);
+    void call(const bool cond, const u16 addr);
+    void rst(const u8 n);
+    void ret(const bool cond);
+    void reti();
+
+    /*################### STACK ###################*/
+
     void pop(r16&);
     void popAF();
     void push(const r16 rp);
-    void rlc(r8& r);
-    void rlca();
-    void rrc(r8& r);
-    void rrca();
-    void rl(r8& r);
-    void rla();
-    void rr(r8& r);
-    void rra();
+    void ldHLSP(const int8_t d);
+    void addSP();
+
+    /*################### misc ###################*/
+
+    void inline nop();
+    void inline scf();
+    void inline ccf();
+    void inline cpl();
+    void inline ei();
+    void inline di();
+    void inline stop();
+    void halt();
+    void daa();
+
 };

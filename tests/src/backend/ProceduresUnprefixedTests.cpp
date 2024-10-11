@@ -56,7 +56,6 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         }
     }
     SECTION("0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x3C", "[INC]") {
-        
         std::vector<r8*> reg{&B_, &C_, &D_, &E_, &H_, &L_, &A_};
         u8 k = 0x04;
         for(u16 i = 0; i < reg.size(); i++, k+=8) {
@@ -478,38 +477,99 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             }
         }
     }
-    /*SECTION("0x80") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x81") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x82") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x83") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x84") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x85") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x86") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x87") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x87", "[ADD]") {
+        std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
+        u8 k = 0x80;
+        for(u8 i = 0; i < reg.size(); ++i) {
+            if(i == 6)
+                continue;
+            u8* to = i == 7 ? reg[i-1] : reg[i];
+
+            A_ = k;
+            *to = i;
+            execute(k+i);
+            REQUIRE(A_ == k+i);
+
+            A_ = 2;
+            *to = 0xFF;
+            execute(k+i);
+            REQUIRE(A_ == 1);
+        }
+    }
+    SECTION("0x86", "[ADD]") {
+        A_ = 20;
+        memory.write(20, HL_);
+        execute(0x86);
+        REQUIRE(A_ == 40);
+
+        A_ = 2;
+        memory.write(0xFF, HL_);
+        execute(0x86);
+        REQUIRE(A_ == 1);
+    }
+    SECTION("0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8F", "[ADD]") {
+        std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
+        u8 k = 0x88;
+        for(u8 i = 0; i < reg.size(); ++i) {
+            FlagC_.set(true);
+            if(i == 6)
+                continue;
+            u8* to = i == 7 ? reg[i-1] : reg[i];
+
+            A_ = k;
+            *to = i;
+            execute(k+i);
+            //FIXME: fix this
+            REQUIRE(A_ == k+i+FlagC_);
+
+            A_ = 2;
+            *to = 0xFF;
+            execute(k+i);
+            REQUIRE(A_ == 1 + FlagC_);
+        }
+        for(u8 i = 0; i < reg.size(); ++i) {
+            FlagC_.set(false);
+            if(i == 6)
+                continue;
+            u8* to = i == 7 ? reg[i-1] : reg[i];
+
+            A_ = k;
+            *to = i;
+            execute(k+i);
+            REQUIRE(A_ == k+i+FlagC_);
+
+            A_ = 2;
+            *to = 0xFF;
+            execute(k+i);
+            REQUIRE(A_ == 1 + FlagC_);
+        }
+    }
+    SECTION("0x8E", "[ADD]") {
+        FlagC_.set(true);
+        A_ = 20;
+        memory.write(20, HL_);
+        execute(0x8E);
+        REQUIRE(A_ == 41);
+
+        FlagC_.set(true);
+        A_ = 2;
+        memory.write(0xFF, HL_);
+        execute(0x8E);
+        REQUIRE(A_ == 1 + FlagC_);
+
+        FlagC_.set(false);
+        A_ = 20;
+        memory.write(20, HL_);
+        execute(0x8E);
+        REQUIRE(A_ == 40);
+
+        FlagC_.set(false);
+        A_ = 2;
+        memory.write(0xFF, HL_);
+        execute(0x8E);
+        //FIXME: Fix this
+        REQUIRE(A_ == 1 + FlagC_);
+    }
     /*SECTION("0x88") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
