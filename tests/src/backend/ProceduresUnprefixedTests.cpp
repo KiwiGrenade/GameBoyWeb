@@ -712,7 +712,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         }
     }
     SECTION("0xA6", "[AND]") {
-        SECTION("shouldLogicAndCorrectly") {
+        SECTION("shouldLogicANDCorrectly") {
             A_ =  0b11100101;
             memory.write(0b11000111, HL_);
             execute(0xA6);
@@ -725,38 +725,62 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE(FlagZ_);
         }
     }
-    /*SECTION("0xA8") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xA9") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xAA") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xAB") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xAC") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xAD") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xAE") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xAF") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAF", "[XOR]") {
+        std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
+        u8 k = 0xA8;
+        for(u8 i = 0; i < reg.size(); ++i) {
+            if(i == 6)
+                continue;
+            u8* to = i == 7 ? reg[i-1] : reg[i];
+
+            A_ =  0b11100101;
+            *to = 0b11000111;
+            execute(k+i);
+            REQUIRE(A_ == 0b00100010);
+        }
+    }
+    SECTION("0xAE", "[XOR]") {
+        SECTION("shouldLogicORCorrectly") {
+            A_ =  0b11100101;
+            memory.write(0b11000111, HL_);
+            execute(0xAE);
+            REQUIRE(A_ == 0b00100010);
+        }
+        SECTION("shouldSetZeroFlag") {
+            A_ = 23;
+            memory.write(23, HL_);
+            execute(0xAE);
+            REQUIRE(FlagZ_);
+        }
+    }
+    SECTION("0xA7, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAF", "[XOR]") {
+        std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
+        u8 k = 0xA8;
+        for(u8 i = 0; i < reg.size(); ++i) {
+            if(i == 6)
+                continue;
+            u8* to = i == 7 ? reg[i-1] : reg[i];
+
+            A_ =  0b11100101;
+            *to = 0b11000111;
+            execute(k+i);
+            REQUIRE(A_ == 0b00100010);
+        }
+    }
+    SECTION("0xAE", "[XOR]") {
+        SECTION("shouldLogicXORCorrectly") {
+            A_ =  0b11100101;
+            memory.write(0b11000111, HL_);
+            execute(0xAE);
+            REQUIRE(A_ == 0b00100010);
+        }
+        SECTION("shouldSetZeroFlag") {
+            A_ = 23;
+            memory.write(23, HL_);
+            execute(0xAE);
+            REQUIRE(FlagZ_);
+        }
+    }
     /*SECTION("0xB0") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
