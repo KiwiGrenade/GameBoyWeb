@@ -781,38 +781,34 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE(FlagZ_);
         }
     }
-    /*SECTION("0xB0") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xB1") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xB2") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xB3") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xB4") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xB5") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xB6") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xB7") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB7", "[OR]") {
+        std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
+        u8 k = 0xB0;
+        for(u8 i = 0; i < reg.size(); ++i) {
+            if(i == 6)
+                continue;
+            u8* to = i == 7 ? reg[i-1] : reg[i];
+
+            A_ =  0b11100101;
+            *to = 0b11000111;
+            execute(k+i);
+            REQUIRE(A_ == 0b11100111);
+        }
+    }
+    SECTION("0xB6", "[OR]") {
+        SECTION("shouldLogicXORCorrectly") {
+            A_ =  0b11100101;
+            memory.write(0b11000111, HL_);
+            execute(0xB6);
+            REQUIRE(A_ == 0b11100111);
+        }
+        SECTION("shouldSetZeroFlag") {
+            A_ = 0;
+            memory.write(0, HL_);
+            execute(0xB6);
+            REQUIRE(FlagZ_);
+        }
+    }
     /*SECTION("0xB8") {*/
     /*    step();*/
     /*    REQUIRE(true);*/

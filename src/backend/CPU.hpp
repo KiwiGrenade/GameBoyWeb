@@ -136,7 +136,6 @@ protected:
     void sbc(const u8); // sub with carry flag
     void andr(const u8);
     void xorr(const u8);
-    // TODO: Add tests
     void orr(const u8);
     // TODO: Add tests
     void cp(const u8);
