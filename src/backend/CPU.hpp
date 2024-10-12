@@ -132,9 +132,7 @@ protected:
     void add(const u8);
     void adc(const u8); // add with carry flag
     void subHelper(const u8, const bool);
-    // TODO: Add tests
     void sub(const u8);
-    // TODO: Add tests
     void sbc(const u8); // sub with carry flag
     // TODO: Add tests
     void andr(const u8);
