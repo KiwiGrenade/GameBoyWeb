@@ -809,38 +809,36 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE(FlagZ_);
         }
     }
-    /*SECTION("0xB8") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xB9") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xBA") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xBB") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xBC") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xBD") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xBE") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0xBF") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBF", "[CP]") {
+        std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
+        u8 k = 0xB8;
+        for(u8 i = 0; i < reg.size(); ++i) {
+            if(i == 6)
+                continue;
+            u8* to = i == 7 ? reg[i-1] : reg[i];
+
+        }
+    }
+    SECTION("0xBE", "[CP]") {
+        SECTION("shouldCPCorrectly") {
+            A_ =  21;
+            memory.write(23, HL_);
+            execute(0xBE);
+            REQUIRE(A_ == 21);
+        }
+        SECTION("shouldSetZeroFlag") {
+            A_ =  28;
+            memory.write(28, HL_);
+            execute(0xBE);
+            REQUIRE(FlagZ_);
+        }
+        SECTION("shouldSetHalfCarry") {
+            A_ =  1;
+            memory.write(0xFF, HL_);
+            execute(0xBE);
+            REQUIRE(FlagH_);
+        }
+    }
     SECTION("0xC0, 0xC4, 0xC8, 0xC9, 0xCC, 0xCD, 0xD0, 0xD8, 0xD9, 0xDA, 0xDC", "[RET]") {
         SP_ = 0xFF82;
         PC_ = 0x0130;

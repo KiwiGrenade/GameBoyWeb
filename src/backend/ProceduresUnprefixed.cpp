@@ -328,23 +328,20 @@ void CPU::andr(const u8 r) {
     FlagZ_.set(!A_);
 }
 
-// TODO: Add tests
 void CPU::xorr(const u8 r) {
     A_ ^= r;
     FlagZ_.set(!A_);
 }
 
-// TODO: Add tests
 void CPU::orr(const u8 r) {
     A_ |= r;
     FlagZ_.set(!A_);
 }
 
-// TODO: Add tests
 void CPU::cp(const u8 r) {
-    u8 res = A_ - r;
+    r16 res = A_ - r;
     FlagZ_.set(!res);
-    FlagH_.set(Flag::checkH(A_, r, res));
+    FlagH_.set(Flag::checkH(A_, r, res.lo_));
     FlagC_.set(res < 0);
 }
 

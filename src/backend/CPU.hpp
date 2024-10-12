@@ -137,7 +137,6 @@ protected:
     void andr(const u8);
     void xorr(const u8);
     void orr(const u8);
-    // TODO: Add tests
     void cp(const u8);
 
     /*################### 16-bit arithmetic and logic ###################*/
