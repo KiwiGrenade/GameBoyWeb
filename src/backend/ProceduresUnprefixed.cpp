@@ -291,7 +291,7 @@ void CPU::addHelper(const u8 r, const bool addFlagC) {
     r16 res = A_ + r;
     if(addFlagC)
         res += static_cast<u16>(FlagC_);
-    FlagZ_.set(res);
+    FlagZ_.set(u8(res) == 0);
     FlagH_.set(Flag::checkH(A_, r, res.lo_));
     FlagC_.set(res > 0x00FF);
     A_ = res;
@@ -309,7 +309,7 @@ void CPU::subHelper(const u8 r, const bool subFlagC) {
     r16 res = A_ - r;
     if(subFlagC)
         res -= static_cast<u16>(FlagC_);
-    FlagZ_.set(res);
+    FlagZ_.set(u8(res) == 0);
     FlagH_.set(Flag::checkH(A_, r, res.lo_));
     A_ = res;
 }
