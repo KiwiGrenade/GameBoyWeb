@@ -134,7 +134,6 @@ protected:
     void subHelper(const u8, const bool);
     void sub(const u8);
     void sbc(const u8); // sub with carry flag
-    // TODO: Add tests
     void andr(const u8);
     // TODO: Add tests
     void xorr(const u8);

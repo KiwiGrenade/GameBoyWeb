@@ -512,16 +512,16 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             A_ = 0b00001000;
             memory.write(A_, HL_);
             execute(0x86);
-            REQUIRE(FlagH_);
             REQUIRE_FALSE(FlagZ_);
+            REQUIRE(FlagH_);
             REQUIRE_FALSE(FlagC_);
         }
         SECTION("shouldSetHalfCarryFlagZeroFlagAndCarryFlag") {
             A_ = 0xFF;
             memory.write(1, HL_);
             execute(0x86);
-            REQUIRE(FlagH_);
             REQUIRE(FlagZ_);
+            REQUIRE(FlagH_);
             REQUIRE(FlagC_);
         }
     }
@@ -583,16 +583,16 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             A_ = 0b00001000;
             memory.write(A_, HL_);
             execute(0x8E);
-            REQUIRE(FlagH_);
             REQUIRE_FALSE(FlagZ_);
+            REQUIRE(FlagH_);
             REQUIRE_FALSE(FlagC_);
         }
         SECTION("shouldSetHalfCarryFlagZeroFlagAndCarryFlag") {
             A_ = 0xFF;
             memory.write(1, HL_);
             execute(0x8E);
-            REQUIRE(FlagH_);
             REQUIRE(FlagZ_);
+            REQUIRE(FlagH_);
             REQUIRE(FlagC_);
         }
     }
@@ -626,16 +626,16 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             A_ = 0;
             memory.write(1, HL_);
             execute(0x96);
-            REQUIRE(FlagH_);
             REQUIRE_FALSE(FlagZ_);
+            REQUIRE(FlagH_);
             REQUIRE(FlagC_);
         }
         SECTION("shouldSetZeroFlag") {
             A_ = 0xFF;
             memory.write(A_, HL_);
             execute(0x96);
-            REQUIRE_FALSE(FlagH_);
             REQUIRE(FlagZ_);
+            REQUIRE_FALSE(FlagH_);
             REQUIRE_FALSE(FlagC_);
         }
     }
@@ -683,8 +683,8 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             A_ = 0;
             memory.write(1, HL_);
             execute(0x9E);
-            REQUIRE(FlagH_);
             REQUIRE_FALSE(FlagZ_);
+            REQUIRE(FlagH_);
             REQUIRE(FlagC_);
         }
         SECTION("shouldSetZeroFlag") {
@@ -692,51 +692,39 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             A_ = 0xFF;
             memory.write(A_-1, HL_);
             execute(0x9E);
-            REQUIRE_FALSE(FlagH_);
             REQUIRE(FlagZ_);
+            REQUIRE_FALSE(FlagH_);
             REQUIRE_FALSE(FlagC_);
         }
     }
-    /*SECTION("0xA0, 0xA1, 0xA2, 0xA3, 0xA3, 0xA5, 0xA7", "[AND]") {*/
-    /*    std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};*/
-    /*    u8 k = 0xA0;*/
-    /*    for(u8 i = 0; i < reg.size(); ++i) {*/
-    /*        if(i == 6)*/
-    /*            continue;*/
-    /*        u8* to = i == 7 ? reg[i-1] : reg[i];*/
-    /**/
-    /*        A_ =  0b11100101;*/
-    /*        *to = 0b11000111;*/
-    /*        execute(k+i);*/
-    /*        REQUIRE(A_ == 0b11000101);*/
-    /*    }*/
-    /*}*/
-    /*SECTION("0x96", "[AND]") {*/
-    /*    SECTION("shouldLogicAndCorrectly") {*/
-    /*        A_ =  0b11100101;*/
-    /*        memory.write(0b11000111, HL_);*/
-    /*        execute(0xA6);*/
-    /*        REQUIRE(A_ == 0b11000101);*/
-    /*    }*/
-    /*    SECTION("shouldSetHalfCarryFlagAndCarryFlag") {*/
-    /*        FlagC_.set(true);*/
-    /*        A_ = 0;*/
-    /*        memory.write(1, HL_);*/
-    /*        execute(0x9E);*/
-    /*        REQUIRE(FlagH_);*/
-    /*        REQUIRE_FALSE(FlagZ_);*/
-    /*        REQUIRE(FlagC_);*/
-    /*    }*/
-    /*    SECTION("shouldSetZeroFlag") {*/
-    /*        FlagC_.set(true);*/
-    /*        A_ = 0xFF;*/
-    /*        memory.write(A_-1, HL_);*/
-    /*        execute(0x9E);*/
-    /*        REQUIRE_FALSE(FlagH_);*/
-    /*        REQUIRE(FlagZ_);*/
-    /*        REQUIRE_FALSE(FlagC_);*/
-    /*    }*/
-    /*}*/
+    SECTION("0xA0, 0xA1, 0xA2, 0xA3, 0xA3, 0xA5, 0xA7", "[AND]") {
+        std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
+        u8 k = 0xA0;
+        for(u8 i = 0; i < reg.size(); ++i) {
+            if(i == 6)
+                continue;
+            u8* to = i == 7 ? reg[i-1] : reg[i];
+
+            A_ =  0b11100101;
+            *to = 0b11000111;
+            execute(k+i);
+            REQUIRE(A_ == 0b11000101);
+        }
+    }
+    SECTION("0xA6", "[AND]") {
+        SECTION("shouldLogicAndCorrectly") {
+            A_ =  0b11100101;
+            memory.write(0b11000111, HL_);
+            execute(0xA6);
+            REQUIRE(A_ == 0b11000101);
+        }
+        SECTION("shouldSetZeroFlag") {
+            A_ = 0b11100010;
+            memory.write(0b00011101, HL_);
+            execute(0xA6);
+            REQUIRE(FlagZ_);
+        }
+    }
     /*SECTION("0xA8") {*/
     /*    step();*/
     /*    REQUIRE(true);*/
