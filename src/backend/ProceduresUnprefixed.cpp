@@ -264,9 +264,9 @@ ProcArray CPU::getUnprefProcArray() {
 /*################### 8-bit arithmetic and logic ###################*/
 
 void CPU::inc(r8& r) {
-    FlagZ_.set(r+1 > 0xFF);
     FlagH_.set(Flag::checkH(r, 1, r+1));
     ++r;
+    FlagZ_.set(!r);
 }
 
 void CPU::incd(const u16 addr) {
@@ -276,9 +276,9 @@ void CPU::incd(const u16 addr) {
 }
 
 void CPU::dec(r8& r) {
-    FlagZ_.set(r-1 == 0);
     FlagH_.set(Flag::checkH(r, 1, r-1));
     --r;
+    FlagZ_.set(!r);
 }
 
 void CPU::decd(const u16 addr) {
@@ -291,7 +291,7 @@ void CPU::addHelper(const u8 r, const bool addFlagC) {
     r16 res = A_ + r;
     if(addFlagC)
         res += static_cast<u16>(FlagC_);
-    FlagZ_.set(u8(res) == 0);
+    FlagZ_.set(!static_cast<u8>(res));
     FlagH_.set(Flag::checkH(A_, r, res.lo_));
     FlagC_.set(res > 0x00FF);
     A_ = res.lo_;
@@ -309,7 +309,7 @@ void CPU::subHelper(const u8 r, const bool subFlagC) {
     r16 res = A_ - r;
     if(subFlagC)
         res -= static_cast<u16>(FlagC_);
-    FlagZ_.set(u8(res) == 0);
+    FlagZ_.set(!static_cast<u8>(res));
     FlagH_.set(Flag::checkH(A_, r, res.lo_));
     FlagC_.set(res > 0x00FF);
     A_ = res.lo_;
@@ -323,28 +323,27 @@ void CPU::sbc(const u8 r) {
     subHelper(r, true);
 }
 
-// TODO: Add tests
 void CPU::andr(const u8 r) {
     A_ &= r;
-    FlagZ_.set(A_);
+    FlagZ_.set(!A_);
 }
 
 // TODO: Add tests
 void CPU::xorr(const u8 r) {
     A_ ^= r;
-    FlagZ_.set(A_);
+    FlagZ_.set(!A_);
 }
 
 // TODO: Add tests
 void CPU::orr(const u8 r) {
     A_ |= r;
-    FlagZ_.set(A_);
+    FlagZ_.set(!A_);
 }
 
 // TODO: Add tests
 void CPU::cp(const u8 r) {
     u8 res = A_ - r;
-    FlagZ_.set(res);
+    FlagZ_.set(!res);
     FlagH_.set(Flag::checkH(A_, r, res));
     FlagC_.set(res < 0);
 }
