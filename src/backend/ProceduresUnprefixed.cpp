@@ -220,7 +220,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0xD7*/ { rst(0x10); },
         [this] /*0xD8*/ { ret(FlagC_); },
         [this] /*0xD9*/ { reti(); },
-        [this] /*0xDA*/ { call(!FlagC_, fetch16(PC_+1)); },
+        [this] /*0xDA*/ { jp(FlagC_, fetch16(PC_+1)); },
         [this] /*0xDB*/ { notImplemented(); },
         [this] /*0xDC*/ { call(FlagC_, fetch16(PC_+1)); },
         [this] /*0xDD*/ { notImplemented(); },
@@ -347,7 +347,6 @@ void CPU::cp(const u8 r) {
 
 /*################### 16-bit arithmetic and logic ###################*/
 
-// TODO: Add tests
 void CPU::add16(const r16 rp) {
     FlagH_.set(Flag::checkH16(HL_, rp, HL_ + rp));
     FlagC_.set(HL_ + rp > 0xFFFF);
