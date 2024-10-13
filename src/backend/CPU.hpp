@@ -166,25 +166,17 @@ protected:
 
     /*################### bit shift ###################*/
 
-    // TODO: Add tests
     void rl(r8& r);
     void rla();
     void rlca();
-    // TODO: Add tests
     void rr(r8& r);
     void rra();
     void rrca();
-    // TODO: Add tests
     void rlHL();
-    // TODO: Add tests
     void rlc(r8& r);
-    // TODO: Add tests
     void rlcHL();
-    // TODO: Add tests
     void rrHL();
-    // TODO: Add tests
     void rrc(r8& r);
-    // TODO: Add tests
     void rrcHL();
     // TODO: Add tests
     void sla(r8& r);
