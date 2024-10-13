@@ -172,4 +172,62 @@ TEST_CASE_METHOD(ProceduresPrefixedTests, "ProceduresPrefixedTests" ) {
             REQUIRE(FlagZ_);
         }
     }
+    SECTION("0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27", "[SLA]") {
+        checkOnRegisters(0x20, 1,
+            [this] (r8* reg, unsigned int i) {
+                *reg = 0b10001001;
+            },
+            [this] (r8* reg, unsigned int i) {
+                REQUIRE(*reg == 0b00010011);
+                REQUIRE(FlagC_);
+            }
+        );
+    }
+    SECTION("0x26", "[SLAHL]") {
+        HL_ = 30;
+        SECTION("shouldRLCorrectly") {
+            memory_.write(0b10001001, HL_);
+            execute(0x26);
+            REQUIRE(fetch8(HL_) == 0b00010011);
+        }
+        SECTION("shouldSetCarryFlag") {
+            memory_.write(0b10001001, HL_);
+            execute(0x26);
+            REQUIRE(FlagC_);
+        }
+        SECTION("shouldSetZeroFlag") {
+            memory_.write(0b10000000, HL_);
+            execute(0x26);
+            REQUIRE(FlagZ_);
+        }
+    }
+    SECTION("0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2F", "[SRA]") {
+        checkOnRegisters(0x28, 1,
+            [this] (r8* reg, unsigned int i) {
+                *reg = 0b10001001;
+            },
+            [this] (r8* reg, unsigned int i) {
+                REQUIRE(*reg == 0b11000100);
+                REQUIRE(FlagC_);
+            }
+        );
+    }
+    SECTION("0x2E", "[SRAHL]") {
+        HL_ = 30;
+        SECTION("shouldRRCorrectly") {
+            memory_.write(0b10001001, HL_);
+            execute(0x2E);
+            REQUIRE(fetch8(HL_) == 0b11000100);
+        }
+        SECTION("shouldSetCarryFlag") {
+            memory_.write(0b10001001, HL_);
+            execute(0x2E);
+            REQUIRE(FlagC_);
+        }
+        SECTION("shouldSetZeroFlag") {
+            memory_.write(0b00000001, HL_);
+            execute(0x2E);
+            REQUIRE(FlagZ_);
+        }
+    }
 }

@@ -1,4 +1,5 @@
 #include "CPU.hpp"
+#include "utils.hpp"
 
 ProcArray CPU::getPrefProcArray() {
     return {
@@ -375,7 +376,9 @@ void CPU::rrcHL() {
 
 void CPU::sla(r8& r) {
     bool msb = Utils::getBit(r, 7);
+    bool lsb = Utils::getBit(r, 0);
     r <<= 1;
+    Utils::setBit(r, 0, lsb);
     FlagC_.set(msb);
     FlagZ_.set(!r);
 }
