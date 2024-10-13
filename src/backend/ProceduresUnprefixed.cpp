@@ -1,4 +1,5 @@
 #include "CPU.hpp"
+#include <cstdint>
 
 ProcArray CPU::getUnprefProcArray() {
     return {
@@ -347,9 +348,10 @@ void CPU::cp(const u8 r) {
 
 /*################### 16-bit arithmetic and logic ###################*/
 
-void CPU::add16(const r16 rp) {
-    FlagH_.set(Flag::checkH16(HL_, rp, HL_ + rp));
-    FlagC_.set(HL_ + rp > 0xFFFF);
+void CPU::add16(const u16 rp) {
+    uint32_t res = rp + HL_.getVal();
+    FlagH_.set(Flag::checkH16(HL_, rp, res));
+    FlagC_.set(res > 0xFFFF);
     HL_ += rp;
 }
 
@@ -483,7 +485,7 @@ void CPU::ldHLSP(const int8_t d) {
 void CPU::addSP() {
     int8_t val = fetch8(PC_+1);
     FlagH_.set(Flag::checkH(SP_, val, SP_ + val));
-    FlagC_.set(SP_ + val > 0xFFFF);
+    FlagC_.set(SP_ + val > 0x00FF);
     SP_ += val;
 }
 
