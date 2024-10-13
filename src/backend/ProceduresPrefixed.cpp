@@ -1,6 +1,6 @@
 #include "CPU.hpp"
 #include "utils.hpp"
-
+#include <bitset>
 ProcArray CPU::getPrefProcArray() {
     return {
         [this] /*0x00*/ { rlc(B_); },
@@ -271,15 +271,23 @@ ProcArray CPU::getPrefProcArray() {
 /*################### bit operations ###################*/
 
 void CPU::swap(r8& r) {
-    u8 v = r;
-    int s = sizeof(v) * CHAR_BIT - 1;
-    for (v >>= 1; v; v >>= 1)
-    {   
-      r <<= 1;
-      r |= v & 1;
-      s--;
-    }
-    r <<= s; // shift when v's highest bits are zero
+    std::cout << "r in swap: " << std::bitset<8>(r) << std::endl;
+    r8 lo = r & 0x0F;
+    std::cout << "r lo : " << std::bitset<8>(lo) << std::endl;
+    r8 hi = r & 0xF0;
+    std::cout << "r hi : " << std::bitset<8>(hi) << std::endl;
+    r = (lo << 4) | (hi >> 4);
+    std::cout << "r combined : " << std::bitset<8>(r) << std::endl;
+    /*u8 v = r;*/
+    /*int s = sizeof(v) * CHAR_BIT - 1;*/
+    /*for (v >>= 1; v; v >>= 1)*/
+    /*{   */
+    /*  r <<= 1;*/
+    /*  r |= v & 1;*/
+    /*  s--;*/
+    /*}*/
+    /*r <<= s; // shift when v's highest bits are zero*/
+    FlagZ_.set(!r);
 }
 
 void CPU::swapHL() {

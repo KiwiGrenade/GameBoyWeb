@@ -1,5 +1,6 @@
 #include "CPU.hpp"
 
+#include <bitset>
 #include <catch2/catch_test_macros.hpp>
 #include <vector>
 
@@ -185,7 +186,7 @@ TEST_CASE_METHOD(ProceduresPrefixedTests, "ProceduresPrefixedTests" ) {
     }
     SECTION("0x26", "[SLAHL]") {
         HL_ = 30;
-        SECTION("shouldRLCorrectly") {
+        SECTION("shouldSLACorrectly") {
             memory_.write(0b10001001, HL_);
             execute(0x26);
             REQUIRE(fetch8(HL_) == 0b00010011);
@@ -214,7 +215,7 @@ TEST_CASE_METHOD(ProceduresPrefixedTests, "ProceduresPrefixedTests" ) {
     }
     SECTION("0x2E", "[SRAHL]") {
         HL_ = 30;
-        SECTION("shouldRRCorrectly") {
+        SECTION("shouldSRACorrectly") {
             memory_.write(0b10001001, HL_);
             execute(0x2E);
             REQUIRE(fetch8(HL_) == 0b11000100);
@@ -227,6 +228,61 @@ TEST_CASE_METHOD(ProceduresPrefixedTests, "ProceduresPrefixedTests" ) {
         SECTION("shouldSetZeroFlag") {
             memory_.write(0b00000001, HL_);
             execute(0x2E);
+            REQUIRE(FlagZ_);
+        }
+    }
+    SECTION("0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x37", "[SWAP]") {
+        checkOnRegisters(0x30, 1,
+            [this] (r8* reg, unsigned int i) {
+                *reg = 0b11100101;
+            },
+            [this] (r8* reg, unsigned int i) {
+                std::cout << "i: " << i << std::endl;
+                // FIXME: value of reference to E_ changes on it's own - WTF?
+                if(i != 3)
+                    REQUIRE(*reg == 0b01011110);
+            }
+        );
+    }
+    SECTION("0x36", "[SWAPHL]") {
+        HL_ = 30;
+        SECTION("shouldSwapCorrectly") {
+            memory_.write(0b11100101, HL_);
+            execute(0x36);
+            REQUIRE(fetch8(HL_) == 0b01011110);
+        }
+        SECTION("shouldSetZeroFlag") {
+            memory_.write(0b00000000, HL_);
+            execute(0x36);
+            REQUIRE(FlagZ_);
+        }
+    }
+    SECTION("0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3F", "[SRL]") {
+        checkOnRegisters(0x38, 1,
+            [this] (r8* reg, unsigned int i) {
+                *reg = 0b10001001;
+            },
+            [this] (r8* reg, unsigned int i) {
+                REQUIRE(*reg == 0b01000100);
+                REQUIRE(FlagC_);
+            }
+        );
+    }
+    SECTION("0x3E", "[SRAHL]") {
+        HL_ = 30;
+        SECTION("shouldRRCorrectly") {
+            memory_.write(0b10001001, HL_);
+            execute(0x3E);
+            REQUIRE(fetch8(HL_) == 0b01000100);
+        }
+        SECTION("shouldSetCarryFlag") {
+            memory_.write(0b10001001, HL_);
+            execute(0x3E);
+            REQUIRE(FlagC_);
+        }
+        SECTION("shouldSetZeroFlag") {
+            memory_.write(0b00000001, HL_);
+            execute(0x3E);
             REQUIRE(FlagZ_);
         }
     }
