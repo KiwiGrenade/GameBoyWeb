@@ -1,6 +1,4 @@
 #include "CPU.hpp"
-#include "utils.hpp"
-#include <utility>
 
 ProcArray CPU::getPrefProcArray() {
     return {
@@ -290,11 +288,11 @@ void CPU::swapHL() {
 }
 
 void CPU::bit(const u8 n, const r8 r) {
-    FlagZ_.set(Utils::getBit(r, n));
+    FlagZ_.set(!Utils::getBit(r, n));
 }
 
 void CPU::bitHL(const u8 n) {
-    FlagZ_.set(Utils::getBit(fetch8(HL_), n));
+    FlagZ_.set(!Utils::getBit(fetch8(HL_), n));
 }
 
 void CPU::res(const u8 n, r8& r) {
@@ -324,7 +322,7 @@ void CPU::rl(r8& r) {
     r <<= 1;
     Utils::setBit(r, 0, FlagC_);
     FlagC_.set(msb);
-    FlagZ_.set(r);
+    FlagZ_.set(!r);
 }
 
 void CPU::rlHL() {
@@ -338,7 +336,7 @@ void CPU::rlc(u8& r) {
     r <<= 1;
     Utils::setBit(r, 0, msb);
     FlagC_.set(msb);
-    FlagZ_.set(r);
+    FlagZ_.set(!r);
 }
 
 void CPU::rlcHL() {
@@ -352,7 +350,7 @@ void CPU::rr(r8& r) {
     r >>= 1;
     Utils::setBit(r, 7, FlagC_);
     FlagC_.set(lsb);
-    FlagZ_.set(r);
+    FlagZ_.set(!r);
 }
 
 void CPU::rrHL() {
@@ -366,7 +364,7 @@ void CPU::rrc(r8& r) {
     r >>= 1;
     Utils::setBit(r, 7, lsb);
     FlagC_.set(lsb);
-    FlagZ_.set(r);
+    FlagZ_.set(!r);
 }
 
 void CPU::rrcHL() {
@@ -379,7 +377,7 @@ void CPU::sla(r8& r) {
     bool msb = Utils::getBit(r, 7);
     r <<= 1;
     FlagC_.set(msb);
-    FlagZ_.set(r);
+    FlagZ_.set(!r);
 }
 
 void CPU::slaHL() {
@@ -394,7 +392,7 @@ void CPU::sra(r8& r) {
     r >>= 1;
     Utils::setBit(r, 7, msb);
     FlagC_.set(lsb);
-    FlagZ_.set(r);
+    FlagZ_.set(!r);
 }
 
 void CPU::sraHL() {
@@ -407,7 +405,7 @@ void CPU::srl(r8& r) {
     bool lsb = Utils::getBit(r, 0);
     r >>= 1;
     FlagC_.set(lsb);
-    FlagZ_.set(r);
+    FlagZ_.set(!r);
 }
 
 void CPU::srlHL() {
