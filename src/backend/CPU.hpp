@@ -147,21 +147,13 @@ protected:
 
     /*################### bit operations ###################*/
 
-    // TODO: Add tests
     void bit(const u8 n, const r8 r);
-    // TODO: Add tests
     void bitHL(const u8 n);
-    // TODO: Add tests
     void res(const u8 n, r8& r);
-    // TODO: Add tests
     void resHL(const u8 n);
-    // TODO: Add tests
     void set(const u8 n, r8& r);
-    // TODO: Add tests
     void setHL(const u8 n);
-    // TODO: Add tests
     void swap(r8& r);
-    // TODO: Add tests
     void swapHL();
 
     /*################### bit shift ###################*/
@@ -178,17 +170,11 @@ protected:
     void rrHL();
     void rrc(r8& r);
     void rrcHL();
-    // TODO: Add tests
     void sla(r8& r);
-    // TODO: Add tests
     void slaHL();
-    // TODO: Add tests
     void sra(r8& r);
-    // TODO: Add tests
     void sraHL();
-    // TODO: Add tests
     void srl(r8& r);
-    // TODO: Add tests
     void srlHL();
 
     /*################### LOAD ###################*/
