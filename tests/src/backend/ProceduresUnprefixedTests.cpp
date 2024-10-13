@@ -13,6 +13,24 @@ struct ProceduresUnprefixedTests : CPU {
         memory_.write(op, PC_);
         step();
     }
+
+    void checkOnRegisters(const u8 startOpcode, const u8 jump, std::function<void(r8*, unsigned int)> setUp, std::function<void(r8*, unsigned int)>requirements) {
+        std::vector<r8*> regs{&B_, &C_, &D_, &E_, &H_, &L_, &A_};
+        unsigned int k = startOpcode;
+        unsigned int i = 0;
+        for(r8* reg : regs) {
+            /*std::cout << "i: " << i << std::endl << "k: " << k << std::endl;*/
+            if(i == 6)
+               k += jump;
+
+            setUp(reg, i);
+            execute(k);
+            requirements(reg, i);
+            
+            k += jump;
+            ++i;
+        }
+    }
 };
 
 TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
@@ -53,15 +71,14 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         }
     }
     SECTION("0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x3C", "[INC]") {
-        std::vector<r8*> reg{&B_, &C_, &D_, &E_, &H_, &L_, &A_};
-        u8 k = 0x04;
-        for(u16 i = 0; i < reg.size(); i++, k+=8) {
-            if(i == 6)
-                continue;
-            *reg[i] = i;
-            execute(k);
-            REQUIRE(*reg[i] - 1 == i);
-        }
+        checkOnRegisters(0x04, 8,
+            [this] (r8* reg, unsigned int i) {
+                *reg = 20;
+            },
+            [this] (r8* reg, unsigned int i) {
+                REQUIRE(*reg == 21);
+            }
+        );
         SECTION("shouldSetHalfCarryFlag") {
             B_ = 0x0F;
             execute(0x04);
@@ -74,16 +91,14 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         }
     }
     SECTION("0x05, 0x0D, 0x15, 0x1D, 0x25, 0x2D, 0x3D", "[DEC]") {
-        
-        std::vector<r8*> reg{&B_, &C_, &D_, &E_, &H_, &L_, &A_};
-        u8 k = 0x05;
-        for(u16 i = 0; i < reg.size(); i++, k+=8) {
-            if(i == 6)
-                continue;
-            *reg[i] = i;
-            execute(k);
-            REQUIRE(u8(*reg[i] + 1) == i);
-        }
+        checkOnRegisters(0x05, 8,
+            [this] (r8* reg, unsigned int i) {
+                *reg = 20;
+            },
+            [this] (r8* reg, unsigned int i) {
+                REQUIRE(*reg == 19);
+            }
+        );
         SECTION("shouldSetHalfCarryFlag") {
             B_ = 0;
             execute(0x05);
@@ -96,18 +111,14 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         }
     }
     SECTION("0x06, 0x0E, 0x16, 0x1E, 0x26, 0x2E, 0x3E", "[LD]") {
-        std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
-        u8 k = 0x06;
-        for(u8 i = 0; i < 8; i++, k +=8) {
-            if(i == 6)
-                continue;
-            u8 op = k;
-            u8* to = i == 7 ? reg[i-1] : reg[i];
-            u16 addrU8 = PC_+1;
-            memory_.write(op, addrU8);
-            execute(op);
-            REQUIRE(fetch8(addrU8) == *to);
-        }
+        checkOnRegisters(0x06, 8,
+            [this] (r8* reg, unsigned int i) {
+                memory_.write(30, PC_+1);
+            },
+            [this] (r8* reg, unsigned int i) {
+                REQUIRE(*reg == 30);
+            }
+        );
     }
     SECTION("0x07", "[RLCA]") {
         A_ = 0b10000001;
@@ -115,7 +126,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
 
         execute(0x07);
         REQUIRE(FlagC_);
-        REQUIRE(00000011);
+        REQUIRE(A_ == 0b00000011);
     }
     SECTION("0x08", "[LDD16]") {
         SP_ = 28;
@@ -410,53 +421,41 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             }
         }
         SECTION("0x70-0x75, 0x77", "[LDD]") {
-            k = 0x70;
-            for(u8 i = 0; i < 8; i++) {
-                if(i == 6)
-                    continue;
-                op = k + i;
-                u8* from = i == 7 ? reg[i-1] : reg[i];
-                *from = op;
-                HL_.setVal(op);
-                execute(op);
-                REQUIRE(fetch8(HL_) == *from);
-            }
-            REQUIRE(fetch8(0x77) == 0x77);
+            checkOnRegisters(0x70, 1,
+                [this] (r8* reg, unsigned int i) {
+                    HL_ = 40;
+                    *reg = 20;
+                },
+                [this] (r8* reg, unsigned int i) {
+                    REQUIRE(fetch8(HL_) == 20);
+                }
+            );
         }
-        SECTION("0x46, 0x4E, 0x56, 0x5E, 0x66, 0x6E, 0x77, 0x7E") {
-
-            k = 0x46;
-            for(u8 i = 0; i < 8; i++, k +=8) {
-                if(i == 6)
-                    continue;
-                op = k;
-                u8* to = i == 7 ? reg[i-1] : reg[i];
-                HL_.setVal(op);
-                memory_.write(op, HL_);
-                u16 prevHL_ = HL_; // execute changes H_ and L_ registers
-                execute(op);
-                REQUIRE(fetch8(prevHL_) == *to);
-            }
+        SECTION("0x46, 0x4E, 0x56, 0x5E, 0x66, 0x6E, 0x7E") {
+            checkOnRegisters(0x46, 8,
+                [this] (r8* reg, unsigned int i) {
+                    HL_ = 40;
+                    memory_.write(20, HL_);
+                },
+                [this] (r8* reg, unsigned int i) {
+                    REQUIRE(*reg == 20);
+                }
+            );
         }
     }
     SECTION("0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x87", "[ADD]") {
-        std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
-        u8 k = 0x80;
-        for(u8 i = 0; i < reg.size(); ++i) {
-            if(i == 6)
-                continue;
-            u8* to = i == 7 ? reg[i-1] : reg[i];
-
-            A_ = k;
-            *to = i;
-            execute(k+i);
-            REQUIRE(A_ == k+i);
-
-            A_ = 2;
-            *to = 0xFF;
-            execute(k+i);
-            REQUIRE(A_ == 1);
-        }
+        checkOnRegisters(0x80, 1,
+            [this] (r8* reg, unsigned int i) {
+                A_ = 2;
+                *reg = 0xFF;
+            },
+            [this] (r8* reg, unsigned int i) {
+                if(i == 6)
+                    REQUIRE(A_ == 0xFE);
+                else
+                    REQUIRE(A_ == 1);
+            }
+        );
     }
     SECTION("0x86", "[ADD]") {
         SECTION("shouldAddCorrectly") {
@@ -488,29 +487,35 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         }
     }
     SECTION("0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8F", "[ADC]") {
-        std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
-        u8 k = 0x88;
-        for(u8 i = 0; i < reg.size(); ++i) {
-            FlagC_.set(true);
-            if(i == 6)
-                continue;
-            u8* to = i == 7 ? reg[i-1] : reg[i];
-
-            A_ = 2;
-            *to = 0xFF;
-            execute(k+i);
-            REQUIRE(A_ == 2);
+        SECTION("FlagC_ = true") {
+            checkOnRegisters(0x88, 1,
+                [this] (r8* reg, unsigned int i) {
+                    FlagC_.set(true);
+                    A_ = 2;
+                    *reg = 0xFF;
+                },
+                [this] (r8* reg, unsigned int i) {
+                    if(i == 6)
+                        REQUIRE(A_ == 0xFF);
+                    else
+                        REQUIRE(A_ == 2);
+                }
+            );
         }
-        for(u8 i = 0; i < reg.size(); ++i) {
-            FlagC_.set(false);
-            if(i == 6)
-                continue;
-            u8* to = i == 7 ? reg[i-1] : reg[i];
-
-            A_ = 2;
-            *to = 0xFF;
-            execute(k+i);
-            REQUIRE(A_ == 1);
+        SECTION("FlagC_ = false") {
+            checkOnRegisters(0x88, 1,
+                [this] (r8* reg, unsigned int i) {
+                    FlagC_.set(false);
+                    A_ = 2;
+                    *reg = 0xFF;
+                },
+                [this] (r8* reg, unsigned int i) {
+                    if(i == 6)
+                        REQUIRE(A_ == 0xFE);
+                    else
+                        REQUIRE(A_ == 1);
+                }
+            );
         }
     }
     SECTION("0x8E", "[ADC]") {
@@ -559,18 +564,18 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         }
     }
     SECTION("0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x97", "[SUB]") {
-        std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
-        u8 k = 0x90;
-        for(u8 i = 0; i < reg.size(); ++i) {
-            if(i == 6)
-                continue;
-            u8* to = i == 7 ? reg[i-1] : reg[i];
-
-            A_ = 2;
-            *to = 0xFF;
-            execute(k+i);
-            REQUIRE(A_ == 3);
-        }
+        checkOnRegisters(0x90, 1,
+            [this] (r8* reg, unsigned int i) {
+                A_ = 2;
+                *reg = 0xFF;
+            },
+            [this] (r8* reg, unsigned int i) {
+                if(i == 6)
+                    REQUIRE(A_ == 0);
+                else
+                    REQUIRE(A_ == 3);
+            }
+        );
     }
     SECTION("0x96", "[SUB]") {
         SECTION("shouldSubstractCorrectly") {
@@ -602,29 +607,35 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         }
     }
     SECTION("0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9F", "[SBC]") {
-        std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
-        u8 k = 0x98;
-        for(u8 i = 0; i < reg.size(); ++i) {
-            FlagC_.set(false);
-            if(i == 6)
-                continue;
-            u8* to = i == 7 ? reg[i-1] : reg[i];
-
-            A_ = 2;
-            *to = 0xFF;
-            execute(k+i);
-            REQUIRE(A_ == 3);
+        SECTION("FlagC_ = true") {
+            checkOnRegisters(0x98, 1,
+                [this] (r8* reg, unsigned int i) {
+                    FlagC_.set(true);
+                    A_ = 2;
+                    *reg = 0xFF;
+                },
+                [this] (r8* reg, unsigned int i) {
+                    if(i == 6)
+                        REQUIRE(A_ == 0xFF);
+                    else
+                        REQUIRE(A_ == 2);
+                }
+            );
         }
-        for(u8 i = 0; i < reg.size(); ++i) {
-            FlagC_.set(true);
-            if(i == 6)
-                continue;
-            u8* to = i == 7 ? reg[i-1] : reg[i];
-
-            A_ = 2;
-            *to = 0xFF;
-            execute(k+i);
-            REQUIRE(A_ == 2);
+        SECTION("FlagC_ = false") {
+            checkOnRegisters(0x98, 1,
+                [this] (r8* reg, unsigned int i) {
+                    FlagC_.set(false);
+                    A_ = 2;
+                    *reg = 0xFF;
+                },
+                [this] (r8* reg, unsigned int i) {
+                    if(i == 6)
+                        REQUIRE(A_ == 0);
+                    else
+                        REQUIRE(A_ == 3);
+                }
+            );
         }
     }
     SECTION("0x9E", "[SBC]") {
@@ -660,18 +671,18 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         }
     }
     SECTION("0xA0, 0xA1, 0xA2, 0xA3, 0xA3, 0xA5, 0xA7", "[AND]") {
-        std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
-        u8 k = 0xA0;
-        for(u8 i = 0; i < reg.size(); ++i) {
-            if(i == 6)
-                continue;
-            u8* to = i == 7 ? reg[i-1] : reg[i];
-
-            A_ =  0b11100101;
-            *to = 0b11000111;
-            execute(k+i);
-            REQUIRE(A_ == 0b11000101);
-        }
+        checkOnRegisters(0xA0, 1,
+            [this] (r8* reg, unsigned int i) {
+                A_      = 0b11100101;
+                *reg    = 0b11000111;
+            },
+            [this] (r8* reg, unsigned int i) {
+                if(i == 6)
+                    REQUIRE(A_ == 0b11000111);
+                else
+                    REQUIRE(A_ == 0b11000101);
+            }
+        );
     }
     SECTION("0xA6", "[AND]") {
         SECTION("shouldLogicANDCorrectly") {
@@ -688,18 +699,18 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         }
     }
     SECTION("0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAF", "[XOR]") {
-        std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
-        u8 k = 0xA8;
-        for(u8 i = 0; i < reg.size(); ++i) {
-            if(i == 6)
-                continue;
-            u8* to = i == 7 ? reg[i-1] : reg[i];
-
-            A_ =  0b11100101;
-            *to = 0b11000111;
-            execute(k+i);
-            REQUIRE(A_ == 0b00100010);
-        }
+        checkOnRegisters(0xA8, 1,
+            [this] (r8* reg, unsigned int i) {
+                A_      = 0b11100101;
+                *reg    = 0b11000111;
+            },
+            [this] (r8* reg, unsigned int i) {
+                if(i == 6)
+                    REQUIRE(A_ == 0b00000000);
+                else 
+                    REQUIRE(A_ == 0b00100010);
+            }
+        );
     }
     SECTION("0xAE", "[XOR]") {
         SECTION("shouldLogicORCorrectly") {
@@ -715,47 +726,19 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE(FlagZ_);
         }
     }
-    SECTION("0xA7, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAF", "[XOR]") {
-        std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
-        u8 k = 0xA8;
-        for(u8 i = 0; i < reg.size(); ++i) {
-            if(i == 6)
-                continue;
-            u8* to = i == 7 ? reg[i-1] : reg[i];
-
-            A_ =  0b11100101;
-            *to = 0b11000111;
-            execute(k+i);
-            REQUIRE(A_ == 0b00100010);
-        }
-    }
-    SECTION("0xAE", "[XOR]") {
-        SECTION("shouldLogicXORCorrectly") {
-            A_ =  0b11100101;
-            memory.write(0b11000111, HL_);
-            execute(0xAE);
-            REQUIRE(A_ == 0b00100010);
-        }
-        SECTION("shouldSetZeroFlag") {
-            A_ = 23;
-            memory.write(23, HL_);
-            execute(0xAE);
-            REQUIRE(FlagZ_);
-        }
-    }
     SECTION("0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB7", "[OR]") {
-        std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
-        u8 k = 0xB0;
-        for(u8 i = 0; i < reg.size(); ++i) {
-            if(i == 6)
-                continue;
-            u8* to = i == 7 ? reg[i-1] : reg[i];
-
-            A_ =  0b11100101;
-            *to = 0b11000111;
-            execute(k+i);
-            REQUIRE(A_ == 0b11100111);
-        }
+        checkOnRegisters(0xB0, 1,
+            [this] (r8* reg, unsigned int i) {
+                A_      = 0b11100101;
+                *reg    = 0b11000111;
+            },
+            [this] (r8* reg, unsigned int i) {
+                if(i == 6)
+                    REQUIRE(A_ == 0b11000111);
+                else 
+                    REQUIRE(A_ == 0b11100111);
+            }
+        );
     }
     SECTION("0xB6", "[OR]") {
         SECTION("shouldLogicXORCorrectly") {
@@ -772,13 +755,42 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         }
     }
     SECTION("0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBF", "[CP]") {
-        std::vector<u8*> reg {&B_, &C_, &D_, &E_, &H_, &L_, &A_};
-        u8 k = 0xB8;
-        for(u8 i = 0; i < reg.size(); ++i) {
-            if(i == 6)
-                continue;
-            u8* to = i == 7 ? reg[i-1] : reg[i];
-
+        SECTION("shouldCPCorrectly") {
+            checkOnRegisters(0xB8, 1,
+                [this] (r8* reg, unsigned int i) {
+                    A_      = 21;
+                    *reg    = 23;
+                },
+                [this] (r8* reg, unsigned int i) {
+                    if(i == 6)
+                        REQUIRE(A_ == 23);
+                    else 
+                        REQUIRE(A_ == 21);
+                }
+            );
+        }
+        SECTION("shouldSetZeroFlag") {
+            checkOnRegisters(0xB8, 1,
+                [this] (r8* reg, unsigned int i) {
+                    A_      = 28;
+                    *reg    = 28;
+                },
+                [this] (r8* reg, unsigned int i) {
+                    REQUIRE(FlagZ_);
+                }
+            );
+        }
+        SECTION("shouldSetHalfCarry") {
+            checkOnRegisters(0xB8, 1,
+                [this] (r8* reg, unsigned int i) {
+                    A_      = 1;
+                    *reg    = 0xFF;
+                },
+                [this] (r8* reg, unsigned int i) {
+                    if(i != 6)
+                        REQUIRE(FlagH_);
+                }
+            );
         }
     }
     SECTION("0xBE", "[CP]") {
@@ -801,7 +813,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE(FlagH_);
         }
     }
-    SECTION("0xC0, 0xC4, 0xC8, 0xC9, 0xCC, 0xCD, 0xD0, 0xD8, 0xD9, 0xDA, 0xDC", "[RET]") {
+    SECTION("0xC0", "[RET]") {
         SP_ = 0xFF82;
         PC_ = 0x0130;
         oldPC = PC_;
