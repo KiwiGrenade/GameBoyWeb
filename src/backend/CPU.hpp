@@ -141,7 +141,6 @@ protected:
 
     /*################### 16-bit arithmetic and logic ###################*/
 
-    // TODO: Add tests
     void add16(const u16);
     void inline inc(r16&);
     void inline dec(r16&);
