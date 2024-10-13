@@ -5,9 +5,6 @@
 
 struct ProceduresUnprefixedTests : CPU {
     ProceduresUnprefixedTests() : CPU(memory) {
-        /*for(size_t i = 0; i < memory.size_; i++) {*/
-        /*    memory.write(u8(i), i);*/
-        /*}*/
         F_ = 0;
     };
     Memory memory;
@@ -888,10 +885,17 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE(fetch8(SP_+1) == regPairs[i]->hi_);
         }
     }
-    /*SECTION("0xC6") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xC6", "[ADD]") {
+        A_ = 20;
+        memory.write(20, PC_+1);
+        execute(0xC6);
+        REQUIRE(A_ == 40);
+
+        A_ = 2;
+        memory.write(0xFF, PC_+1);
+        execute(0xC6);
+        REQUIRE(A_ == 1);
+    }
     SECTION("0xC7, 0xCF, 0xD7, 0xDF, 0xE7, 0xEF, 0xF7, 0xFF", "[RST]") {
         u8 op = 0xC7;
         u8 k = 0;
@@ -998,10 +1002,35 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         REQUIRE(fetch8(--oldSP) == oldPC.hi_);
         REQUIRE(fetch8(--oldSP) == oldPC.lo_);
     }
-    /*SECTION("0xCE") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xCE", "[ADC]") {
+        SECTION("FlagC_ = false") {
+            FlagC_.set(false);
+            A_ = 20;
+            memory.write(20, PC_+1);
+            execute(0xCE);
+            REQUIRE(A_ == 40);
+
+            FlagC_.set(false);
+            A_ = 2;
+            memory.write(0xFF, PC_+1);
+            execute(0xCE);
+            REQUIRE(FlagC_);
+            REQUIRE(A_ == 1);
+        }
+        SECTION("FlagC_ = true") {
+            FlagC_.set(true);
+            A_ = 20;
+            memory.write(20, PC_+1);
+            execute(0xCE);
+            REQUIRE(A_ == 41);
+
+            FlagC_.set(true);
+            A_ = 2;
+            memory.write(0xFF, PC_+1);
+            execute(0xCE);
+            REQUIRE(A_ == 2);
+        }
+    }
     SECTION("0xD0", "[RET]") {
         SP_ = 0xFF82;
         PC_ = 0x0130;
@@ -1047,10 +1076,19 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE_FALSE(PC_ == 0xF1F0);
         }
     }
-    /*SECTION("0xD6") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xD6", "[SUB]") {
+        SECTION("shouldSubstractCorrectly") {
+            A_ = 20;
+            memory.write(20, PC_+1);
+            execute(0xD6);
+            REQUIRE(A_ == 0);
+
+            A_ = 2;
+            memory.write(0xFF, PC_+1);
+            execute(0xD6);
+            REQUIRE(A_ == 3);
+        }
+    }
     SECTION("0xD8", "[RET]") {
         SP_ = 0xFF82;
         PC_ = 0x0130;
@@ -1119,10 +1157,18 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE(SP_ == oldSP);
         }
     }
-    /*SECTION("0xDE") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xDE", "[SBC]") {
+        A_ = 20;
+        memory.write(20, PC_+1);
+        execute(0xDE);
+        REQUIRE(A_ == 0);
+
+        FlagC_.set(true);
+        A_ = 2;
+        memory.write(0xFF, PC_+1);
+        execute(0xDE);
+        REQUIRE(A_ == 2);
+    }
     SECTION("0xDF", "[LDD]") {
         A_ = 20;
         memory_.write(A_, PC_+1);
@@ -1135,10 +1181,12 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         execute(0xE2);
         REQUIRE(fetch8(0xFF00 + C_) == A_);
     }
-    /*SECTION("0xE6") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xE6", "[AND]") {
+        A_ =  0b11100101;
+        memory.write(0b11000111, PC_+1);
+        execute(0xE6);
+        REQUIRE(A_ == 0b11000101);
+    }
     SECTION("0xE8", "[ADDSP]") {
         SECTION("shouldAddPositiveNumber") {
             SP_ = 30000;
@@ -1175,10 +1223,12 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         execute(0xEA);
         REQUIRE(fetch8(fetch16(oldPC+1)) == A_);
     }
-    /*SECTION("0xEE") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xEE") {
+        A_ =  0b11100101;
+        memory.write(0b11000111, PC_+1);
+        execute(0xEE);
+        REQUIRE(A_ == 0b00100010);
+    }
     SECTION("0xF0", "[LD]") {
         u8 val = 20;
         memory_.write(val, PC_+1);
@@ -1218,10 +1268,12 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
 
         REQUIRE_FALSE(IME_);
     }
-    /*SECTION("0xF6") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xF6", "[OR]") {
+        A_ =  0b11100101;
+        memory.write(0b11000111, PC_+1);
+        execute(0xF6);
+        REQUIRE(A_ == 0b11100111);
+    }
     SECTION("0xF8") {
         int8_t val;
         SECTION("positive") {
@@ -1331,8 +1383,10 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
 
         REQUIRE(IME_);
     }
-    /*SECTION("0xFE") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xFE") {
+        A_ =  21;
+        memory.write(23, PC_+1);
+        execute(0xFE);
+        REQUIRE(A_ == 21);
+    }
 }
