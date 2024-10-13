@@ -127,17 +127,29 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         execute(0x08);
         REQUIRE(fetch8(0x00000010) == SP_);
     }
-    SECTION("0x09") {
+    SECTION("0x09, 0x19, 0x29, 0x39", "[ADD16]") {
         std::vector<r16*> regPairs{&BC_, &DE_, &HL_, &SP_};
         u8 k = 0x09;
         for(u16 i = 0; i < regPairs.size(); i++, k+=16) {
-            HL_ = 0xF00F;
-            *regPairs[i] = 0x0FF0;
-            execute(0x09);
+            HL_ = 20;
+            *regPairs[i] = 30;
+            execute(k);
             if(i != 2)
-                REQUIRE(HL_ == 0xFFFF);
+                REQUIRE(HL_ == 50);
             else
-                REQUIRE(HL_ == 0x0FF0 * 2);
+                REQUIRE(HL_ == 60);
+        }
+        SECTION("shouldSetHalfCarryFlag") {
+            HL_ = 0b0000100000000000;
+            BC_ = 0b0000100000000000;
+            execute(0x09);
+            REQUIRE(FlagH_);
+        }
+        SECTION("shouldSetCarryFlag") {
+            HL_ = 0xFFFF;
+            BC_ = 0xFFFF;
+            execute(0x09);
+            REQUIRE(FlagC_);
         }
     }
     SECTION("0x0A", "[LD]") {
@@ -156,14 +168,6 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE(*regPairs[i] + 1 == i);
         }
     }
-    /*SECTION("0x0C") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x0D") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
     SECTION("0x0F", "[RRCA]") {
         A_ = 0b10000001;
         FlagC_.set(false);
@@ -176,10 +180,6 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         execute(0x10);
         REQUIRE(isStopped_);
     }
-    /*SECTION("0x11") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
     SECTION("0x12", "[LDD]") {
         DE_ = 15;
         A_ = 16;
@@ -220,14 +220,6 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         execute(0x1A);
         REQUIRE(A_ == val);
     }
-    /*SECTION("0x1C") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x1D") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
     SECTION("0x1F", "[rra]") {
         A_ = 0b00000001;
 
@@ -254,10 +246,6 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE(PC_ == oldPC+2);
         }
     }
-    /*SECTION("0x21") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
     SECTION("0x22", "[LDD]") {
         HL_ = 17;
         u16 oldHL = HL_;
@@ -296,14 +284,6 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         REQUIRE(oldHL + 1 == HL_);
         REQUIRE(A_ == val);
     }
-    /*SECTION("0x2C") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x2D") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
     SECTION("0x2F", "[CPL]") {
         A_ = u8(0b11010100);
         execute(0x2f);
@@ -324,10 +304,6 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE(PC_ == oldPC+2);
         }
     }
-    /*SECTION("0x31") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
     SECTION("0x32", "[LDD]") {
         HL_ = 21;
         u16 oldHL = HL_;
@@ -389,14 +365,6 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         REQUIRE(oldHL - 1 == HL_);
         REQUIRE(A_ == val);
     }
-    /*SECTION("0x3C") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
-    /*SECTION("0x3D") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
     SECTION("0x3F", "[CCF]") {
         execute(0x3f);
         REQUIRE(oldFlagC != FlagC_);
@@ -987,10 +955,12 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE_FALSE(PC_ == 0xF1F0);
         }
     }
-    /*SECTION("0xCB") {*/
-    /*    step();*/
-    /*    REQUIRE(true);*/
-    /*}*/
+    SECTION("0xCB") {
+        REQUIRE_FALSE(isPrefixed_);
+        execute(0xCB);
+        REQUIRE(isPrefixed_);
+        isPrefixed_ = false;
+    }
     SECTION("0xCC", "[CALL]") {
             SP_ = 0xFF82;
             PC_ = 0x0130;
@@ -1170,8 +1140,30 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     /*    REQUIRE(true);*/
     /*}*/
     SECTION("0xE8", "[ADDSP]") {
-        step();
-        REQUIRE(true);
+        SECTION("shouldAddPositiveNumber") {
+            SP_ = 30000;
+            memory.write(40, PC_+1);
+            execute(0xE8);
+            REQUIRE(SP_ == 30040);
+        }
+        SECTION("shouldAddNegativeNumber") {
+            SP_ = 30000;
+            memory.write(-40, PC_+1);
+            execute(0xE8);
+            REQUIRE(SP_ == 29960);
+        }
+        SECTION("shouldSetHalfCarryFlag") {
+            SP_ = 0x0008;
+            memory.write(0x08, PC_+1);
+            execute(0xE8);
+            REQUIRE(FlagH_);
+        }
+        SECTION("shouldSetHalfCarryFlag") {
+            SP_ = 0x00FF;
+            memory.write(1, PC_+1);
+            execute(0xE8);
+            REQUIRE(FlagC_);
+        }
     }
     SECTION("0xE9", "[JP]") {
         HL_ = 0xF1F0;
