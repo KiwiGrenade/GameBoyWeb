@@ -28,7 +28,9 @@ void MainWindow::on_actionLoad_triggered() {
         {
             Utils::error("No file was selected! Exiting!");
         }
-        gameBoy_->loadROM(fileContent);
+        // TEST: check if this works - there might be a problem with reloading a cartridge
+        cartridge_ = std::make_shared<Cartridge>(fileContent);
+        gameBoy_->loadCartridge(cartridge_);
     };
 
     QFileDialog::getOpenFileContent(" ROMs (*.gb)", fileContentReady);

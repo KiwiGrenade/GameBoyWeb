@@ -4,6 +4,7 @@
 
 #include <QByteArray>
 
+#include "Cartridge.hpp"
 #include "Memory.hpp"
 #include "CPU.hpp"
 
@@ -12,7 +13,7 @@ public:
     GameBoy();
     ~GameBoy() = default;
     
-    inline void loadROM(const QByteArray& rom) { memory_->loadSimpleROM(rom); }
+    void loadCartridge(const std::shared_ptr<Cartridge> cartridge) { memory_->loadCartridge(cartridge); }
     inline const std::shared_ptr<Memory> getMemory() { return memory_; }
 
 private:
