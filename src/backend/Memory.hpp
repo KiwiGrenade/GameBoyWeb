@@ -31,6 +31,7 @@ public:
     
     u8 read(const u16 addr) const;
     void write(const u8 byte, const u16 addr);
+    void reset();
     inline u8& getIE() { return memory_[0xFFFF]; }
     inline u8& getIF() { return memory_[0xFF0F]; }
     void loadCartridge(std::shared_ptr<Cartridge>);
