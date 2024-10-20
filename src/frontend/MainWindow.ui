@@ -499,7 +499,7 @@
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_2">
-        <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignVCenter">
+        <item alignment="Qt::AlignmentFlag::AlignVCenter">
          <widget class="QLabel" name="label">
           <property name="text">
            <string>Emulation Screen</string>
@@ -558,7 +558,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>19</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuLoad">
@@ -566,6 +566,9 @@
      <string>File</string>
     </property>
     <addaction name="actionLoad"/>
+    <addaction name="actionStart"/>
+    <addaction name="actionStop"/>
+    <addaction name="actionPause_2"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -594,6 +597,26 @@
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::ApplicationSpecificRole</enum>
+   </property>
+  </action>
+  <action name="actionStart">
+   <property name="text">
+    <string>Start</string>
+   </property>
+  </action>
+  <action name="actionStop">
+   <property name="text">
+    <string>Stop</string>
+   </property>
+  </action>
+  <action name="actionPause">
+   <property name="text">
+    <string>Pause</string>
+   </property>
+  </action>
+  <action name="actionPause_2">
+   <property name="text">
+    <string>Pause</string>
    </property>
   </action>
  </widget>

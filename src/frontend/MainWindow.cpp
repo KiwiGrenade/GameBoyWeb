@@ -5,6 +5,7 @@
 #include <memory>
 
 #include <QFileDialog>
+#include <qtpreprocessorsupport.h>
 
 #include "utils.hpp"
 
@@ -28,17 +29,33 @@ void MainWindow::on_actionLoad_triggered() {
         {
             Utils::error("No file was selected! Exiting!");
         }
-        // TEST: check if this works - there might be a problem with reloading a cartridge
         cartridge_ = std::make_shared<Cartridge>(fileContent);
+        gameBoy_->reset();
         gameBoy_->loadCartridge(cartridge_);
     };
 
     QFileDialog::getOpenFileContent(" ROMs (*.gb)", fileContentReady);
 }
 
-
 void MainWindow::on_pushButton_released(){
     ui->plainTextEdit->appendPlainText(ui->lineEdit->text());
 }
 
+void MainWindow::on_actionStart_triggered() {
+    gameBoy_->start();
+}
+
+void MainWindow::on_actionStop_triggered() {
+    gameBoy_->stop();
+}
+
+void MainWindow::on_actionPause_triggered() {
+    gameBoy_->pause();
+}
+
+void MainWindow::closeEvent(QCloseEvent* event) {
+    Q_UNUSED(event);
+    gameBoy_->stop();
+    gameBoy_->wait();
+}
 
