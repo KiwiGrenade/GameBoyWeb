@@ -5,7 +5,7 @@
 struct CPUTests : CPU {
     CPUTests()
     :   CPU(memory) {
-
+        PC_ = 0xC000;
     }
     Memory memory;
 };

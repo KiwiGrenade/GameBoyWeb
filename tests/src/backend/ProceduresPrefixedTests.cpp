@@ -10,7 +10,7 @@ struct ProceduresPrefixedTests : CPU {
         DE_ = 0;
         HL_ = 0;
         SP_ = 0xFFFF;
-        PC_ = 0;
+        PC_ = 0xC000;
         E_ = 0;
     };
     Memory memory;
@@ -57,7 +57,7 @@ TEST_CASE_METHOD(ProceduresPrefixedTests, "ProceduresPrefixedTests" ) {
         );
     }
     SECTION("0x06", "[RLCHL]") {
-        HL_ = 30;
+        HL_ = 0xC300;
         SECTION("shouldRLCCorrectly") {
             memory_.write(0b10001001, HL_);
             execute(0x06);
@@ -87,7 +87,7 @@ TEST_CASE_METHOD(ProceduresPrefixedTests, "ProceduresPrefixedTests" ) {
         );
     }
     SECTION("0x0E", "[RRCHL]") {
-        HL_ = 30;
+        HL_ = 0xC300;
         SECTION("shouldRRCCorrectly") {
             memory_.write(0b10001001, HL_);
             execute(0x0E);
@@ -117,7 +117,7 @@ TEST_CASE_METHOD(ProceduresPrefixedTests, "ProceduresPrefixedTests" ) {
         );
     }
     SECTION("0x16", "[RLHL]") {
-        HL_ = 30;
+        HL_ = 0xC300;
         SECTION("shouldRLCorrectly") {
             memory_.write(0b10001001, HL_);
             execute(0x16);
@@ -147,7 +147,7 @@ TEST_CASE_METHOD(ProceduresPrefixedTests, "ProceduresPrefixedTests" ) {
         );
     }
     SECTION("0x1E", "[RRHL]") {
-        HL_ = 30;
+        HL_ = 0xC300;
         SECTION("shouldRRCorrectly") {
             memory_.write(0b10001001, HL_);
             execute(0x1E);
@@ -176,7 +176,7 @@ TEST_CASE_METHOD(ProceduresPrefixedTests, "ProceduresPrefixedTests" ) {
         );
     }
     SECTION("0x26", "[SLAHL]") {
-        HL_ = 30;
+        HL_ = 0xC300;
         SECTION("shouldSLACorrectly") {
             memory_.write(0b10001001, HL_);
             execute(0x26);
@@ -205,7 +205,7 @@ TEST_CASE_METHOD(ProceduresPrefixedTests, "ProceduresPrefixedTests" ) {
         );
     }
     SECTION("0x2E", "[SRAHL]") {
-        HL_ = 30;
+        HL_ = 0xC300;
         SECTION("shouldSRACorrectly") {
             memory_.write(0b10001001, HL_);
             execute(0x2E);
@@ -233,7 +233,7 @@ TEST_CASE_METHOD(ProceduresPrefixedTests, "ProceduresPrefixedTests" ) {
         );
     }
     SECTION("0x36", "[SWAPHL]") {
-        HL_ = 30;
+        HL_ = 0xC300;
         SECTION("shouldSwapCorrectly") {
             memory_.write(0b11100101, HL_);
             execute(0x36);
@@ -257,7 +257,7 @@ TEST_CASE_METHOD(ProceduresPrefixedTests, "ProceduresPrefixedTests" ) {
         );
     }
     SECTION("0x3E", "[SRAHL]") {
-        HL_ = 30;
+        HL_ = 0xC300;
         SECTION("shouldRRCorrectly") {
             memory_.write(0b10001001, HL_);
             execute(0x3E);
@@ -523,7 +523,7 @@ TEST_CASE_METHOD(ProceduresPrefixedTests, "ProceduresPrefixedTests" ) {
     }
     // exam = 0b11100101
     SECTION("0x46, 0x4E, 0x56, 0x5E, 0x66, 0x6E, 0x76, 0x7E", "[BITHL]") {
-        HL_ = 2300;
+        HL_ = 0xC300;
         memory_.write(exam, HL_);
         u8 k = 0x46;
         execute(k);
@@ -551,7 +551,7 @@ TEST_CASE_METHOD(ProceduresPrefixedTests, "ProceduresPrefixedTests" ) {
         REQUIRE_FALSE(FlagZ_);
     }
     SECTION("0x86, 0x8E, 0x86, 0x8E, 0x86, 0x8E, 0x86, 0x8E", "[RESHL]") {
-        HL_ = 2300;
+        HL_ = 0xC300;
         memory_.write(0xFF, HL_);
         u8 k = 0x86;
         for(unsigned int i = 0; i < 8; ++i, k+=8) {
@@ -561,7 +561,7 @@ TEST_CASE_METHOD(ProceduresPrefixedTests, "ProceduresPrefixedTests" ) {
         REQUIRE(fetch8(HL_) == 0);
     }
     SECTION("0xC6, 0xCE, 0xD6, 0xDE, 0xE6, 0xEE, 0xF6, 0xFE", "[SETHL]") {
-        HL_ = 2300;
+        HL_ = 0xC300;
         memory_.write(0, HL_);
         u8 k = 0xC6;
         for(unsigned int i = 0; i < 8; ++i, k+=8) {
