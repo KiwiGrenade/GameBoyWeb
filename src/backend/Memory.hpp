@@ -38,6 +38,21 @@ public:
 
     static constexpr uint32_t size_ = 0x10000;
 
+    struct Timer {
+        void reset() {
+            DIV_ = 0;
+            TIMA_ = 0;
+            TMA_ = 0;
+            TAC_ = 0;
+        }
+        u8 TIMA_ = 0;
+        u8 TMA_ = 0;
+        u8 TAC_ = 0;
+        u16 DIV_ = 0;
+    };
+
+    Timer timer_;
+
 protected:
     inline bool isROM0(const u16 addr) const { return 0 <= addr && addr <= 0x3FFF; };
     inline bool isROM1(const u16 addr) const { return 0x4000 <= addr && addr <= 0x7FFF; };

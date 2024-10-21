@@ -19,6 +19,7 @@ public:
     
     u8 step();
     void reset();
+    void requestInterrupt();
 
 protected:
     Memory&     memory_;

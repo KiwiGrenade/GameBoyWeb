@@ -50,6 +50,24 @@ void Memory::write(const u8 byte, const u16 addr) {
         }
         // Timer and divider
         else if (0xFF04 <= addr && addr <= 0xFF07) {
+            switch(addr) {
+                // DIV
+                case 0xFF04:
+                    timer_.DIV_ = 0;
+                    break;
+                // TIMA
+                case 0xFF05:
+                    timer_.TIMA_ = byte;
+                    break;
+                // TMA
+                case 0xFF06:
+                    timer_.TMA_ = byte;
+                    break;
+                // TAC
+                case 0xFF07:
+                    timer_.TAC_ = byte;
+                    break;
+            }
         }
         // Interrupts
         else if (0xFF0F == addr) {
@@ -83,6 +101,28 @@ u8 Memory::read(const u16 addr) const {
     if(isROM0(addr) || isROM1(addr)) {
         return cartridge_->read(addr);
     }
+    else if(isIOPORT(addr)) {
+        if (0xFF04 <= addr && addr <= 0xFF07) {
+            switch(addr) {
+                // DIV
+                case 0xFF04:
+                    return timer_.DIV_ >> 8;
+                // TIMA
+                case 0xFF05:
+                    return timer_.TIMA_;
+                // TMA
+                case 0xFF06:
+                    return timer_.TMA_;
+                // TAC
+                case 0xFF07:
+                    return timer_.TAC_;
+                default:
+                    return 0;
+            }
+        }
+        else
+            return memory_[addr];
+    }
     else {
         return memory_[addr];
     }
@@ -90,4 +130,5 @@ u8 Memory::read(const u16 addr) const {
 
 void Memory::reset() {
     memory_.fill(0);
+    timer_.reset();
 }

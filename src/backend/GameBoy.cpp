@@ -5,8 +5,9 @@
 #include<QElapsedTimer>
 
 GameBoy::GameBoy()
-    : memory_(std::make_shared<Memory>())
-    , cpu_(std::make_shared<CPU>(*memory_)){
+    : memory_(Memory())
+    , cpu_(CPU(memory_))
+    , timer_(memory_, cpu_){
 }
 
 GameBoy::~GameBoy() {
@@ -14,8 +15,9 @@ GameBoy::~GameBoy() {
 }
 
 void GameBoy::reset() {
-    memory_->reset();
-    cpu_->reset();
+    memory_.reset();
+    cpu_.reset();
+    timer_.reset();
 }
 
 void GameBoy::stop() {
@@ -29,7 +31,7 @@ void GameBoy::pause() {
 uint64_t GameBoy::update(const uint32_t cyclesToExecute) {
     uint64_t cyclesPassed = 0;
     while(cyclesPassed < cyclesToExecute) {
-        cyclesPassed += cpu_->step();
+        cyclesPassed += cpu_.step();
     }
     return cyclesPassed;
 }
