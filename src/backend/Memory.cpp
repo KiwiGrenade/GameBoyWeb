@@ -51,6 +51,7 @@ void Memory::write(const u8 byte, const u16 addr) {
         }
         // Interrupts
         else if (0xFF0F == addr) {
+            memory_[addr] = byte;
         }
         // Audio - obsolete
         else if (0xFF10 <= addr && addr <= 0xFF26) {
