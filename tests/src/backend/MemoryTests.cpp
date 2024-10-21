@@ -187,19 +187,18 @@ TEST_CASE_METHOD(Memory, "getIE") {
     u8& IE_ = getIE();
 
     REQUIRE(IE_ == 0);
-    REQUIRE(read(addr) == 0);
+    REQUIRE(memory_[addr] == 0);
 
     IE_ = byte;
 
     REQUIRE(IE_ == byte);
-    REQUIRE(read(addr) == byte);
+    REQUIRE(memory_[addr] == byte);
 
-    write(byte1, addr);
+    memory_[addr] = byte1;
 
     REQUIRE(IE_ == byte1);
-    REQUIRE(read(addr) == byte1);
+    REQUIRE(memory_[addr] == byte1);
 }
-
 
 TEST_CASE_METHOD(Memory, "getIF") {
     u8 byte = GENERATE(take(1, random(0, 0xFF)));
@@ -209,15 +208,22 @@ TEST_CASE_METHOD(Memory, "getIF") {
     u8& IF_ = getIF();
 
     REQUIRE(IF_ == 0);
-    REQUIRE(read(addr) == 0);
+    REQUIRE(memory_[addr] == 0);
 
     IF_ = byte;
 
     REQUIRE(IF_ == byte);
-    REQUIRE(read(addr) == byte);
+    REQUIRE(memory_[addr] == byte);
 
-    write(byte1, addr);
+    memory_[addr] = byte1;
 
     REQUIRE(IF_ == byte1);
-    REQUIRE(read(addr) == byte1);
+    REQUIRE(memory_[addr] == byte1);
+}
+
+TEST_CASE_METHOD(Memory, "reset") {
+    reset();
+    for(u8 cell : memory_) {
+        REQUIRE(cell == 0x0);
+    }
 }

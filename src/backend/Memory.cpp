@@ -85,3 +85,7 @@ u8 Memory::read(const u16 addr) const {
         return memory_[addr];
     }
 }
+
+void Memory::reset() {
+    memory_.fill(0);
+}
