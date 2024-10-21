@@ -50,6 +50,10 @@ void CPU::reset() {
     incrementPC_ = true;
 }
 
+void CPU::requestInterrupt() {
+
+}
+
 InstrArray CPU::getInstrArray(const bool prefixed) {
     QJsonObject instrMapJsonObj = Utils::getInstrMapJsonObjectFromFile(prefixed);
     ProcArray procArray = prefixed ? getPrefProcArray() : getUnprefProcArray(); 
