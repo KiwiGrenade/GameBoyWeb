@@ -25,5 +25,6 @@ private slots:
 private:
     Ui::MainWindow *ui;
     std::shared_ptr<GameBoy> gameBoy_;
+    std::shared_ptr<Cartridge> cartridge_;
     /*std::shared_ptr<Disassembler> disassembler_;*/
 };
