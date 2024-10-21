@@ -21,8 +21,12 @@ public:
 private slots:
     void on_actionLoad_triggered();
     void on_pushButton_released();
+    void on_actionStart_triggered();
+    void on_actionStop_triggered();
+    void on_actionPause_triggered();
 
 private:
+    void closeEvent(QCloseEvent* event);
     Ui::MainWindow *ui;
     std::shared_ptr<GameBoy> gameBoy_;
     std::shared_ptr<Cartridge> cartridge_;

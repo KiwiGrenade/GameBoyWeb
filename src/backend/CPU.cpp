@@ -23,15 +23,23 @@ CPU::CPU(Memory& memory)
 }
 
 void CPU::reset() {
+    /*cycles_ = 0;*/
+
+    // registers
     AF_.setVal(0x11B0);
     BC_.setVal(0x0013);
     DE_.setVal(0x00D8);
     HL_.setVal(0x014D);
     SP_.setVal(0xFFFE);
     PC_.setVal(0x1000);
-    cycles_ = 0;
+
+    // interrupt flags registers
     IME_ = false;
+    IE_ = 0;
+    IF_ = 0;
+
     // helper flags
+    isPrefixed_ = false;
     isStopped_ = false;
     isHalted_ = false;
     isHaltBug_ = false;
@@ -59,12 +67,11 @@ InstrArray CPU::getInstrArray(const bool prefixed) {
     return instrArray;
 }
 
-void CPU::step() {
+u8 CPU::step() {
     handleIME();
     if(isHalted_) {
         // assume nop
-        cycles_ += 4;
-        return;
+        return 4;
     }
     isCondMet_ = false;
     incrementPC_ = true;
@@ -86,7 +93,7 @@ void CPU::step() {
 
     // determine number of cycles that went by while executing instruction
     std::pair <u8, u8> cycles = instr.info_.getCycles();
-    cycles_ += isCondMet_ ? cycles.first : cycles.second;
+    return isCondMet_ ? cycles.second : cycles.first;
 }
 
 void CPU::handleFlags(const Utils::flagArray& flags) {

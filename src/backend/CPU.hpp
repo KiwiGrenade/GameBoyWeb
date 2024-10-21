@@ -17,12 +17,12 @@ public:
     CPU(Memory&);
     ~CPU() = default;
     
-    void step();
+    u8 step();
+    void reset();
 
 protected:
     Memory&     memory_;
-    uint64_t    cycles_; // T-cycles
-
+    /*uint64_t    cycles_; // T-cycles*/
 
     // helper flags 
     bool isPrefixed_;
@@ -43,7 +43,6 @@ protected:
     ProcArray getPrefProcArray();
     void handleIME();
     void handleFlags(const Utils::flagArray& flags);
-    void reset();
 
     r16 SP_; // Stack pointer
     r16 PC_; // Program Counter
@@ -108,10 +107,6 @@ protected:
     Flag FlagN_;
     Flag FlagH_;
     Flag FlagC_;
-
-    inline void checkFlagZ() {
-        FlagZ_.set(A_); 
-    }
 
     u8 inline fetch8(const u16 addr) { return memory_.read(addr); };
     u16 fetch16(const u16 addr) {

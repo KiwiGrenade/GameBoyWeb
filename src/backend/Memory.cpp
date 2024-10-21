@@ -11,7 +11,9 @@ Memory::Memory()
 }
 
 void Memory::loadCartridge(std::shared_ptr<Cartridge> cartridge) {
+    std::cout << "hello!" << std::endl;
     cartridge_ = cartridge;
+    std::cout << "world!" << std::endl;
 }
 
 void Memory::write(const u8 byte, const u16 addr) {
