@@ -8,7 +8,7 @@ qt_add_library(Instruction STATIC Instruction.cpp)
 qt_add_library(Cartridge STATIC Cartridge.cpp)
 qt_add_library(Timer STATIC Timer.cpp)
 
-target_link_libraries(Timer PRIVATE CPU Utils)
+target_link_libraries(Timer PRIVATE Memory CPU Utils)
 target_link_libraries(Cartridge PRIVATE Qt6::Core)
 target_link_libraries(Utils PUBLIC Qt6::Core)
 target_link_libraries(Memory PUBLIC Cartridge Utils Qt6::Core)

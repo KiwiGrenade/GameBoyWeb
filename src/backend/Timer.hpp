@@ -2,6 +2,7 @@
 
 #include "utils.hpp"
 #include "CPU.hpp"
+#include "Memory.hpp"
 
 class Timer {
 public:
@@ -10,13 +11,14 @@ public:
     void update(uint64_t cycles);
     void reset();
 
-private:
+protected:
     void timaOverflow();
+
+    CPU& cpu_;
+    Memory& mmu_;
 
     int div_ticks_;
     int tima_ticks_;
-    CPU& cpu_;
-    Memory& mmu_;
 
     u8& TIMA_;
     u8& TMA_;
