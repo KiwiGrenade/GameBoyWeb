@@ -12,8 +12,9 @@ Timer::Timer(Memory& mmu, CPU& cpu)
 
 void Timer::update(uint64_t cycles) {
     div_ticks_ += cycles;
-    if(div_ticks_ >= 0xFF) {
-        div_ticks_-= 0xFF;
+    // prev value - 0xFF
+    if(div_ticks_ >= 0x4000) {
+        div_ticks_-= 0x4000;
         DIV_++;
     }
 
