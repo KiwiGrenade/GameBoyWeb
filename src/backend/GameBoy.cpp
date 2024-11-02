@@ -32,6 +32,9 @@ uint64_t GameBoy::update(const uint32_t cyclesToExecute) {
     uint64_t cyclesPassed = 0;
     while(cyclesPassed < cyclesToExecute) {
         cyclesPassed += cpu_.step();
+        // TODO: Check if this is right
+        timer_.update(cyclesPassed);
+        // TODO: add upate ppu
     }
     return cyclesPassed;
 }
@@ -41,21 +44,29 @@ void GameBoy::run() {
     isStopped = false;
 
     QElapsedTimer timer;
+    // time between loop iterations
     uint64_t deltaTime = 0;
+    // time accumulator
     uint64_t accuTime = 0;
+    // 4194304 (DMG-1 clocks/second) / 60 (frames / second)
+    constexpr uint32_t frequnecy = 4194304;
+    constexpr uint32_t fps = 60;
+    constexpr uint32_t nCyclesInWaitTime = frequnecy / fps;
+    // 1/60 of second in nanoseconds
+    constexpr uint32_t waitTimeNsecs = 16670000;
+    constexpr uint64_t maxWaitTimeNsecs = 1000000000;
 
-    constexpr uint32_t maxCycles = 69905; // 4194304 (DMG-1 clocks/second) / 60 (frames / second)
     timer.start();
     while(!isStopped) {
         deltaTime = timer.nsecsElapsed();
         timer.restart();
 
-        if(deltaTime > 1000000000)
-            deltaTime = 1000000000;
+        if(deltaTime > maxWaitTimeNsecs)
+            deltaTime = maxWaitTimeNsecs;
 
         accuTime += deltaTime;
-        for(;accuTime >= 16670000; accuTime -= 16670000) {
-            update(maxCycles);
+        for(;accuTime >= waitTimeNsecs; accuTime -= waitTimeNsecs) {
+            update(nCyclesInWaitTime);
             qDebug() << "Emulator is running!" << Qt::endl;
         }
     }
