@@ -106,7 +106,7 @@ u8 Memory::read(const u16 addr) const {
             switch(addr) {
                 // DIV
                 case 0xFF04:
-                    return timer_.DIV_ >> 8;
+                    return timer_.DIV_;
                 // TIMA
                 case 0xFF05:
                     return timer_.TIMA_;
