@@ -32,12 +32,15 @@ public:
     u8 read(const u16 addr) const;
     void write(const u8 byte, const u16 addr);
     void reset();
+    inline void resetTimer() { timer_.reset(); };
+    inline void setDIV(u8 val) { timer_.DIV_ = val; };
     inline u8& getIE() { return memory_[0xFFFF]; }
     inline u8& getIF() { return memory_[0xFF0F]; }
     void loadCartridge(std::shared_ptr<Cartridge>);
 
     static constexpr uint32_t size_ = 0x10000;
 
+protected:
     struct Timer {
         void reset() {
             DIV_ = 0;
@@ -53,7 +56,6 @@ public:
 
     Timer timer_;
 
-protected:
     inline bool isROM0(const u16 addr) const { return 0 <= addr && addr <= 0x3FFF; };
     inline bool isROM1(const u16 addr) const { return 0x4000 <= addr && addr <= 0x7FFF; };
     inline bool isVRAM(const u16 addr) const { return 0x8000 <= addr && addr <= 0x9FFF; };
