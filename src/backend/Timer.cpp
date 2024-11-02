@@ -9,8 +9,8 @@ Timer::Timer(Memory& mmu, CPU& cpu)
 void Timer::update(uint64_t cycles) {
     div_ticks_ += cycles;
     // prev value - 0xFF
-    if(div_ticks_ >= 0x4000) {
-        div_ticks_ -= 0x4000;
+    if(div_ticks_ >= 0xFF) {
+        div_ticks_ -= 0xFF;
         setDIV(getDIV() + 1);
     }
 
