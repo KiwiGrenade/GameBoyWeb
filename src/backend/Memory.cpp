@@ -1,5 +1,6 @@
 #include "Memory.hpp"
 #include "Cartridge.hpp"
+#include "utils.hpp"
 #include <memory>
 
 constexpr u16 Cartridge::romSize_;
@@ -44,6 +45,7 @@ void Memory::write(const u8 byte, const u16 addr) {
     else if(isIOPORT(addr)) {
         // joypad
         if(addr == 0xFF00) {
+            joypad_.write(byte);
         }
         // serial transfer
         else if (0xFF01 <= addr && addr <= 0xFF02) {
@@ -102,6 +104,9 @@ u8 Memory::read(const u16 addr) const {
         return cartridge_->read(addr);
     }
     else if(isIOPORT(addr)) {
+        if (addr == 0xFF00) {
+            return joypad_.read();
+        }
         if (0xFF04 <= addr && addr <= 0xFF07) {
             switch(addr) {
                 // DIV
