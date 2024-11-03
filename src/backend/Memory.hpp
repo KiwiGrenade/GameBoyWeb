@@ -40,6 +40,63 @@ public:
 
     static constexpr uint32_t size_ = 0x10000;
 
+    struct Joypad {
+        void reset() {
+            inputDevice_ = InputDevice::Nothing;
+            buttons_ = 0;
+        };
+        void write(u8 byte) {
+            bool buttons = Utils::getBit(byte, 5);
+            bool pad = Utils::getBit(byte, 4);
+            // buttons are selected if 5-th bit is 0
+            if(not buttons && pad) {
+                inputDevice_ = InputDevice::Buttons;
+            }
+            else if(buttons && not pad) {
+                // selected pad
+                inputDevice_ = InputDevice::Pad;
+            }
+            else if(buttons && pad) {
+                inputDevice_ = InputDevice::Nothing;
+            }
+            else {
+                Utils::error("Both input devices selected!");
+            }
+        }
+
+        u8 read() const {
+            u8 hi = 0;
+            u8 lo = 0;
+            switch (inputDevice_) {
+                case InputDevice::Buttons:
+                    hi = 0b11010000;
+                    lo = buttons_ & 0x0F;
+                    return hi | lo;
+                    break;
+                case InputDevice::Pad:
+                    hi = 0b11100000;
+                    lo = (buttons_ & 0xF0) >> 4;
+                    return hi | lo;
+                    break;
+                case InputDevice::Nothing:
+                    return 0xFF;
+                    break;
+            }
+        }
+
+        u8 buttons_;
+
+        enum class InputDevice {
+            Buttons,
+            Pad,
+            Nothing
+        };
+
+        InputDevice inputDevice_;
+    };
+
+    Joypad joypad_;
+
 protected:
     struct Timer {
         void reset() {
@@ -53,7 +110,7 @@ protected:
         u8 TAC_ = 0;
         u16 DIV_ = 0;
     };
-
+    
     Timer timer_;
 
     inline bool isROM0(const u16 addr) const { return 0 <= addr && addr <= 0x3FFF; };

@@ -1,8 +1,6 @@
 #include "Timer.hpp"
 
 #include <catch2/catch_test_macros.hpp>
-#include <catch2/generators/catch_generators_adapters.hpp>
-#include <catch2/generators/catch_generators_random.hpp>
 #include <memory>
 
 constexpr u16 DIV = 0xFF04;

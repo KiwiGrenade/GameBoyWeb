@@ -6,6 +6,7 @@ add_executable(ProceduresPrefixedTests ProceduresPrefixedTests.cpp)
 add_executable(ProceduresUnprefixedTests ProceduresUnprefixedTests.cpp)
 add_executable(CartridgeTests CartridgeTests.cpp)
 add_executable(TimerTests TimerTests.cpp)
+add_executable(JoypadTests JoypadTests.cpp)
 
 target_include_directories(RegisterPairTests PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
 target_include_directories(UtilsTests PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
@@ -15,6 +16,7 @@ target_include_directories(ProceduresPrefixedTests PRIVATE ${CMAKE_SOURCE_DIR}/s
 target_include_directories(ProceduresUnprefixedTests PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
 target_include_directories(CartridgeTests PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
 target_include_directories(TimerTests PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
+target_include_directories(JoypadTests PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
 
 target_link_libraries(RegisterPairTests PRIVATE
     RegisterPair
@@ -57,6 +59,13 @@ target_link_libraries(TimerTests PUBLIC
     Qt6::Core
     Catch2::Catch2WithMain
 )
+target_link_libraries(JoypadTests PUBLIC
+    Joypad 
+    CPU
+    Memory
+    Qt6::Core
+    Catch2::Catch2WithMain
+)
 
 add_test(RegisterPairTests ${CMAKE_SOURCE_DIR}/bin/RegisterPairTests)
 add_test(UtilsTests ${CMAKE_SOURCE_DIR}/bin/UtilsTests)
@@ -66,3 +75,4 @@ add_test(ProceduresPrefixedTests ${CMAKE_SOURCE_DIR}/bin/ProceduresPrefixedTests
 add_test(ProceduresUnprefixedTests ${CMAKE_SOURCE_DIR}/bin/ProceduresUnprefixedTests)
 add_test(CartridgeTests ${CMAKE_SOURCE_DIR}/bin/CartridgeTests)
 add_test(TimerTests ${CMAKE_SOURCE_DIR}/bin/TimerTests)
+add_test(JoypadTests ${CMAKE_SOURCE_DIR}/bin/JoypadTests)
