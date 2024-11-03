@@ -1,8 +1,10 @@
 #include "CPU.hpp"
+#include "InterruptController.hpp"
 #include "utils.hpp"
 
-CPU::CPU(Memory& memory)
-    : memory_(memory)
+CPU::CPU(Memory& mmu)
+    : memory_(mmu)
+    /*, ic_(ic)*/
     , prefInstrArray_(getInstrArray(true))
     , unprefInstrArray_(getInstrArray(false))
     , A_(AF_.hi_)
@@ -16,9 +18,7 @@ CPU::CPU(Memory& memory)
     , FlagZ_(Flag(F_, 7))
     , FlagN_(Flag(F_, 6))
     , FlagH_(Flag(F_, 5))
-    , FlagC_(Flag(F_, 4))
-    , IE_(memory_.getIE())
-    , IF_(memory_.getIF()) {
+    , FlagC_(Flag(F_, 4)) {
     reset();
 }
 
@@ -35,8 +35,6 @@ void CPU::reset() {
 
     // interrupt flags registers
     IME_ = false;
-    IE_ = 0;
-    IF_ = 0;
 
     // helper flags
     isPrefixed_ = false;
@@ -48,10 +46,6 @@ void CPU::reset() {
     isDISet_ = false;
     isCondMet_ = false;
     incrementPC_ = true;
-}
-
-void CPU::requestInterrupt() {
-
 }
 
 InstrArray CPU::getInstrArray(const bool prefixed) {
@@ -71,7 +65,24 @@ InstrArray CPU::getInstrArray(const bool prefixed) {
     return instrArray;
 }
 
+void CPU::requestInterrupt() {
+
+}
+
+u8 CPU::handleInterrupts() {
+/*    // Interrupt Master Enable is disabled - do nothing*/
+/*    if(not IME_)*/
+/*        return 0;*/
+/*    if (ic_.checkForInterrupts()) {*/
+/*        u8 IE = fetch8(0xFFFF);*/
+/*    }*/
+/*    return 0;*/
+    return 0;
+}
+
 u8 CPU::step() {
+    /*if(u8 i = handleInterrupts())*/
+    /*    return i;*/
     handleIME();
     if(isHalted_) {
         // assume nop
@@ -108,8 +119,12 @@ void CPU::handleFlags(const Utils::flagArray& flags) {
 }
 
 void CPU::handleIME() {
-    if(isEISet_)
+    if(isEISet_) {
         IME_ = true;
-    else if(isDISet_)
+        isEISet_ = false;
+    }
+    else if(isDISet_) {
         IME_ = false;
+        isDISet_ = false;
+    }
 }

@@ -521,7 +521,7 @@ void CPU::halt() {
     if(IME_)
         isHalted_ = true;
     else {
-        if(IE_ & IF_) {
+        if(fetch8(0xFFFF) & fetch8(0xFF0F)) {
             isHaltBug_ = true;
         }
         else
