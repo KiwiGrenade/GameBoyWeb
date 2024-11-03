@@ -103,11 +103,6 @@ TEST_CASE_METHOD(Memory, "write") {
             write(byte, TAC);
             REQUIRE(timer_.TAC_ == byte);
         }
-        /*u16 i = GENERATE(take(100, random(0xFF00, 0xFF7F)));*/
-        /**/
-        /*write(byte, i);*/
-        /**/
-        /*REQUIRE(memory_[i] == byte);*/
     }
     SECTION("HRAM") {
         u16 i = GENERATE(take(100, random(0xFF90, 0xFFFE)));
@@ -116,13 +111,13 @@ TEST_CASE_METHOD(Memory, "write") {
 
         REQUIRE(memory_[i] == byte);
     }
-    SECTION("IE") {
-        u16 i = 0xFFFF;
-
-        write(byte, i);
-
-        REQUIRE(memory_[i] == byte);
-    }
+    /*SECTION("IE") {*/
+    /*    u16 i = 0xFFFF;*/
+    /**/
+    /*    write(byte, i);*/
+    /**/
+    /*    REQUIRE(memory_[i] == byte);*/
+    /*}*/
 };
 TEST_CASE_METHOD(Memory, "read") {
     u8 byte = GENERATE(take(1, random(1, 0xFF)));
@@ -222,11 +217,6 @@ TEST_CASE_METHOD(Memory, "read") {
             timer_.TAC_ = byte;
             REQUIRE(read(TAC) == byte);
         }
-        /*u16 i = GENERATE(take(100, random(0xFF00, 0xFF7F)));*/
-        /**/
-        /*write(byte, i);*/
-        /**/
-        /*REQUIRE(read(i) == byte);*/
     }
     SECTION("HRAM") {
         u16 i = GENERATE(take(100, random(0xFF90, 0xFFFE)));
@@ -235,56 +225,14 @@ TEST_CASE_METHOD(Memory, "read") {
 
         REQUIRE(read(i) == byte);
     }
-    SECTION("IE") {
-        u16 i = 0xFFFF;
-
-        write(byte, i);
-
-        REQUIRE(read(i) == byte);
-    }
+    /*SECTION("IE") {*/
+    /*    u16 i = 0xFFFF;*/
+    /**/
+    /*    write(byte, i);*/
+    /**/
+    /*    REQUIRE(read(i) == byte);*/
+    /*}*/
 };
-
-TEST_CASE_METHOD(Memory, "getIE") {
-    u8 byte = GENERATE(take(1, random(0, 0xFF)));
-    u8 byte1 = GENERATE(take(1, random(0, 0xFF)));
-    u16 addr = 0xFFFF; // IE address
-
-    u8& IE_ = getIE();
-
-    REQUIRE(IE_ == 0);
-    REQUIRE(memory_[addr] == 0);
-
-    IE_ = byte;
-
-    REQUIRE(IE_ == byte);
-    REQUIRE(memory_[addr] == byte);
-
-    memory_[addr] = byte1;
-
-    REQUIRE(IE_ == byte1);
-    REQUIRE(memory_[addr] == byte1);
-}
-
-TEST_CASE_METHOD(Memory, "getIF") {
-    u8 byte = GENERATE(take(1, random(0, 0xFF)));
-    u8 byte1 = GENERATE(take(1, random(0, 0xFF)));
-    u16 addr = 0xFF0F; // IE address
-
-    u8& IF_ = getIF();
-
-    REQUIRE(IF_ == 0);
-    REQUIRE(memory_[addr] == 0);
-
-    IF_ = byte;
-
-    REQUIRE(IF_ == byte);
-    REQUIRE(memory_[addr] == byte);
-
-    memory_[addr] = byte1;
-
-    REQUIRE(IF_ == byte1);
-    REQUIRE(memory_[addr] == byte1);
-}
 
 TEST_CASE_METHOD(Memory, "reset") {
     reset();

@@ -4,6 +4,7 @@
 #include "Instruction.hpp"
 #include "RegisterPair.hpp"
 #include "Memory.hpp"
+#include "InterruptController.hpp"
 
 #include <QJsonObject>
 
@@ -14,7 +15,7 @@ typedef std::array<std::function<void()>, 256> ProcArray;
 
 class CPU {
 public:
-    CPU(Memory&);
+    CPU(Memory& mmu);
     ~CPU() = default;
     
     u8 step();
@@ -22,7 +23,8 @@ public:
     void requestInterrupt();
 
 protected:
-    Memory&     memory_;
+    Memory&                 memory_;
+    /*InterruptController&    ic_;*/
     /*uint64_t    cycles_; // T-cycles*/
 
     // helper flags 
@@ -42,6 +44,7 @@ protected:
     InstrArray getInstrArray(const bool prefixed);
     ProcArray getUnprefProcArray();
     ProcArray getPrefProcArray();
+    u8 handleInterrupts();
     void handleIME();
     void handleFlags(const Utils::flagArray& flags);
 
@@ -66,8 +69,6 @@ protected:
     
     // interrupts
     bool IME_;
-    u8& IE_; // memory[0xFFFF]
-    u8& IF_; // memory[0xFF0F]
 
     class Flag {
     public:
@@ -208,5 +209,4 @@ protected:
     void inline stop();
     void halt();
     void daa();
-
 };

@@ -383,6 +383,8 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     }
     SECTION("0x40-0x7F", "[LD], [LDD], [HALT]") {
         SECTION("0x76", "[HALT]") {
+            u16 IF = 0xFF0F;
+            u16 IE = 0xFFFF;
             isHalted_ = false;
             IME_ = true;
             execute(0x76);
@@ -390,15 +392,15 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
 
             isHalted_ = false;
             IME_ = false;
-            IE_ = 0;
-            IF_ = 1;
+            memory_.write(0, IE);
+            memory_.write(1, IF);
             execute(0x76);
             REQUIRE(isHalted_);
 
             isHalted_ = false;
             IME_ = false;
-            IE_ = 1;
-            IF_ = 1;
+            memory_.write(1, IE);
+            memory_.write(1, IF);
             execute(0x76);
             REQUIRE(isHaltBug_);
         }
