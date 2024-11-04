@@ -11,6 +11,7 @@ public:
         Serial,
         Joypad
     };
+
     InterruptController() = default;
 
     void requestInterrupt(Type);

@@ -63,8 +63,7 @@ target_link_libraries(TimerTests PUBLIC
 )
 target_link_libraries(JoypadTests PUBLIC
     Joypad 
-    CPU
-    Memory
+    InterruptController
     Qt6::Core
     Catch2::Catch2WithMain
 )

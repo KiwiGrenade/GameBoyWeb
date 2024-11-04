@@ -1,48 +1,62 @@
 #include "Joypad.hpp"
 #include "utils.hpp"
 
-Joypad::Joypad(Memory::Joypad& joypad, CPU& cpu)
-    : joypad_(joypad)
-    , cpu_(cpu) {
+Joypad::Joypad(InterruptController& ic)
+    : ic_(ic)
+    , inputDevice_(InputDevice::Nothing)
+    , buttons_(0) {
 }
 
 void Joypad::press(const Button b) {
-    updateButton(b, true);
+    Utils::setBit(buttons_, b, true);
 }
 
 void Joypad::release(const Button b) {
-    updateButton(b, false);
+    Utils::setBit(buttons_, b, false);
 }
 
 void Joypad::reset() {
-    joypad_.reset();
+    inputDevice_ = InputDevice::Nothing;
+    buttons_ = 0;
 }
 
-void Joypad::updateButton(const Button button, const bool state) {
-    switch(button) {
-        case Button::A:
-            Utils::setBit(joypad_.buttons_, 0, state);
+void Joypad::write(u8 byte) {
+    bool buttons = Utils::getBit(byte, 5);
+    bool pad = Utils::getBit(byte, 4);
+    // buttons are selected if 5-th bit is 0
+    if(not buttons && pad) {
+        inputDevice_ = InputDevice::Buttons;
+    }
+    else if(buttons && not pad) {
+        // selected pad
+        inputDevice_ = InputDevice::Pad;
+    }
+    else if(buttons && pad) {
+        inputDevice_ = InputDevice::Nothing;
+    }
+    else {
+        Utils::error("Both input devices selected!");
+    }
+}
+
+u8 Joypad::read() {
+    u8 hi = 0;
+    u8 lo = 0;
+    u8 res = 0;
+    switch (inputDevice_) {
+        case InputDevice::Buttons:
+            hi = 0b11010000;
+            lo = buttons_ & 0x0F;
+            res = hi | lo;
             break;
-        case Button::B:
-            Utils::setBit(joypad_.buttons_, 1, state);
+        case InputDevice::Pad:
+            hi = 0b11100000;
+            lo = (buttons_ & 0xF0) >> 4;
+            res = hi | lo;
             break;
-        case Button::Select:
-            Utils::setBit(joypad_.buttons_, 2, state);
-            break;
-        case Button::Start:
-            Utils::setBit(joypad_.buttons_, 3, state);
-            break;
-        case Button::Right:
-            Utils::setBit(joypad_.buttons_, 4, state);
-            break;
-        case Button::Left:
-            Utils::setBit(joypad_.buttons_, 5, state);
-            break;
-        case Button::Up:
-            Utils::setBit(joypad_.buttons_, 6, state);
-            break;
-        case Button::Down:
-            Utils::setBit(joypad_.buttons_, 7, state);
+        case InputDevice::Nothing:
+            res = 0xFF;
             break;
     }
+    return res;
 }

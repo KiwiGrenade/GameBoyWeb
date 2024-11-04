@@ -5,9 +5,10 @@
 
 constexpr u16 Cartridge::romSize_;
 
-Memory::Memory()
+Memory::Memory(Joypad& joypad)
     : memory_(std::array<unsigned char, size_>{})
     , cartridge_(std::make_shared<Cartridge>())
+    , joypad_(joypad)
     , wroteToSram_(false) {
 }
 
