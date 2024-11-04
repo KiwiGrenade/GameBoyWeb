@@ -4,6 +4,10 @@
 #include <vector>
 
 struct ProceduresPrefixedTests : CPU {
+    InterruptController ic;
+    Joypad jp = Joypad(ic);
+    Memory memory = Memory(jp);
+
     ProceduresPrefixedTests() : CPU(memory) {
         AF_ = 0;
         BC_ = 0;
@@ -13,7 +17,6 @@ struct ProceduresPrefixedTests : CPU {
         PC_ = 0xC000;
         E_ = 0;
     };
-    Memory memory;
 
     void execute(u8 op) {
         memory_.write(0xCB, PC_);

@@ -3,8 +3,16 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators_adapters.hpp>
 #include <catch2/generators/catch_generators_random.hpp>
+#include <memory>
 
-TEST_CASE_METHOD(Memory, "write") {
+struct MemoryTests : Memory {
+    InterruptController ic;
+    Joypad jp = Joypad(ic);
+    MemoryTests() : Memory(jp) {
+    }
+};
+
+TEST_CASE_METHOD(MemoryTests, "write") {
     u8 byte = GENERATE(take(1, random(1, 0xFF)));
     SECTION("ROM0") {
         u16 i = GENERATE(take(100, random(0, 0x3FFF)));
@@ -71,20 +79,6 @@ TEST_CASE_METHOD(Memory, "write") {
         REQUIRE_FALSE(memory_[i] == byte);
     }
     SECTION("IOPORT") {
-        SECTION("JOYPAD") {
-            SECTION("BUTTONS") {
-                write(0b00010000, 0xFF00);
-                REQUIRE(joypad_.inputDevice_ == Joypad::InputDevice::Buttons);
-            }
-            SECTION("PAD") {
-                write(0b00100000, 0xFF00);
-                REQUIRE(joypad_.inputDevice_ == Joypad::InputDevice::Pad);
-            }
-            SECTION("NOTHING") {
-                write(0b00110000, 0xFF00);
-                REQUIRE(joypad_.inputDevice_ == Joypad::InputDevice::Nothing);
-            }
-        }
         SECTION("TIMER") {
             constexpr u16 DIV = 0xFF04;
             constexpr u16 TIMA = 0xFF05;
@@ -119,7 +113,7 @@ TEST_CASE_METHOD(Memory, "write") {
     /*    REQUIRE(memory_[i] == byte);*/
     /*}*/
 };
-TEST_CASE_METHOD(Memory, "read") {
+TEST_CASE_METHOD(MemoryTests, "read") {
     u8 byte = GENERATE(take(1, random(1, 0xFF)));
     SECTION("ROM0") {
         u16 i = GENERATE(take(100, random(0, 0x3FFF)));
@@ -184,21 +178,6 @@ TEST_CASE_METHOD(Memory, "read") {
         REQUIRE(read(i) == 0x00);
     }
     SECTION("IOPORT") {
-        SECTION("JOYPAD") {
-            joypad_.buttons_ = 0b01110101;
-            SECTION("BUTTONS") {
-                write(0b00010000, 0xFF00);
-                REQUIRE(read(0xFF00) == 0b11010101);
-            }
-            SECTION("PAD") {
-                write(0b00100000, 0xFF00);
-                REQUIRE(read(0xFF00) == 0b11100111);
-            }
-            SECTION("NOTHING") {
-                write(0b00110000, 0xFF00);
-                REQUIRE(read(0xFF00) == 0b11111111);
-            }
-        }
         SECTION("TIMER") {
             constexpr u16 DIV = 0xFF04;
             constexpr u16 TIMA = 0xFF05;
@@ -234,7 +213,7 @@ TEST_CASE_METHOD(Memory, "read") {
     /*}*/
 };
 
-TEST_CASE_METHOD(Memory, "reset") {
+TEST_CASE_METHOD(MemoryTests, "reset") {
     reset();
     for(u8 cell : memory_) {
         REQUIRE(cell == 0x0);

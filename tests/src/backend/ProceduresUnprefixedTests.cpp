@@ -4,12 +4,14 @@
 #include <vector>
 
 struct ProceduresUnprefixedTests : CPU {
+    InterruptController ic;
+    Joypad jp = Joypad(ic);
+    Memory memory = Memory(jp);
     ProceduresUnprefixedTests() : CPU(memory) {
         F_ = 0;
         HL_ = 0xCC00;
         PC_ = 0xC000;
     };
-    Memory memory;
 
     void execute(u8 op) {
         memory_.write(op, PC_);

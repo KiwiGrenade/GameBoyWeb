@@ -1,33 +1,38 @@
 #pragma once
 
 #include "utils.hpp"
-
-#include "Memory.hpp"
-#include "CPU.hpp"
+#include "InterruptController.hpp"
 
 class Joypad {
 public:
-    enum class Button {
+    enum Button {
         A,
         B,
-        Up,
-        Down,
-        Left,
-        Right,
+        Select,
         Start,
-        Select
+        Right,
+        Left,
+        Up,
+        Down
     };
 
-    Joypad(Memory::Joypad& joypad, CPU& cpu);
+    Joypad(InterruptController& ic);
 
     void press(const Button);
     void release(const Button);
     void reset();
+    u8 read();
+    void write(u8 byte);
 
 protected:
-    void updateButton(const Button button, const bool pressed);
+    enum class InputDevice {
+        Buttons,
+        Pad,
+        Nothing
+    };
 
-    Memory::Joypad& joypad_;
-    CPU& cpu_;
+    InputDevice inputDevice_;
+    InterruptController& ic_;
+    u8 buttons_;
 };
 

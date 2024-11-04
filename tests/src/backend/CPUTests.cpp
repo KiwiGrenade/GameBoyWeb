@@ -3,11 +3,13 @@
 #include <catch2/catch_test_macros.hpp>
 
 struct CPUTests : CPU {
+    InterruptController ic;
+    Joypad jp = Joypad(ic);
+    Memory memory = Memory(jp);
     CPUTests()
     :   CPU(memory) {
         PC_ = 0xC000;
     }
-    Memory memory;
 };
 
 TEST_CASE_METHOD(CPUTests, "CPU") {

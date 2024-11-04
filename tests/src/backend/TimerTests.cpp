@@ -9,15 +9,19 @@ constexpr u16 TMA = 0xFF06;
 constexpr u16 TAC = 0xFF07;
 
 struct TimerTest : Timer {
-    Memory mmu;
+    InterruptController ic;
+    Joypad jp = Joypad(ic);
+    Memory mmu = Memory(jp);
     CPU cpu = CPU(mmu);
     TimerTest() : Timer(mmu, cpu) {};
 };
 
 TEST_CASE("constructor") {
-    Memory memory;
-    CPU cpu = CPU(memory);
-    std::unique_ptr<Timer> timer = std::make_unique<Timer>(memory, cpu);
+    InterruptController ic;
+    Joypad jp = Joypad(ic);
+    Memory mmu = Memory(jp);
+    CPU cpu = CPU(mmu);
+    std::unique_ptr<Timer> timer = std::make_unique<Timer>(mmu, cpu);
     REQUIRE(timer != nullptr);
 }
 

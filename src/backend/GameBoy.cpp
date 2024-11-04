@@ -5,7 +5,9 @@
 #include<QElapsedTimer>
 
 GameBoy::GameBoy()
-    : memory_(Memory())
+    : ic_(InterruptController())
+    , joypad_(Joypad(ic_))
+    , memory_(Memory(joypad_))
     , cpu_(CPU(memory_))
     , timer_(memory_, cpu_){
 }

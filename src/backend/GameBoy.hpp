@@ -6,6 +6,7 @@
 #include <QThread>
 
 #include "Cartridge.hpp"
+#include "InterruptController.hpp"
 #include "Memory.hpp"
 #include "CPU.hpp"
 #include "Timer.hpp"
@@ -30,4 +31,6 @@ private:
     Memory memory_;
     CPU cpu_;
     Timer timer_;
+    InterruptController ic_;
+    Joypad joypad_;
 };
