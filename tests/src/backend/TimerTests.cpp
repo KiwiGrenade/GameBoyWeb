@@ -53,17 +53,14 @@ TEST_CASE_METHOD(TimerTest, "update") {
             update(256);
             REQUIRE(TIMA_ == 1);
 
-            /*write(0b00000100, TAC);*/
             TAC_ = 0b00000101;
             update(40);
             REQUIRE(TIMA_ == 11);
 
-            /*write(0b00000110, TAC);*/
             TAC_ = 0b00000110;
             update(32);
             REQUIRE(TIMA_ == 13);
 
-            /*write(0b00000111, TAC);*/
             TAC_ = 0b00000111;
             update(128);
             REQUIRE(TIMA_ == 15);

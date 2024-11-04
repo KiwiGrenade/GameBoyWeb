@@ -79,24 +79,28 @@ TEST_CASE_METHOD(MemoryTests, "write") {
         REQUIRE_FALSE(memory_[i] == byte);
     }
     SECTION("IOPORT") {
-        /*SECTION("TIMER") {*/
-        /*    constexpr u16 DIV = 0xFF04;*/
-        /*    constexpr u16 TIMA = 0xFF05;*/
-        /*    constexpr u16 TMA = 0xFF06;*/
-        /*    constexpr u16 TAC = 0xFF07;*/
-        /**/
-        /*    write(byte, DIV);*/
-        /*    REQUIRE(timer_.DIV_ == 0);*/
-        /**/
-        /*    write(byte, TIMA);*/
-        /*    REQUIRE(timer_.TIMA_  == byte);*/
-        /**/
-        /*    write(byte, TMA);*/
-        /*    REQUIRE(timer_.TMA_ == byte);*/
-        /**/
-        /*    write(byte, TAC);*/
-        /*    REQUIRE(timer_.TAC_ == byte);*/
-        /*}*/
+        SECTION("IF") {
+            write(byte, 0xFF0F);
+            REQUIRE(ic_.getIF() == byte);
+        }
+        SECTION("TIMER") {
+            SECTION("DIV") {
+                write(byte, 0xFF04);
+                REQUIRE(timer_.getDIV() == 0);
+            }
+            SECTION("DIV") {
+                write(byte, 0xFF05);
+                REQUIRE(timer_.getTIMA() == byte);
+            }
+            SECTION("DIV") {
+                write(byte, 0xFF06);
+                REQUIRE(timer_.getTMA() == byte);
+            }
+            SECTION("DIV") {
+                write(byte, 0xFF07);
+                REQUIRE(timer_.getTAC() == byte);
+            }
+        }
     }
     SECTION("HRAM") {
         u16 i = GENERATE(take(100, random(0xFF90, 0xFFFE)));
@@ -105,14 +109,12 @@ TEST_CASE_METHOD(MemoryTests, "write") {
 
         REQUIRE(memory_[i] == byte);
     }
-    /*SECTION("IE") {*/
-    /*    u16 i = 0xFFFF;*/
-    /**/
-    /*    write(byte, i);*/
-    /**/
-    /*    REQUIRE(memory_[i] == byte);*/
-    /*}*/
+    SECTION("IE") {
+        write(byte, 0xFFFF);
+        REQUIRE(ic_.getIE() == byte);
+    }
 };
+
 TEST_CASE_METHOD(MemoryTests, "read") {
     u8 byte = GENERATE(take(1, random(1, 0xFF)));
     SECTION("ROM0") {
@@ -178,24 +180,28 @@ TEST_CASE_METHOD(MemoryTests, "read") {
         REQUIRE(read(i) == 0x00);
     }
     SECTION("IOPORT") {
-        /*SECTION("TIMER") {*/
-        /*    constexpr u16 DIV = 0xFF04;*/
-        /*    constexpr u16 TIMA = 0xFF05;*/
-        /*    constexpr u16 TMA = 0xFF06;*/
-        /*    constexpr u16 TAC = 0xFF07;*/
-        /**/
-        /*    timer_.DIV_ = byte;*/
-        /*    REQUIRE(read(DIV) == byte);*/
-        /**/
-        /*    timer_.TIMA_ = byte;*/
-        /*    REQUIRE(read(TIMA) == byte);*/
-        /**/
-        /*    timer_.TMA_ = byte;*/
-        /*    REQUIRE(read(TMA) == byte);*/
-        /**/
-        /*    timer_.TAC_ = byte;*/
-        /*    REQUIRE(read(TAC) == byte);*/
-        /*}*/
+        SECTION("IF") {
+            write(byte, 0xFFFF);
+            REQUIRE(read(0xFFFF) == byte);
+        }
+        SECTION("TIMER") {
+            SECTION("DIV") {
+                write(byte, 0xFF04);
+                REQUIRE(read(0xFF04) == 0);
+            }
+            SECTION("DIV") {
+                write(byte, 0xFF05);
+                REQUIRE(read(0xFF05) == byte);
+            }
+            SECTION("DIV") {
+                write(byte, 0xFF06);
+                REQUIRE(read(0xFF06) == byte);
+            }
+            SECTION("DIV") {
+                write(byte, 0xFF07);
+                REQUIRE(read(0xFF07) == byte);
+            }
+        }
     }
     SECTION("HRAM") {
         u16 i = GENERATE(take(100, random(0xFF90, 0xFFFE)));
@@ -204,13 +210,10 @@ TEST_CASE_METHOD(MemoryTests, "read") {
 
         REQUIRE(read(i) == byte);
     }
-    /*SECTION("IE") {*/
-    /*    u16 i = 0xFFFF;*/
-    /**/
-    /*    write(byte, i);*/
-    /**/
-    /*    REQUIRE(read(i) == byte);*/
-    /*}*/
+    SECTION("IE") {
+        write(byte, 0xFFFF);
+        REQUIRE(read(0xFFFF) == byte);
+    }
 };
 
 TEST_CASE_METHOD(MemoryTests, "reset") {

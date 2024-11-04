@@ -2,17 +2,26 @@
 #include "utils.hpp"
 
 void InterruptController::requestInterrupt(Type intType) {
-    Utils::setBit(interrupts_, intType, true);
+    Utils::setBit(IF_, intType, true);
 }
 
-void InterruptController::write(u8 byte) {
-    interrupts_ = byte;
+void InterruptController::setIE(u8 byte) {
+    IE_ = byte;
 }
 
-u8 InterruptController::read() {
-    return interrupts_;
+void InterruptController::setIF(u8 byte) {
+    IF_ = byte;
+}
+
+u8 InterruptController::getIE() {
+    return IE_;
+}
+
+u8 InterruptController::getIF() {
+    return IF_;
 }
 
 void InterruptController::reset() {
-    interrupts_ = 0;
+    IF_ = 0;
+    IE_ = 0;
 }

@@ -9,43 +9,62 @@ TEST_CASE("InterruptController", "Constructor") {
     REQUIRE(ic);
 }
 
-TEST_CASE_METHOD(InterruptController, "write") {
+TEST_CASE_METHOD(InterruptController, "setIE") {
     u8 val = 0xC1;
-    write(val);
-    REQUIRE(interrupts_ == val);
+    setIE(val);
+    REQUIRE(IE_ == val);
 }
 
-TEST_CASE_METHOD(InterruptController, "read") {
+TEST_CASE_METHOD(InterruptController, "getIE") {
     u8 val = 0xC2;
-    write(val);
-    REQUIRE(read() == val);
+    IE_ = val;
+
+    REQUIRE(getIE() == val);
+}
+
+TEST_CASE_METHOD(InterruptController, "setIF") {
+    u8 val = 0xC1;
+    setIF(val);
+
+    REQUIRE(IF_ == val);
+}
+
+TEST_CASE_METHOD(InterruptController, "getIF") {
+    u8 val = 0xC2;
+    IF_ = val;
+
+    REQUIRE(getIF() == val);
 }
 
 TEST_CASE_METHOD(InterruptController, "reset") {
-    interrupts_ = 200;
+    IE_ = 200;
+    IF_ = 200;
+
     reset();
-    REQUIRE(interrupts_ == 0);
+
+    REQUIRE(IE_ == 0);
+    REQUIRE(IF_ == 0);
 }
 
 TEST_CASE_METHOD(InterruptController, "requestInterrupt") {
     SECTION("VBlank") {
         requestInterrupt(Type::VBlank);
-        REQUIRE(interrupts_ == 0b00000001);
+        REQUIRE(IF_ == 0b00000001);
     }
     SECTION("LCD") {
         requestInterrupt(Type::LCD);
-        REQUIRE(interrupts_ == 0b00000010);
+        REQUIRE(IF_ == 0b00000010);
     }
     SECTION("Timer") {
         requestInterrupt(Type::Timer);
-        REQUIRE(interrupts_ == 0b00000100);
+        REQUIRE(IF_ == 0b00000100);
     }
     SECTION("Serial") {
         requestInterrupt(Type::Serial);
-        REQUIRE(interrupts_ == 0b00001000);
+        REQUIRE(IF_ == 0b00001000);
     }
     SECTION("Joypad") {
         requestInterrupt(Type::Joypad);
-        REQUIRE(interrupts_ == 0b00010000);
+        REQUIRE(IF_ == 0b00010000);
     }
 }

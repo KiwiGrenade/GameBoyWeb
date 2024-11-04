@@ -72,8 +72,7 @@ void Memory::write(const u8 byte, const u16 addr) {
         }
         // Interrupts
         else if (0xFF0F == addr) {
-            
-            memory_[addr] = byte;
+            ic_.setIF(byte);
         }
         // Audio - obsolete
         else if (0xFF10 <= addr && addr <= 0xFF26) {
@@ -95,7 +94,7 @@ void Memory::write(const u8 byte, const u16 addr) {
         memory_[addr] = byte;
     }
     else if (isIE(addr)) {
-        memory_[addr] = byte;
+        ic_.setIE(byte);
     }
 }
 
@@ -121,8 +120,14 @@ u8 Memory::read(const u16 addr) const {
                     return 0;
             }
         }
+        else if (addr == 0xFF0F) {
+            return ic_.getIF();
+        }
         else
             return memory_[addr];
+    }
+    else if(isIE(addr)) {
+        return ic_.getIE();
     }
     else {
         return memory_[addr];
