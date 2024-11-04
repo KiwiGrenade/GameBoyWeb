@@ -1,33 +1,35 @@
 #pragma once
 
 #include "utils.hpp"
-#include "CPU.hpp"
-#include "Memory.hpp"
+
+#include "InterruptController.hpp"
 
 class Timer {
 public:
-    Timer(Memory& mmu, CPU& cpu);
+    Timer(InterruptController& ic);
 
     void update(uint64_t cycles);
     void reset();
+    inline u8 getDIV() { return DIV_; };
+    inline void setDIV(u8 val) { DIV_ = val; };
+    inline u8 getTIMA() { return TIMA_; };
+    inline void setTIMA(u8 val) { TIMA_ = val; };
+    inline u8 getTMA() { return TMA_; };
+    inline void setTMA(u8 val) { TMA_ = val; };
+    inline u8 getTAC() { return TAC_; };
+    inline void setTAC(u8 val) { TAC_ = val; };
 
 protected:
     void timaOverflow();
 
-    u8 getDIV() { return mmu_.read(0xFF04); };
-    void setDIV(u8 val) { mmu_.setDIV(val); };
-    u8 getTIMA() { return mmu_.read(0xFF05); };
-    void setTIMA(u8 val) { mmu_.write(val, 0xFF05); };
-    u8 getTMA() { return mmu_.read(0xFF06); };
-    void setTMA(u8 val) { mmu_.write(val, 0xFF06); };
-    u8 getTAC() { return mmu_.read(0xFF07); };
-    void setTAC(u8 val) { mmu_.write(val, 0xFF07); };
-
-    CPU& cpu_;
-    Memory& mmu_;
+    InterruptController& ic_;
 
     int div_ticks_;
     int tima_ticks_;
 
+    u8 TIMA_ = 0;
+    u8 TMA_ = 0;
+    u8 TAC_ = 0;
+    u16 DIV_ = 0;
     static constexpr u16 frequencies[4] { 256, 4, 16, 64 };
 };

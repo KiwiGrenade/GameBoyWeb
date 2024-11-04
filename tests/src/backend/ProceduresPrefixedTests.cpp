@@ -6,7 +6,8 @@
 struct ProceduresPrefixedTests : CPU {
     InterruptController ic;
     Joypad jp = Joypad(ic);
-    Memory memory = Memory(jp);
+    Timer timer = Timer(ic);
+    Memory memory = Memory(ic, jp, timer);
 
     ProceduresPrefixedTests() : CPU(memory) {
         AF_ = 0;

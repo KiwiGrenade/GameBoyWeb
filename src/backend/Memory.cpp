@@ -5,10 +5,12 @@
 
 constexpr u16 Cartridge::romSize_;
 
-Memory::Memory(Joypad& joypad)
+Memory::Memory(InterruptController& ic, Joypad& joypad, Timer& timer)
     : memory_(std::array<unsigned char, size_>{})
     , cartridge_(std::make_shared<Cartridge>())
+    , ic_(ic)
     , joypad_(joypad)
+    , timer_(timer)
     , wroteToSram_(false) {
 }
 
@@ -54,26 +56,23 @@ void Memory::write(const u8 byte, const u16 addr) {
         // Timer and divider
         else if (0xFF04 <= addr && addr <= 0xFF07) {
             switch(addr) {
-                // DIV
                 case 0xFF04:
-                    timer_.DIV_ = 0;
+                    timer_.setDIV(0);
                     break;
-                // TIMA
                 case 0xFF05:
-                    timer_.TIMA_ = byte;
+                    timer_.setTIMA(byte);
                     break;
-                // TMA
                 case 0xFF06:
-                    timer_.TMA_ = byte;
+                    timer_.setTMA(byte);
                     break;
-                // TAC
                 case 0xFF07:
-                    timer_.TAC_ = byte;
+                    timer_.setTAC(byte);
                     break;
             }
         }
         // Interrupts
         else if (0xFF0F == addr) {
+            
             memory_[addr] = byte;
         }
         // Audio - obsolete
@@ -110,18 +109,14 @@ u8 Memory::read(const u16 addr) const {
         }
         if (0xFF04 <= addr && addr <= 0xFF07) {
             switch(addr) {
-                // DIV
                 case 0xFF04:
-                    return timer_.DIV_;
-                // TIMA
+                    return timer_.getDIV();
                 case 0xFF05:
-                    return timer_.TIMA_;
-                // TMA
+                    return timer_.getTIMA();
                 case 0xFF06:
-                    return timer_.TMA_;
-                // TAC
+                    return timer_.getTMA();
                 case 0xFF07:
-                    return timer_.TAC_;
+                    return timer_.getTAC();
                 default:
                     return 0;
             }

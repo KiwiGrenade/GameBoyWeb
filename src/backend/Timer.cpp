@@ -1,8 +1,7 @@
 #include "Timer.hpp"
 
-Timer::Timer(Memory& mmu, CPU& cpu)
-    : mmu_(mmu)
-    , cpu_(cpu) {
+Timer::Timer(InterruptController& ic)
+    : ic_(ic) {
     reset();
 }
 
@@ -11,32 +10,34 @@ void Timer::update(uint64_t cycles) {
     // prev value - 0xFF
     if(div_ticks_ >= 0xFF) {
         div_ticks_ -= 0xFF;
-        setDIV(getDIV() + 1);
+        ++DIV_;
     }
 
     // bit 2 - enable
-    u8 TAC = getTAC();
-    if(TAC & 0b100) {
+    if(TAC_ & 0b100) {
         tima_ticks_ += cycles;
         // bit 0 and 1 - timer control (TAC)
-        u16 freq = frequencies[TAC & 0b11];
+        u16 freq = frequencies[TAC_ & 0b11];
         while(tima_ticks_ >= freq) {
             tima_ticks_ -= freq;
-            setTIMA(getTIMA() + 1);
-            if(getTIMA() == 0)
+            ++TIMA_;
+            if(TIMA_ == 0)
                 timaOverflow();
         }
     }
 }
 
 void Timer::timaOverflow() {
-    setTIMA(getTMA());
-    cpu_.requestInterrupt();
+    TIMA_ = TMA_;
+    ic_.requestInterrupt(InterruptController::Type::Timer);
 }
 
 void Timer::reset() {
     div_ticks_ = 0;
     tima_ticks_ = 0;
-    mmu_.resetTimer();
+    DIV_ = 0;
+    TIMA_ = 0;
+    TMA_ = 0;
+    TAC_ = 0;
 }
 

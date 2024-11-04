@@ -28,9 +28,9 @@ private:
     // flags
     bool isPaused;
     bool isStopped;
+    InterruptController ic_;
+    Timer timer_;
+    Joypad joypad_;
     Memory memory_;
     CPU cpu_;
-    Timer timer_;
-    InterruptController ic_;
-    Joypad joypad_;
 };
