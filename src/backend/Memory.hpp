@@ -8,6 +8,7 @@
 
 #include "Cartridge.hpp"
 #include "Joypad.hpp"
+#include "Timer.hpp"
 
 /* ######## Memory Map #########
  *
@@ -27,37 +28,19 @@
 
 class Memory {
 public:
-    Memory(Joypad& joypad);
+    Memory(InterruptController& ic, Joypad& joypad, Timer& timer);
     ~Memory() = default;
     
     u8 read(const u16 addr) const;
     void write(const u8 byte, const u16 addr);
     void reset();
-    inline void resetTimer() { timer_.reset(); };
-    inline void setDIV(u8 val) { timer_.DIV_ = val; };
     inline u8& getIE() { return memory_[0xFFFF]; }
     inline u8& getIF() { return memory_[0xFF0F]; }
     void loadCartridge(std::shared_ptr<Cartridge>);
 
     static constexpr uint32_t size_ = 0x10000;
 
-
 protected:
-
-    struct Timer {
-        void reset() {
-            DIV_ = 0;
-            TIMA_ = 0;
-            TMA_ = 0;
-            TAC_ = 0;
-        }
-        u8 TIMA_ = 0;
-        u8 TMA_ = 0;
-        u8 TAC_ = 0;
-        u16 DIV_ = 0;
-    };
-    
-    Timer timer_;
 
     inline bool isROM0(const u16 addr) const { return 0 <= addr && addr <= 0x3FFF; };
     inline bool isROM1(const u16 addr) const { return 0x4000 <= addr && addr <= 0x7FFF; };
@@ -72,7 +55,9 @@ protected:
     inline bool isHRAM(const u16 addr) const { return 0xFF90 <= addr && addr <= 0xFFFE; };
     inline bool isIE(const u16 addr) const { return addr == 0xFFFF; };
     
+    InterruptController& ic_;
     Joypad& joypad_;
+    Timer& timer_;
     std::shared_ptr<Cartridge> cartridge_;
     std::array<u8, size_> memory_;
     bool wroteToSram_;

@@ -56,14 +56,11 @@ target_link_libraries(CartridgeTests PUBLIC
 )
 target_link_libraries(TimerTests PUBLIC
     Timer
-    CPU
-    Memory
     Qt6::Core
     Catch2::Catch2WithMain
 )
 target_link_libraries(JoypadTests PUBLIC
     Joypad 
-    InterruptController
     Qt6::Core
     Catch2::Catch2WithMain
 )

@@ -3,84 +3,76 @@
 #include <catch2/catch_test_macros.hpp>
 #include <memory>
 
-constexpr u16 DIV = 0xFF04;
-constexpr u16 TIMA = 0xFF05;
-constexpr u16 TMA = 0xFF06;
-constexpr u16 TAC = 0xFF07;
-
 struct TimerTest : Timer {
     InterruptController ic;
-    Joypad jp = Joypad(ic);
-    Memory mmu = Memory(jp);
-    CPU cpu = CPU(mmu);
-    TimerTest() : Timer(mmu, cpu) {};
+    TimerTest() : Timer(ic) {};
 };
 
 TEST_CASE("constructor") {
     InterruptController ic;
-    Joypad jp = Joypad(ic);
-    Memory mmu = Memory(jp);
-    CPU cpu = CPU(mmu);
-    std::unique_ptr<Timer> timer = std::make_unique<Timer>(mmu, cpu);
-    REQUIRE(timer != nullptr);
+    std::unique_ptr<Timer> timer = std::make_unique<Timer>(ic);
+    REQUIRE(timer);
 }
 
 TEST_CASE_METHOD(TimerTest, "reset") {
-    mmu.write(1, DIV);
-    mmu.write(1, TIMA);
-    mmu.write(1, TMA);
-    mmu.write(1, TAC);
+    DIV_ = 1;
+    TIMA_ = 1;
+    TMA_ = 1;
+    TAC_ = 1;
 
     reset();
 
-    REQUIRE(mmu.read(DIV) == 0);
-    REQUIRE(mmu.read(TIMA) == 0);
-    REQUIRE(mmu.read(TMA) == 0);
-    REQUIRE(mmu.read(TAC) == 0);
+    REQUIRE(DIV_ == 0);
+    REQUIRE(TIMA_ == 0);
+    REQUIRE(TMA_ == 0);
+    REQUIRE(TAC_ == 0);
 }
 
 TEST_CASE_METHOD(TimerTest, "update") {
     SECTION("divider") {
         SECTION("shouldIncrementDivider") {
             update(0x00FF);
-            REQUIRE(mmu.read(DIV) == 1);
+            REQUIRE(DIV_ == 1);
             update(0x00FF);
-            REQUIRE(mmu.read(DIV) == 2);
+            REQUIRE(DIV_ == 2);
         }
     }
     SECTION("timerControl") {
         SECTION("shouldIncrementTIMA") {
-            mmu.write(0b00000100, TAC);
+            TAC_ = 0b00000100;
             update(0x5000);
-            REQUIRE_FALSE(mmu.read(TIMA) == 0);
+            REQUIRE_FALSE(TIMA_ == 0);
         }
         SECTION("shouldNOTIncrementTIMA") {
-            mmu.write(0b00000000, TAC);
+            TAC_ = 0;
             update(0x5000);
-            REQUIRE(mmu.read(TIMA) == 0);
+            REQUIRE(TIMA_ == 0);
         }
         SECTION("shouldSetFrequencyCorrectly") {
-            mmu.write(0b00000100, TAC);
+            TAC_ = 0b00000100;
             update(256);
-            REQUIRE(mmu.read(TIMA) == 1);
+            REQUIRE(TIMA_ == 1);
 
-            mmu.write(0b00000101, TAC);
+            /*write(0b00000100, TAC);*/
+            TAC_ = 0b00000101;
             update(40);
-            REQUIRE(mmu.read(TIMA) == 11);
+            REQUIRE(TIMA_ == 11);
 
-            mmu.write(0b00000110, TAC);
+            /*write(0b00000110, TAC);*/
+            TAC_ = 0b00000110;
             update(32);
-            REQUIRE(mmu.read(TIMA) == 13);
+            REQUIRE(TIMA_ == 13);
 
-            mmu.write(0b00000111, TAC);
+            /*write(0b00000111, TAC);*/
+            TAC_ = 0b00000111;
             update(128);
-            REQUIRE(mmu.read(TIMA) == 15);
+            REQUIRE(TIMA_ == 15);
         }
         SECTION("shouldOverflowAndRequestInterrupt") {
-            mmu.write(0xB9, TMA);
-            mmu.write(0b00000101, TAC);
+            TMA_ = 0xB9;
+            TAC_ = 0b00000101;
             update(1024);
-            REQUIRE(mmu.read(TIMA) == mmu.read(TMA));
+            REQUIRE(TIMA_ == TMA_);
         }
     }
 }

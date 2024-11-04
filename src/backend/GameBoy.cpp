@@ -7,9 +7,9 @@
 GameBoy::GameBoy()
     : ic_(InterruptController())
     , joypad_(Joypad(ic_))
-    , memory_(Memory(joypad_))
-    , cpu_(CPU(memory_))
-    , timer_(memory_, cpu_){
+    , timer_(Timer(ic_))
+    , memory_(Memory(ic_, joypad_, timer_))
+    , cpu_(CPU(memory_)) {
 }
 
 GameBoy::~GameBoy() {
@@ -19,7 +19,9 @@ GameBoy::~GameBoy() {
 void GameBoy::reset() {
     memory_.reset();
     cpu_.reset();
+    joypad_.reset();
     timer_.reset();
+    ic_.reset();
 }
 
 void GameBoy::stop() {
