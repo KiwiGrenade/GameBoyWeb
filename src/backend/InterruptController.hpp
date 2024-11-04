@@ -15,10 +15,15 @@ public:
     InterruptController() = default;
 
     void requestInterrupt(Type);
-    void write(u8 byte);
-    u8 read();
+    void setIE(u8 byte);
+    u8 getIE();
+    void setIF(u8 byte);
+    u8 getIF();
     void reset();
 
 protected:
-    u8 interrupts_;
+    // Address: 0xFFFF
+    u8 IE_;
+    // Address: 0xFF0F
+    u8 IF_;
 };
