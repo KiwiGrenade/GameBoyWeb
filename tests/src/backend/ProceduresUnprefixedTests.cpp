@@ -9,15 +9,15 @@ struct ProceduresUnprefixedTests : CPU {
     Timer timer = Timer(ic);
     Memory memory = Memory(ic, jp, timer);
 
-    ProceduresUnprefixedTests() : CPU(memory) {
+    ProceduresUnprefixedTests() : CPU(ic, memory) {
         F_ = 0;
         HL_ = 0xCC00;
         PC_ = 0xC000;
     };
 
-    void execute(u8 op) {
+    u8 execute(u8 op) {
         memory_.write(op, PC_);
-        step();
+        return step();
     }
 
     void checkOnRegisters(const u8 startOpcode, const u8 jump, std::function<void(r8*, unsigned int)> setUp, std::function<void(r8*, unsigned int)>requirements) {
@@ -219,12 +219,12 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         SECTION("positive") {
             memory_.write(int8_t(20), PC_+1);
             execute(0x18);
-            REQUIRE(PC_ == oldPC+2+20);
+            REQUIRE(PC_ == oldPC+20);
         }
         SECTION("negative") {
             memory_.write(int8_t(-20), PC_+1);
             execute(0x18);
-            REQUIRE(PC_ == oldPC.getVal()+2-20);
+            REQUIRE(PC_ == oldPC.getVal()-20);
         }
     }
     SECTION("0x1A", "[LD]") {
@@ -251,7 +251,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         SECTION("shouldJump") {
             memory_.write(int8_t(val), PC_+1);
             execute(op);
-            REQUIRE(PC_ == oldPC+2+val);
+            REQUIRE(PC_ == oldPC+val);
         }
         SECTION("shouldNotJump") {
             FlagZ_.set(true);
@@ -281,7 +281,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             FlagZ_.set(true);
             memory_.write(int8_t(val), PC_+1);
             execute(op);
-            REQUIRE(PC_ == oldPC+2+val);
+            REQUIRE(PC_ == oldPC+val);
         }
         SECTION("shouldNotJump") {
             memory_.write(int8_t(val), PC_+1);
@@ -309,7 +309,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         SECTION("shouldJump") {
             memory_.write(int8_t(val), PC_+1);
             execute(op);
-            REQUIRE(PC_ == oldPC+2+val);
+            REQUIRE(PC_ == oldPC+val);
         }
         SECTION("shouldNotJump") {
             FlagC_.set(true);
@@ -362,7 +362,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             FlagC_.set(true);
             memory_.write(int8_t(val), PC_+1);
             execute(op);
-            REQUIRE(PC_ == oldPC+2+val);
+            REQUIRE(PC_ == oldPC+val);
         }
         SECTION("shouldNotJump") {
             memory_.write(int8_t(val), PC_+1);
@@ -725,8 +725,9 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         SECTION("shouldLogicORCorrectly") {
             A_ =  0b11100101;
             memory.write(0b11000111, HL_);
-            execute(0xAE);
+            u8 c = execute(0xAE);
             REQUIRE(A_ == 0b00100010);
+            REQUIRE(c == 8);
         }
         SECTION("shouldSetZeroFlag") {
             A_ = 23;
@@ -831,16 +832,15 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         execute(0xCD);
         SECTION("shouldReturn") {
             FlagZ_.set(false);
-            REQUIRE(PC_ == 0xC212);
-            REQUIRE(SP_ == 0xC080);
-            REQUIRE_FALSE(FlagZ_);
             execute(0xC0);
-            REQUIRE(PC_ == oldPC);
+            REQUIRE(PC_ == oldPC + unprefInstrArray_[0xCD].info_.getBytes());
+            REQUIRE(SP_ == 0xC082);
+            REQUIRE_FALSE(FlagZ_);
         }
         SECTION("shouldNotReturn") {
             FlagZ_.set(true);
             execute(0xC0);
-            REQUIRE_FALSE(PC_ == oldPC);
+            REQUIRE(PC_ == 0xC212 + unprefInstrArray_[0xC0].info_.getBytes());
         }
     }
     SECTION("0xC1, 0xD1, 0xE1", "[POP]") {
@@ -876,7 +876,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     }
     SECTION("0xC4", "[CALL]") {
             SP_ = 0xC082;
-            oldPC = PC_;
+            oldPC = PC_ + 3; // PC += 3 is iniside call
             oldSP = SP_;
             memory_.write(0x12, PC_+1);
             memory_.write(0xC2, PC_+2);
@@ -925,7 +925,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         for(u8 i = 0; i < 8; ++i, k+=8, op+=8) {
             PC_ = 0xC083;
             SP_ = 0xC082;
-            oldPC = PC_;
+            oldPC = PC_ + 1; // PC_++ in RST
             oldSP = SP_;
 
             execute(op);
@@ -946,12 +946,15 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         execute(0xCD);
         SECTION("shouldReturn") {
             FlagZ_.set(true);
-            execute(0xC8);
-            REQUIRE(PC_ == oldPC);
+            u8 c = execute(0xC8);
+            REQUIRE(PC_ == oldPC + unprefInstrArray_[0xCD].info_.getBytes());
+
+            REQUIRE(c == 20);
         }
         SECTION("shouldNotReturn") {
-            execute(0xC8);
-            REQUIRE_FALSE(PC_ == oldPC);
+            u8 c = execute(0xC8);
+            REQUIRE(PC_ == 0xC212 + unprefInstrArray_[0xC8].info_.getBytes());
+            REQUIRE(c == 8);
         }
     }
     SECTION("0xC9", "[RET]") {
@@ -962,9 +965,9 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         memory_.write(0xC2, PC_+2);
 
         execute(0xCD);
-        execute(0xC9);
+        u8 c = execute(0xC9);
 
-        REQUIRE(PC_ == oldPC);
+        REQUIRE(PC_ == oldPC + unprefInstrArray_[0xCD].info_.getBytes());
     }
     SECTION("0xCA", "[JP]") {
         memory_.write(0xF0, PC_+1);
@@ -986,11 +989,11 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         isPrefixed_ = false;
     }
     SECTION("0xCC", "[CALL]") {
-            SP_ = 0xC082;
-            oldPC = PC_;
-            oldSP = SP_;
-            memory_.write(0x12, PC_+1);
-            memory_.write(0x02, PC_+2);
+        SP_ = 0xC082;
+        oldPC = PC_ + 3; // PC += 3 is iniside call
+        oldSP = SP_;
+        memory_.write(0x12, PC_+1);
+        memory_.write(0x02, PC_+2);
         SECTION("shouldCall") {
             FlagZ_.set(true);
             execute(0xCC);
@@ -1008,7 +1011,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     }
     SECTION("0xCD", "[CALL]") {
         SP_ = 0xC082;
-        oldPC = PC_;
+        oldPC = PC_ + 3; // PC += 3 is iniside call
         oldSP = SP_;
         memory_.write(0x12, PC_+1);
         memory_.write(0x02, PC_+2);
@@ -1059,12 +1062,12 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         execute(0xCD);
         SECTION("shouldReturn") {
             execute(0xD0);
-            REQUIRE(PC_ == oldPC);
+            REQUIRE(PC_ == oldPC + unprefInstrArray_[0xCD].info_.getBytes());
         }
         SECTION("shouldNotReturn") {
             FlagC_.set(true);
             execute(0xD0);
-            REQUIRE_FALSE(PC_ == oldPC);
+            REQUIRE(PC_ == 0xC212 + unprefInstrArray_[0xD0].info_.getBytes());
         }
     }
     SECTION("0xD2", "[JP]") {
@@ -1117,11 +1120,11 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         SECTION("shouldReturn") {
             FlagC_.set(true);
             execute(0xD8);
-            REQUIRE(PC_ == oldPC);
+            REQUIRE(PC_ == oldPC + unprefInstrArray_[0xCD].info_.getBytes());
         }
         SECTION("shouldNotReturn") {
             execute(0xD8);
-            REQUIRE_FALSE(PC_ == oldPC);
+            REQUIRE(PC_ == 0xC212 + unprefInstrArray_[0xD8].info_.getBytes());
         }
     }
     SECTION("0xD9", "[RETI]") {
@@ -1133,7 +1136,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
 
         execute(0xCD);
         execute(0xD9);
-        REQUIRE(PC_ == oldPC);
+        REQUIRE(PC_ == oldPC + unprefInstrArray_[0xCD].info_.getBytes());
         REQUIRE(IME_);
     }
     SECTION("0xDA", "[JP]") {
@@ -1151,7 +1154,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     }
     SECTION("0xDC", "[CALL]") {
         SP_ = 0xC082;
-        oldPC = PC_;
+        oldPC = PC_ + 3; // PC += 3 is iniside call
         oldSP = SP_;
         memory_.write(0x12, PC_+1);
         memory_.write(0x02, PC_+2);

@@ -15,16 +15,15 @@ typedef std::array<std::function<void()>, 256> ProcArray;
 
 class CPU {
 public:
-    CPU(Memory& mmu);
+    CPU(InterruptController& ic, Memory& mmu);
     ~CPU() = default;
     
     u8 step();
     void reset();
-    void requestInterrupt();
 
 protected:
     Memory&                 memory_;
-    /*InterruptController&    ic_;*/
+    InterruptController&    ic_;
     /*uint64_t    cycles_; // T-cycles*/
 
     // helper flags 
@@ -44,6 +43,8 @@ protected:
     InstrArray getInstrArray(const bool prefixed);
     ProcArray getUnprefProcArray();
     ProcArray getPrefProcArray();
+    void executeInterrupt(u8 i);
+    // returns number of M-cycles of an interrupt 
     u8 handleInterrupts();
     void handleIME();
     void handleFlags(const Utils::flagArray& flags);
