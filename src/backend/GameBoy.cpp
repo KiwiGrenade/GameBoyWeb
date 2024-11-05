@@ -9,7 +9,7 @@ GameBoy::GameBoy()
     , joypad_(Joypad(ic_))
     , timer_(Timer(ic_))
     , memory_(Memory(ic_, joypad_, timer_))
-    , cpu_(CPU(memory_)) {
+    , cpu_(CPU(ic_, memory_)) {
 }
 
 GameBoy::~GameBoy() {

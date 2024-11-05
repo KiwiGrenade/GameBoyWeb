@@ -8,7 +8,7 @@ struct CPUTests : CPU {
     Timer timer = Timer(ic);
     Memory memory = Memory(ic, jp, timer);
     CPUTests()
-    :   CPU(memory) {
+    :   CPU(ic, memory) {
         PC_ = 0xC000;
     }
 };
