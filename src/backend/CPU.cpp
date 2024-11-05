@@ -65,25 +65,25 @@ InstrArray CPU::getInstrArray(const bool prefixed) {
     return instrArray;
 }
 
-void CPU::executeInterrupt(u8 i) {
-    /*isHalted_ = false;*/
-    /*isStopped_ = false;*/
-    /**/
-    /*call(true, 0x0040 + i * 8);*/
-    /*IME_ = false;*/
+u8 CPU::executeInterrupt(u8 i) {
+    isHalted_ = false;
+    isStopped_ = false;
+
+    call(true, 0x0040 + i * 8);
+    IME_ = false;
 }
 
 u8 CPU::handleInterrupts() {
 /*    // Interrupt Master Enable is disabled - do nothing*/
-    /*if(not IME_)*/
-    /*    return 0;*/
-    /*if (u8 IF = ic_.getIF()) {*/
-    /*    u8 IE = ic_.getIE();*/
-    /*    for(u8 i = 0; i < 5; i++) {*/
-    /*        if(Utils::getBit(IF, i) && Utils::getBit(IE, i))*/
-    /*            executeInterrupt(i);*/
-    /*    }*/
-    /*}*/
+    if(not IME_)
+        return 0;
+    if (u8 IF = ic_.getIF()) {
+        u8 IE = ic_.getIE();
+        for(u8 i = 0; i < 5; i++) {
+            if(Utils::getBit(IF, i) && Utils::getBit(IE, i))
+                executeInterrupt(i);
+        }
+    }
     return 0;
 }
 
