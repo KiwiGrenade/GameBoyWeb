@@ -9,7 +9,7 @@ struct ProceduresPrefixedTests : CPU {
     Timer timer = Timer(ic);
     Memory memory = Memory(ic, jp, timer);
 
-    ProceduresPrefixedTests() : CPU(memory) {
+    ProceduresPrefixedTests() : CPU(ic, memory) {
         AF_ = 0;
         BC_ = 0;
         DE_ = 0;

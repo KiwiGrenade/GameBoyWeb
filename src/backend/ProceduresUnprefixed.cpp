@@ -403,31 +403,34 @@ void CPU::ldd16(u16 const addr, const r16 word) {
 /*################### JUMP and SUBROUTINES ###################*/
 
 void CPU::jp(const bool cond, const u16 addr) {
+    isCondMet_ = cond;
     if(cond) {
         PC_ = addr;
-        isCondMet_ = true;
         incrementPC_ = false;
     }
 }
 
 void CPU::jr(const bool cond, int8_t dest) {
+    isCondMet_ = cond;
     if(cond) {
         PC_ += dest;
-        isCondMet_ = true;
+        incrementPC_ = false;
     }
 }
 
 void CPU::call(const bool cond, const u16 addr) {
+    isCondMet_ = cond;
     if(cond) {
+        PC_ += 3; // instr + addr (1 + 2 * 1)
         memory_.write(PC_.hi_, --SP_);
         memory_.write(PC_.lo_, --SP_);
         PC_ = addr;
-        isCondMet_ = true;
         incrementPC_ = false;
     }
 }
 
 void CPU::rst(const u8 n) {
+    PC_++;
     memory_.write(PC_.hi_, --SP_);
     memory_.write(PC_.lo_, --SP_);
     PC_.hi_ = 0;
@@ -436,10 +439,10 @@ void CPU::rst(const u8 n) {
 }
 
 void CPU::ret(const bool cond) {
+    isCondMet_ = cond;
     if(cond) {
         PC_.lo_ = fetch8(SP_++);
         PC_.hi_ = fetch8(SP_++);
-        isCondMet_ = true;
         incrementPC_ = false;
     }
 }

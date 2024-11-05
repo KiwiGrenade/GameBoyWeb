@@ -2,9 +2,9 @@
 #include "InterruptController.hpp"
 #include "utils.hpp"
 
-CPU::CPU(Memory& mmu)
-    : memory_(mmu)
-    /*, ic_(ic)*/
+CPU::CPU(InterruptController& ic, Memory& mmu)
+    : ic_(ic)
+    , memory_(mmu)
     , prefInstrArray_(getInstrArray(true))
     , unprefInstrArray_(getInstrArray(false))
     , A_(AF_.hi_)
@@ -65,18 +65,25 @@ InstrArray CPU::getInstrArray(const bool prefixed) {
     return instrArray;
 }
 
-void CPU::requestInterrupt() {
-
+void CPU::executeInterrupt(u8 i) {
+    /*isHalted_ = false;*/
+    /*isStopped_ = false;*/
+    /**/
+    /*call(true, 0x0040 + i * 8);*/
+    /*IME_ = false;*/
 }
 
 u8 CPU::handleInterrupts() {
 /*    // Interrupt Master Enable is disabled - do nothing*/
-/*    if(not IME_)*/
-/*        return 0;*/
-/*    if (ic_.checkForInterrupts()) {*/
-/*        u8 IE = fetch8(0xFFFF);*/
-/*    }*/
-/*    return 0;*/
+    /*if(not IME_)*/
+    /*    return 0;*/
+    /*if (u8 IF = ic_.getIF()) {*/
+    /*    u8 IE = ic_.getIE();*/
+    /*    for(u8 i = 0; i < 5; i++) {*/
+    /*        if(Utils::getBit(IF, i) && Utils::getBit(IE, i))*/
+    /*            executeInterrupt(i);*/
+    /*    }*/
+    /*}*/
     return 0;
 }
 
@@ -88,7 +95,7 @@ u8 CPU::step() {
         // assume nop
         return 4;
     }
-    isCondMet_ = false;
+    isCondMet_ = true;
     incrementPC_ = true;
 
     u8 opcode = memory_.read(PC_);
@@ -108,7 +115,8 @@ u8 CPU::step() {
 
     // determine number of cycles that went by while executing instruction
     std::pair <u8, u8> cycles = instr.info_.getCycles();
-    return isCondMet_ ? cycles.second : cycles.first;
+
+    return isCondMet_ ? cycles.first : cycles.second;
 }
 
 void CPU::handleFlags(const Utils::flagArray& flags) {
