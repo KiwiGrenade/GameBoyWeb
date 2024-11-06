@@ -65,7 +65,7 @@ InstrArray CPU::getInstrArray(const bool prefixed) {
     return instrArray;
 }
 
-u8 CPU::executeInterrupt(u8 i) {
+void CPU::executeInterrupt(u8 i) {
     isHalted_ = false;
     isStopped_ = false;
 
@@ -88,8 +88,7 @@ u8 CPU::handleInterrupts() {
 }
 
 u8 CPU::step() {
-    /*if(u8 i = handleInterrupts())*/
-    /*    return i;*/
+    handleInterrupts();
     handleIME();
     if(isHalted_) {
         // assume nop

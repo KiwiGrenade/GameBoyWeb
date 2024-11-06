@@ -1276,6 +1276,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
     }
     SECTION("0xF3", "[DI]") {
         IME_ = true;
+        ic_.setIE(0);
         REQUIRE_FALSE(isDISet_);
 
         execute(0xF3);
