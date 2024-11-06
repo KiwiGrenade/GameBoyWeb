@@ -1,4 +1,6 @@
 #include "GameBoy.hpp"
+#include "InterruptController.hpp"
+#include "SerialDataTransfer.hpp"
 #include <cstdint>
 #include <memory>
 
@@ -8,7 +10,8 @@ GameBoy::GameBoy()
     : ic_(InterruptController())
     , joypad_(Joypad(ic_))
     , timer_(Timer(ic_))
-    , memory_(Memory(ic_, joypad_, timer_))
+    , serial_(SerialDataTransfer(ic_))
+    , memory_(Memory(ic_, joypad_, timer_, serial_))
     , cpu_(CPU(ic_, memory_)) {
 }
 

@@ -6,7 +6,8 @@ struct CPUTests : CPU {
     InterruptController ic;
     Joypad jp = Joypad(ic);
     Timer timer = Timer(ic);
-    Memory memory = Memory(ic, jp, timer);
+    SerialDataTransfer serial = SerialDataTransfer(ic);
+    Memory memory = Memory(ic, jp, timer, serial);
     CPUTests()
     :   CPU(ic, memory) {
         PC_ = 0xC000;

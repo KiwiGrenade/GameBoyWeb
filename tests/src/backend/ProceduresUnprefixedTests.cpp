@@ -7,7 +7,8 @@ struct ProceduresUnprefixedTests : CPU {
     InterruptController ic;
     Joypad jp = Joypad(ic);
     Timer timer = Timer(ic);
-    Memory memory = Memory(ic, jp, timer);
+    SerialDataTransfer serial = SerialDataTransfer(ic);
+    Memory memory = Memory(ic, jp, timer, serial);
 
     ProceduresUnprefixedTests() : CPU(ic, memory) {
         F_ = 0;
