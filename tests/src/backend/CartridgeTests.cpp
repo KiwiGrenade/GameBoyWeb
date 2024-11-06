@@ -12,17 +12,13 @@ TEST_CASE("CartridgeTests") {
         REQUIRE(car.getTitle() == "");
         REQUIRE(car.read(20) == 0);
     }
+    Cartridge car = Cartridge(std::filesystem::path("/home/jaskow/Repo/GameBoyWeb/roms/drmario.gb"));
     SECTION("arrayConstructor") {
-        QByteArray arr = QByteArray(0x8000, 0x23);
-        CHECK(arr.size() <= 0x8000);
-        Cartridge car = Cartridge(arr);
-    }
-    QByteArray arr = QByteArray(0x8000, 0x23);
-    Cartridge car = Cartridge(arr);
-    SECTION("read") {
-        REQUIRE(car.read(0x23) == 0x23);
+        REQUIRE(car.read(0) == 0xC3);
+        REQUIRE(car.read(0x7FFE) == 0x5A);
     }
     SECTION("getTitle") {
-        REQUIRE(car.getTitle() == "###############");
+        std::string expTitle = "DR.MARIO"; 
+        REQUIRE(car.getTitle().contains(expTitle));
     }
 }
