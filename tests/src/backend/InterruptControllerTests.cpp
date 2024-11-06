@@ -1,12 +1,10 @@
 #include "InterruptController.hpp"
 
-#include <memory>
-
 #include <catch2/catch_test_macros.hpp>
 
-TEST_CASE("InterruptController", "Constructor") {
-    std::shared_ptr<InterruptController> ic = std::make_shared<InterruptController>();
-    REQUIRE(ic);
+TEST_CASE_METHOD(InterruptController, "defaultConstructor") {
+    REQUIRE(IE_ == 0);
+    REQUIRE(IF_ == 0);
 }
 
 TEST_CASE_METHOD(InterruptController, "setIE") {
