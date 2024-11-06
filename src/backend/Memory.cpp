@@ -5,12 +5,13 @@
 
 constexpr u16 Cartridge::romSize_;
 
-Memory::Memory(InterruptController& ic, Joypad& joypad, Timer& timer)
+Memory::Memory(InterruptController& ic, Joypad& joypad, Timer& timer, SerialDataTransfer& serial)
     : memory_(std::array<unsigned char, size_>{})
     , cartridge_(std::make_shared<Cartridge>())
     , ic_(ic)
     , joypad_(joypad)
     , timer_(timer)
+    , serial_(serial)
     , wroteToSram_(false) {
 }
 
@@ -52,6 +53,14 @@ void Memory::write(const u8 byte, const u16 addr) {
         }
         // serial transfer
         else if (0xFF01 <= addr && addr <= 0xFF02) {
+            switch (addr) {
+                case 0xFF01:
+                    serial_.setSB(byte);
+                    break;
+                case 0xFF02:
+                    serial_.setSC(byte);
+                    break;
+            }
         }
         // Timer and divider
         else if (0xFF04 <= addr && addr <= 0xFF07) {
@@ -98,13 +107,21 @@ void Memory::write(const u8 byte, const u16 addr) {
     }
 }
 
-u8 Memory::read(const u16 addr) const {
+u8 Memory::read(const u16 addr) {
     if(isROM0(addr) || isROM1(addr)) {
         return cartridge_->read(addr);
     }
     else if(isIOPORT(addr)) {
         if (addr == 0xFF00) {
             return joypad_.read();
+        }
+        else if (0xFF01 <= addr && addr <= 0xFF02) {
+            switch (addr) {
+                case 0xFF01:
+                    return serial_.getSB();
+                case 0xFF02:
+                    return serial_.getSC();
+            }
         }
         if (0xFF04 <= addr && addr <= 0xFF07) {
             switch(addr) {
@@ -136,5 +153,8 @@ u8 Memory::read(const u16 addr) const {
 
 void Memory::reset() {
     memory_.fill(0);
+    ic_.reset();
     timer_.reset();
+    joypad_.reset();
+    serial_.reset();
 }

@@ -9,6 +9,7 @@
 #include "Cartridge.hpp"
 #include "Joypad.hpp"
 #include "Timer.hpp"
+#include "SerialDataTransfer.hpp"
 
 /* ######## Memory Map #########
  *
@@ -28,10 +29,10 @@
 
 class Memory {
 public:
-    Memory(InterruptController& ic, Joypad& joypad, Timer& timer);
+    Memory(InterruptController& ic, Joypad& joypad, Timer& timer, SerialDataTransfer& serial);
     ~Memory() = default;
     
-    u8 read(const u16 addr) const;
+    u8 read(const u16 addr);
     void write(const u8 byte, const u16 addr);
     void reset();
     inline u8& getIE() { return memory_[0xFFFF]; }
@@ -58,6 +59,7 @@ protected:
     InterruptController& ic_;
     Joypad& joypad_;
     Timer& timer_;
+    SerialDataTransfer serial_;
     std::shared_ptr<Cartridge> cartridge_;
     std::array<u8, size_> memory_;
     bool wroteToSram_;

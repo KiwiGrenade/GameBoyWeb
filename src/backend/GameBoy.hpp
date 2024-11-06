@@ -9,6 +9,7 @@
 #include "InterruptController.hpp"
 #include "Memory.hpp"
 #include "CPU.hpp"
+#include "SerialDataTransfer.hpp"
 #include "Timer.hpp"
 
 class GameBoy : public QThread {
@@ -32,5 +33,6 @@ private:
     Timer timer_;
     Joypad joypad_;
     Memory memory_;
+    SerialDataTransfer serial_;
     CPU cpu_;
 };
