@@ -29,7 +29,7 @@ void MainWindow::on_actionLoad_triggered() {
         {
             Utils::error("No file was selected! Exiting!");
         }
-        cartridge_ = std::make_shared<Cartridge>(fileContent);
+        cartridge_ = std::make_shared<Cartridge>(fileName.toStdString());
         gameBoy_->reset();
         gameBoy_->loadCartridge(cartridge_);
     };
