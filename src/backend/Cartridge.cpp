@@ -11,8 +11,10 @@ Cartridge::Cartridge(const std::string& filePath)
 
 std::array<u8, Cartridge::romSize_> Cartridge::extractROM(const std::string& filePathStr) {
     const std::filesystem::path filePath { filePathStr };
-    if(not std::filesystem::exists(filePath))
+    if(filePath.empty())
         Utils::error("Filename not provided for cartridge!");
+    if(not std::filesystem::exists(filePath))
+        Utils::error("Filename: \"" + filePathStr + " does not exist!");
 
     std::array<u8, Cartridge::romSize_> rom;
     

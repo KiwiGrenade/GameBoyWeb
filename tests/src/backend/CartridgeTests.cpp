@@ -12,7 +12,7 @@ TEST_CASE("CartridgeTests") {
         REQUIRE(car.getTitle() == "");
         REQUIRE(car.read(20) == 0);
     }
-    Cartridge car = Cartridge(std::filesystem::path("/home/jaskow/Repo/GameBoyWeb/roms/drmario.gb"));
+    Cartridge car {"/home/jaskow/Repo/GameBoyWeb/roms/games/drmario.gb"};
     SECTION("arrayConstructor") {
         REQUIRE(car.read(0) == 0xC3);
         REQUIRE(car.read(0x7FFE) == 0x5A);
