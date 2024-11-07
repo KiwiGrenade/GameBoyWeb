@@ -31,7 +31,7 @@ void CPU::reset() {
     DE_.setVal(0x00D8);
     HL_.setVal(0x014D);
     SP_.setVal(0xFFFE);
-    PC_.setVal(0x1000);
+    PC_.setVal(0x0100);
 
     // interrupt flags registers
     IME_ = false;
@@ -44,7 +44,7 @@ void CPU::reset() {
     is2xSpeed_ = false;
     isEISet_ = false;
     isDISet_ = false;
-    isCondMet_ = false;
+    isCondMet_ = true;
     incrementPC_ = true;
 }
 
@@ -87,6 +87,9 @@ u8 CPU::handleInterrupts() {
     return 0;
 }
 
+CPU::debugDump() {
+}
+
 u8 CPU::step() {
     handleInterrupts();
     handleIME();
@@ -97,13 +100,22 @@ u8 CPU::step() {
     isCondMet_ = true;
     incrementPC_ = true;
 
-    u8 opcode = memory_.read(PC_);
+    int opcode = memory_.read(PC_);
     
     // deduce from which map to pick
-    Instruction instr = 
-        isPrefixed_ ? prefInstrArray_[opcode] : unprefInstrArray_[opcode];
+    Instruction instr;
+    if(isPrefixed_) {
+        instr = prefInstrArray_[opcode];
+        isPrefixed_ = false;
+    }
+    else {
+        instr = unprefInstrArray_[opcode];
+    }
+
+    std::cout << "PC: " << std::hex << PC_ << " INS: " << opcode << std::endl;
 
     instr.proc_();
+
 
     // set flags
     handleFlags(instr.info_.getFlags());

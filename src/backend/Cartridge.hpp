@@ -2,9 +2,6 @@
 
 #include "utils.hpp"
 
-#include <QByteArray>
-#include <filesystem>
-
 class Cartridge {
 public:
     Cartridge() = default;
