@@ -1,4 +1,5 @@
 #include "CPU.hpp"
+#include "DebugTypes.hpp"
 #include "InterruptController.hpp"
 #include "utils.hpp"
 
@@ -26,7 +27,7 @@ void CPU::reset() {
     /*cycles_ = 0;*/
 
     // registers
-    AF_.setVal(0x11B0);
+    AF_.setVal(0x01B0);
     BC_.setVal(0x0013);
     DE_.setVal(0x00D8);
     HL_.setVal(0x014D);
@@ -87,7 +88,21 @@ u8 CPU::handleInterrupts() {
     return 0;
 }
 
-CPU::debugDump() {
+CPUDump CPU::getDebugDump() {
+    return CPUDump(
+        std::array<u8, 4> { fetch8(PC_), fetch8(PC_ + 1), fetch8(PC_ + 2), fetch8(PC_ + 3) },
+        AF_.hi_,
+        AF_.lo_,
+        BC_.hi_,
+        BC_.lo_,
+        DE_.hi_,
+        DE_.lo_,
+        HL_.hi_,
+        HL_.lo_,
+        SP_,
+        PC_,
+        IME_
+    );
 }
 
 u8 CPU::step() {
@@ -100,7 +115,7 @@ u8 CPU::step() {
     isCondMet_ = true;
     incrementPC_ = true;
 
-    int opcode = memory_.read(PC_);
+    int opcode = fetch8(PC_);
     
     // deduce from which map to pick
     Instruction instr;
@@ -112,10 +127,7 @@ u8 CPU::step() {
         instr = unprefInstrArray_[opcode];
     }
 
-    std::cout << "PC: " << std::hex << PC_ << " INS: " << opcode << std::endl;
-
     instr.proc_();
-
 
     // set flags
     handleFlags(instr.info_.getFlags());

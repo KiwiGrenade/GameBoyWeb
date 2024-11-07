@@ -241,8 +241,20 @@ TEST_CASE("reset") {
         REQUIRE(memory.read(i) == 0xFF);
     }
 
-    SECTION("0xFF01 - 0xFFFF") {
-        i = GENERATE(range(0xFF01, 0xFFFF));
+    SECTION("0xFF01 - 0xFF43") {
+        i = GENERATE(range(0xFF01, 0xFF43));
+
+        DYNAMIC_SECTION("Check if memory.read(" << std::hex << i << std::dec << ") == 0") {
+            REQUIRE(memory.read(i) == 0);
+        }
+    }
+    // lcd - temorary always returns 0x90
+    SECTION("0xFF44") {
+        i = 0xFF44;
+        REQUIRE(memory.read(i) == 0x90);
+    }
+    SECTION("0xFF45 - 0xFFFF") {
+        i = GENERATE(range(0xFF45, 0xFFFF));
 
         DYNAMIC_SECTION("Check if memory.read(" << std::hex << i << std::dec << ") == 0") {
             REQUIRE(memory.read(i) == 0);

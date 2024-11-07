@@ -2,7 +2,6 @@
 #include "InterruptController.hpp"
 #include "SerialDataTransfer.hpp"
 #include <cstdint>
-#include <memory>
 
 #include<QElapsedTimer>
 
@@ -39,6 +38,9 @@ void GameBoy::emulateStep() {
     cpu_.step();
 }
 
+std::string GameBoy::getCPUDebugDump() {
+    return cpu_.getDebugDump().toStr();
+}
 std::string GameBoy::getSerialOutput() {
     const std::vector<char>& vec {serial_.getTestOutput()};
     return std::string {vec.begin(), vec.end()};
