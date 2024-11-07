@@ -20,4 +20,4 @@ FetchContent_MakeAvailable(Catch2)
 include(CTest)
 
 add_subdirectory(src)
-add_subdirectory(tests/src/backend)
+add_subdirectory(tests)
