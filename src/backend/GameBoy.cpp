@@ -35,6 +35,15 @@ void GameBoy::pause() {
     isPaused = !isPaused;
 }
 
+void GameBoy::emulateStep() {
+    cpu_.step();
+}
+
+std::string GameBoy::getSerialOutput() {
+    const std::vector<char>& vec {serial_.getTestOutput()};
+    return std::string {vec.begin(), vec.end()};
+}
+
 uint64_t GameBoy::update(const uint32_t cyclesToExecute) {
     uint64_t cyclesPassed = 0;
     while(cyclesPassed < cyclesToExecute) {
@@ -64,7 +73,8 @@ void GameBoy::run() {
     constexpr uint64_t maxWaitTimeNsecs = 1000000000;
 
     timer.start();
-    while(!isStopped) {
+    uint64_t cycles = 0;
+    while(!isStopped && cycles < 1200000) {
         deltaTime = timer.nsecsElapsed();
         timer.restart();
 

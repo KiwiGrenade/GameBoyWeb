@@ -22,6 +22,8 @@ public:
     void reset();
     void stop();
     void pause();
+    void emulateStep();
+    std::string getSerialOutput();
     void run() override; // start
     uint64_t update(uint32_t nCycles);
 
