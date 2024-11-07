@@ -138,6 +138,9 @@ u8 Memory::read(const u16 addr) {
         else if (addr == 0xFF0F) {
             return ic_.getIF();
         }
+        else if (addr == 0xFF44) {
+            return 0x90;
+        }
         else
             return memory_[addr];
     }

@@ -53,7 +53,7 @@ protected:
     inline bool isOAM(const u16 addr) const { return 0xFE00 <= addr && addr <= 0xFE9F; };
     inline bool isUndefined(const u16 addr) const { return 0xFEA0 <= addr && addr <= 0xFEFF; };
     inline bool isIOPORT(const u16 addr) const { return 0xFF00 <= addr && addr <= 0xFF7F; };
-    inline bool isHRAM(const u16 addr) const { return 0xFF90 <= addr && addr <= 0xFFFE; };
+    inline bool isHRAM(const u16 addr) const { return 0xFF80 <= addr && addr <= 0xFFFE; };
     inline bool isIE(const u16 addr) const { return addr == 0xFFFF; };
     
     InterruptController& ic_;

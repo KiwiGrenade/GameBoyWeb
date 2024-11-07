@@ -5,6 +5,7 @@
 #include "RegisterPair.hpp"
 #include "Memory.hpp"
 #include "InterruptController.hpp"
+#include "DebugTypes.hpp"
 
 #include <QJsonObject>
 
@@ -20,6 +21,7 @@ public:
     
     u8 step();
     void reset();
+    CPUDump getDebugDump();
 
 protected:
     Memory&                 memory_;

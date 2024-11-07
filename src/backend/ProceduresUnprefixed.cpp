@@ -414,7 +414,7 @@ void CPU::jr(const bool cond, int8_t dest) {
     isCondMet_ = cond;
     if(cond) {
         PC_ += dest;
-        incrementPC_ = false;
+        /*incrementPC_ = false;*/
     }
 }
 
