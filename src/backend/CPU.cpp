@@ -106,8 +106,7 @@ CPUDump CPU::getDebugDump() {
 }
 
 u8 CPU::step() {
-    /*u8 cycles { handleInterrupts() };*/
-    u8 cycles {};
+    u8 cycles { handleInterrupts() };
 
     if(cycles != 0)
         return cycles;
@@ -132,15 +131,7 @@ u8 CPU::step() {
         instr = unprefInstrArray_[opcode];
     }
 
-    if(opcode == 0xE0) {
-        std::cout << "elo"<< std::endl;
-    }
-
     instr.proc_();
-
-    if(opcode == 0xE0) {
-        std::cout << "elo"<< std::endl;
-    }
 
     // set flags
     handleFlags(instr.info_.getFlags());

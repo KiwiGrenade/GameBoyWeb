@@ -104,8 +104,8 @@ protected:
         }
 
     private:
-        u8 bitPos_;
         r8& flagsRegister_;
+        u8 bitPos_;
     };
 
     Flag FlagZ_;

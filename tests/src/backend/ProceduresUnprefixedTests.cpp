@@ -26,7 +26,6 @@ struct ProceduresUnprefixedTests : CPU {
         unsigned int k = startOpcode;
         unsigned int i = 0;
         for(r8* reg : regs) {
-            /*std::cout << "i: " << i << std::endl << "k: " << k << std::endl;*/
             if(i == 6)
                k += jump;
 
@@ -220,12 +219,12 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         SECTION("positive") {
             memory_.write(int8_t(20), PC_+1);
             execute(0x18);
-            REQUIRE(PC_ == oldPC+20);
+            REQUIRE(PC_ == oldPC+2+20);
         }
         SECTION("negative") {
             memory_.write(int8_t(-20), PC_+1);
             execute(0x18);
-            REQUIRE(PC_ == oldPC.getVal()-20);
+            REQUIRE(PC_ == oldPC.getVal()-18);
         }
     }
     SECTION("0x1A", "[LD]") {
@@ -252,7 +251,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         SECTION("shouldJump") {
             memory_.write(int8_t(val), PC_+1);
             execute(op);
-            REQUIRE(PC_ == oldPC+val);
+            REQUIRE(PC_ == oldPC+2+val);
         }
         SECTION("shouldNotJump") {
             FlagZ_.set(true);
@@ -282,7 +281,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             FlagZ_.set(true);
             memory_.write(int8_t(val), PC_+1);
             execute(op);
-            REQUIRE(PC_ == oldPC+val);
+            REQUIRE(PC_ == oldPC+2+val);
         }
         SECTION("shouldNotJump") {
             memory_.write(int8_t(val), PC_+1);
@@ -310,7 +309,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
         SECTION("shouldJump") {
             memory_.write(int8_t(val), PC_+1);
             execute(op);
-            REQUIRE(PC_ == oldPC+val);
+            REQUIRE(PC_ == oldPC+2+val);
         }
         SECTION("shouldNotJump") {
             FlagC_.set(true);
@@ -363,7 +362,7 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             FlagC_.set(true);
             memory_.write(int8_t(val), PC_+1);
             execute(op);
-            REQUIRE(PC_ == oldPC+val);
+            REQUIRE(PC_ == oldPC+2+val);
         }
         SECTION("shouldNotJump") {
             memory_.write(int8_t(val), PC_+1);

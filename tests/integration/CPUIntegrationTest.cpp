@@ -4,17 +4,18 @@
 #include <memory>
 
 TEST_CASE("01-special.gb", "[tag1], [tag2]") {
-    auto car  = std::make_shared<Cartridge>("/home/jaskow/Repo/GameBoyWeb/roms/tests/Blaarg/cpu_instrs/individual/01-special.gb");
+    std::string testRomPath = Utils::romsPath + "/tests/Blaarg/cpu_instrs/individual/01-special.gb";
+    auto car  = std::make_shared<Cartridge>(testRomPath);
+    auto gb = std::make_shared<GameBoy>();
 
-    GameBoy gb;
-    gb.loadCartridge(car);
+    gb->loadCartridge(car);
 
-    for(uint32_t i = 0; i < 40000; ++i) {
-        std::cout << gb.getCPUDebugDump() << std::endl;
-        gb.emulateStep();
+    for(uint32_t i = 0; i < 15000000; ++i) {
+        gb->emulateStep();
     }
-    DYNAMIC_SECTION("Check if : " << gb.getSerialOutput() << " contains : Passed") {
-        REQUIRE_FALSE(gb.getSerialOutput().empty());
-        REQUIRE(gb.getSerialOutput().contains("Passed"));
+
+    std::string testOutput = gb->getSerialOutput();
+    DYNAMIC_SECTION("Serial output : " << testOutput) {
+        REQUIRE(testOutput.contains("Passed"));
     }
 }

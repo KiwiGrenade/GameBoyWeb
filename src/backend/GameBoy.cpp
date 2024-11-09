@@ -7,8 +7,8 @@
 
 GameBoy::GameBoy()
     : ic_(InterruptController())
-    , joypad_(Joypad(ic_))
     , timer_(Timer(ic_))
+    , joypad_(Joypad(ic_))
     , serial_(SerialDataTransfer(ic_))
     , memory_(Memory(ic_, joypad_, timer_, serial_))
     , cpu_(CPU(ic_, memory_)) {
@@ -41,8 +41,9 @@ void GameBoy::emulateStep() {
 std::string GameBoy::getCPUDebugDump() {
     return cpu_.getDebugDump().toStr();
 }
+
 std::string GameBoy::getSerialOutput() {
-    const std::vector<char>& vec {serial_.getTestOutput()};
+    std::vector<char> vec { serial_.getTestOutput()};
     return std::string {vec.begin(), vec.end()};
 }
 

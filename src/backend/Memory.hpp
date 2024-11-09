@@ -43,7 +43,7 @@ public:
 
 protected:
 
-    inline bool isROM0(const u16 addr) const { return 0 <= addr && addr <= 0x3FFF; };
+    inline bool isROM0(const u16 addr) const { return addr <= 0x3FFF; };
     inline bool isROM1(const u16 addr) const { return 0x4000 <= addr && addr <= 0x7FFF; };
     inline bool isVRAM(const u16 addr) const { return 0x8000 <= addr && addr <= 0x9FFF; };
     inline bool isERAM(const u16 addr) const { return 0xA000 <= addr && addr <= 0xBFFF; };
@@ -59,7 +59,7 @@ protected:
     InterruptController& ic_;
     Joypad& joypad_;
     Timer& timer_;
-    SerialDataTransfer serial_;
+    SerialDataTransfer& serial_;
     std::shared_ptr<Cartridge> cartridge_;
     std::array<u8, size_> memory_;
     bool wroteToSram_;

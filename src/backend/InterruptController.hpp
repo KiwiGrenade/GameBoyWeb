@@ -15,6 +15,7 @@ public:
     InterruptController() = default;
 
     void requestInterrupt(Type);
+    void disableInterrupt(u8);
     void setIE(u8 byte);
     u8 getIE();
     void setIF(u8 byte);

@@ -22,8 +22,7 @@ struct ProceduresPrefixedTests : CPU {
 
     void execute(u8 op) {
         memory_.write(0xCB, PC_);
-        step();
-        memory_.write(op, PC_);
+        memory_.write(op, PC_+1);
         step();
     }
 

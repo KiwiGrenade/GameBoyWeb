@@ -15,5 +15,6 @@ target_link_libraries(CPULogMaker PRIVATE
     Catch2::Catch2WithMain
 )
 
+target_compile_options(CPULogMaker PRIVATE -Wall)
+
 add_test(CPUIntegrationTest ${CMAKE_SOURCE_DIR}/bin/CPUIntegrationTest)
-add_test(CPULogMaker ${CMAKE_SOURCE_DIR}/bin/CPULogMaker)

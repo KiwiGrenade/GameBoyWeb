@@ -2,14 +2,18 @@
 
 SerialDataTransfer::SerialDataTransfer(InterruptController& ic) 
     : ic_(ic) {
+    reset();
 }
 
-void SerialDataTransfer::writeToTestOutput(u8 controlData) {
-    testOutput_.push_back((char)SB_);
+void SerialDataTransfer::writeToTestOutput() {
+    testOutput_.push_back(SB_);
     ic_.requestInterrupt(InterruptController::Type::Serial);
 }
 
 std::vector<char> SerialDataTransfer::getTestOutput() {
+    std::cout << "Someone is getting serial output!" << std::endl;
+    if(testOutput_.empty())
+        std::cout << "Serial: serial is empty!" << std::endl;
     return testOutput_;
 }
 
@@ -29,7 +33,7 @@ u8 SerialDataTransfer::getSB() {
 void SerialDataTransfer::setSC(u8 byte) {
     SC_ = byte;
     if(byte == 0x81)
-        writeToTestOutput(byte);
+        writeToTestOutput();
 }
 
 u8 SerialDataTransfer::getSC() {
