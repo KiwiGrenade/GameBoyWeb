@@ -38,7 +38,6 @@ void CPU::reset() {
     IME_ = false;
 
     // helper flags
-    isPrefixed_ = false;
     isStopped_ = false;
     isHalted_ = false;
     isHaltBug_ = false;
@@ -71,6 +70,7 @@ void CPU::executeInterrupt(u8 i) {
     isStopped_ = false;
 
     call(true, 0x0040 + i * 8);
+    ic_.disableInterrupt(i);
     IME_ = false;
 }
 
@@ -106,28 +106,41 @@ CPUDump CPU::getDebugDump() {
 }
 
 u8 CPU::step() {
-    handleInterrupts();
+    /*u8 cycles { handleInterrupts() };*/
+    u8 cycles {};
+
+    if(cycles != 0)
+        return cycles;
+
     handleIME();
-    if(isHalted_) {
-        // assume nop
-        return 4;
-    }
+
     isCondMet_ = true;
     incrementPC_ = true;
 
+    if(isHalted_)
+        return 4;
+
     int opcode = fetch8(PC_);
-    
+
     // deduce from which map to pick
     Instruction instr;
-    if(isPrefixed_) {
+    if(opcode == 0xCB) {
+        opcode = fetch8(PC_+1);
         instr = prefInstrArray_[opcode];
-        isPrefixed_ = false;
     }
     else {
         instr = unprefInstrArray_[opcode];
     }
 
+    if(opcode == 0xE0) {
+        std::cout << "elo"<< std::endl;
+    }
+
     instr.proc_();
+
+    if(opcode == 0xE0) {
+        std::cout << "elo"<< std::endl;
+    }
 
     // set flags
     handleFlags(instr.info_.getFlags());
@@ -137,9 +150,14 @@ u8 CPU::step() {
         PC_ += instr.info_.getBytes();
 
     // determine number of cycles that went by while executing instruction
-    std::pair <u8, u8> cycles = instr.info_.getCycles();
+    auto instrCycles = instr.info_.getCycles();
+    
+    if(isCondMet_)
+        cycles += instrCycles.first;
+    else
+        cycles += instrCycles.second;
 
-    return isCondMet_ ? cycles.first : cycles.second;
+    return cycles;
 }
 
 void CPU::handleFlags(const Utils::flagArray& flags) {
