@@ -547,5 +547,5 @@ void CPU::daa() {
         if(FlagH_)
             A_ -=0x6;
     }
-    FlagZ_.set(A_);
+    FlagZ_.set(!A_);
 }

@@ -5,6 +5,10 @@ void InterruptController::requestInterrupt(Type intType) {
     Utils::setBit(IF_, intType, true);
 }
 
+void InterruptController::disableInterrupt(u8 i) {
+    Utils::setBit(IF_, i, false);
+}
+
 void InterruptController::setIE(u8 byte) {
     IE_ = byte;
 }

@@ -1,8 +1,6 @@
 #include "Cartridge.hpp"
-#include <QByteArray>
 
 #include <catch2/catch_test_macros.hpp>
-#include <qstringview.h>
 
 constexpr u16 Cartridge::romSize_;
 
@@ -12,7 +10,8 @@ TEST_CASE("CartridgeTests") {
         REQUIRE(car.getTitle() == "");
         REQUIRE(car.read(20) == 0);
     }
-    Cartridge car {"/home/jaskow/Repo/GameBoyWeb/roms/games/drmario.gb"};
+    std::string testRomPath = Utils::romsPath + "/games/drmario.gb";
+    Cartridge car {testRomPath};
     SECTION("arrayConstructor") {
         REQUIRE(car.read(0) == 0xC3);
         REQUIRE(car.read(0x7FFE) == 0x5A);

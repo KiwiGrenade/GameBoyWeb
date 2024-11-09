@@ -28,14 +28,14 @@ public:
     void run() override; // start
     uint64_t update(uint32_t nCycles);
 
-private:
+protected:
     // flags
     bool isPaused;
     bool isStopped;
     InterruptController ic_;
     Timer timer_;
     Joypad joypad_;
-    Memory memory_;
     SerialDataTransfer serial_;
+    Memory memory_;
     CPU cpu_;
 };
