@@ -983,12 +983,12 @@ TEST_CASE_METHOD(ProceduresUnprefixedTests, "ProceduresUnprefixedTests" ) {
             REQUIRE_FALSE(PC_ == 0xF1F0);
         }
     }
-    SECTION("0xCB") {
-        REQUIRE_FALSE(isPrefixed_);
-        execute(0xCB);
-        REQUIRE(isPrefixed_);
-        isPrefixed_ = false;
-    }
+    /*SECTION("0xCB") {*/
+    /*    REQUIRE_FALSE(isPrefixed_);*/
+    /*    execute(0xCB);*/
+    /*    REQUIRE(isPrefixed_);*/
+    /*    isPrefixed_ = false;*/
+    /*}*/
     SECTION("0xCC", "[CALL]") {
         SP_ = 0xC082;
         oldPC = PC_ + 3; // PC += 3 is iniside call

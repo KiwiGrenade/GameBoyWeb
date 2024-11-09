@@ -46,23 +46,23 @@ TEST_CASE_METHOD(InterruptController, "reset") {
 
 TEST_CASE_METHOD(InterruptController, "requestInterrupt") {
     SECTION("VBlank") {
-        requestInterrupt(Type::VBlank);
+        requestInterrupt(0);
         REQUIRE(IF_ == 0b00000001);
     }
     SECTION("LCD") {
-        requestInterrupt(Type::LCD);
+        requestInterrupt(1);
         REQUIRE(IF_ == 0b00000010);
     }
     SECTION("Timer") {
-        requestInterrupt(Type::Timer);
+        requestInterrupt(2);
         REQUIRE(IF_ == 0b00000100);
     }
     SECTION("Serial") {
-        requestInterrupt(Type::Serial);
+        requestInterrupt(3);
         REQUIRE(IF_ == 0b00001000);
     }
     SECTION("Joypad") {
-        requestInterrupt(Type::Joypad);
+        requestInterrupt(4);
         REQUIRE(IF_ == 0b00010000);
     }
 }

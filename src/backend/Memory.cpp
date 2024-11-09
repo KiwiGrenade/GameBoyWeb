@@ -56,6 +56,7 @@ void Memory::write(const u8 byte, const u16 addr) {
                     serial_.setSB(byte);
                     break;
                 case 0xFF02:
+                    std::cout << "hello from memory" << std::endl;
                     serial_.setSC(byte);
                     break;
             }

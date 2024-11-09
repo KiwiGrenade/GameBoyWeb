@@ -206,7 +206,7 @@ ProcArray CPU::getUnprefProcArray() {
         [this] /*0xC8*/ { ret(FlagZ_); },
         [this] /*0xC9*/ { ret(true); },
         [this] /*0xCA*/ { jp(FlagZ_, fetch16(PC_+1)); },
-        [this] /*0xCB*/ { isPrefixed_ = true; },
+        [this] /*0xCB*/ { notImplemented(); },
         [this] /*0xCC*/ { call(FlagZ_, fetch16(PC_+1)); },
         [this] /*0xCD*/ { call(true, fetch16(PC_+1)); },
         [this] /*0xCE*/ { adc(fetch8(PC_+1)); },
