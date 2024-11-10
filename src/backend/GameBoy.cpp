@@ -10,7 +10,8 @@ GameBoy::GameBoy()
     , timer_(Timer(ic_))
     , joypad_(Joypad(ic_))
     , serial_(SerialDataTransfer(ic_))
-    , memory_(Memory(ic_, joypad_, timer_, serial_))
+    , ppu_(PPU(ic_))
+    , memory_(Memory(ic_, timer_, joypad_, serial_, ppu_))
     , cpu_(CPU(ic_, memory_)) {
 }
 
@@ -19,19 +20,21 @@ GameBoy::~GameBoy() {
 }
 
 void GameBoy::reset() {
+    ic_.reset();
+    timer_.reset();
+    joypad_.reset();
+    serial_.reset();
+    ppu_.reset();
     memory_.reset();
     cpu_.reset();
-    joypad_.reset();
-    timer_.reset();
-    ic_.reset();
 }
 
 void GameBoy::stop() {
-    isStopped = true;
+    isStopped_ = true;
 }
 
 void GameBoy::pause() {
-    isPaused = !isPaused;
+    isPaused_ = !isPaused_;
 }
 
 void GameBoy::emulateStep() {
@@ -60,8 +63,8 @@ uint64_t GameBoy::update(const uint32_t cyclesToExecute) {
 }
 
 void GameBoy::run() {
-    isPaused = false;
-    isStopped = false;
+    isPaused_ = false;
+    isStopped_ = false;
 
     QElapsedTimer timer;
     // time between loop iterations
@@ -78,7 +81,7 @@ void GameBoy::run() {
 
     timer.start();
     uint64_t cycles = 0;
-    while(!isStopped && cycles < 1200000) {
+    while(!isStopped_ && cycles < 1200000) {
         deltaTime = timer.nsecsElapsed();
         timer.restart();
 

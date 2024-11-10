@@ -7,10 +7,12 @@
 
 #include "Cartridge.hpp"
 #include "InterruptController.hpp"
-#include "Memory.hpp"
-#include "CPU.hpp"
+#include "Joypad.hpp"
 #include "SerialDataTransfer.hpp"
 #include "Timer.hpp"
+#include "PPU.hpp"
+#include "Memory.hpp"
+#include "CPU.hpp"
 
 class GameBoy : public QThread {
     Q_OBJECT
@@ -30,12 +32,13 @@ public:
 
 protected:
     // flags
-    bool isPaused;
-    bool isStopped;
+    bool isPaused_;
+    bool isStopped_;
     InterruptController ic_;
     Timer timer_;
     Joypad joypad_;
     SerialDataTransfer serial_;
+    PPU ppu_;
     Memory memory_;
     CPU cpu_;
 };

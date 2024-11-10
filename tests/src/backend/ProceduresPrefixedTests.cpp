@@ -5,10 +5,11 @@
 
 struct ProceduresPrefixedTests : CPU {
     InterruptController ic;
-    Joypad jp = Joypad(ic);
-    Timer timer = Timer(ic);
-    SerialDataTransfer serial = SerialDataTransfer(ic);
-    Memory memory = Memory(ic, jp, timer, serial);
+    Joypad joypad { ic };
+    Timer timer { ic };
+    SerialDataTransfer serial { ic };
+    PPU ppu { ic };
+    Memory memory { ic, timer, joypad, serial, ppu };
 
     ProceduresPrefixedTests() : CPU(ic, memory) {
         AF_ = 0;
