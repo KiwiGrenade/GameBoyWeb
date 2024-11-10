@@ -14,10 +14,22 @@ public:
 protected:
     void setLCDStatus();
     inline bool isLCDEnabled() { return Utils::getBit(LCDC_, 7); };
+    void checkStatus();
+    void loadSprites();
+    void renderScanline();
+    void handleOamScan();
+    void handleVramRead();
+    void handleHBlank();
+    void handleVBlank();
+    void setMode(u8 model);
+    inline u8 getMode() { return STAT_ & 3; };
     void drawScanline();
 
     InterruptController& ic_;
-
+    
+    bool statSignal_;
+    bool isRenderer_;
+    uint32_t clock_;
     u16 scanlineCounter_;
     u8 LCDC_;   // 0xFF40
     u8 STAT_;   // 0xFF41
