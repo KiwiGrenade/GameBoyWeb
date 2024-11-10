@@ -11,9 +11,6 @@ void SerialDataTransfer::writeToTestOutput() {
 }
 
 std::vector<char> SerialDataTransfer::getTestOutput() {
-    std::cout << "Someone is getting serial output!" << std::endl;
-    if(testOutput_.empty())
-        std::cout << "Serial: serial is empty!" << std::endl;
     return testOutput_;
 }
 

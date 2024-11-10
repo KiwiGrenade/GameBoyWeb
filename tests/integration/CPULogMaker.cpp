@@ -3,10 +3,12 @@
 #include <memory>
 #include <string>
 
+using namespace TestUtils::TestNames;
+
 int main(int argc, char *argv[]) {
-    std::string input { argv[1] };
-    int testNumber = std::stoi(input) - 1;
-    std::string testName { TestUtils::blaargTestNames[testNumber]};
+    int numberOfCycles = std::stoi(argv[2]);
+    int testNumber = std::stoi(argv[1]) - 1;
+    std::string testName { CpuInstrs::individual[testNumber]};
     std::string testRomPath = Utils::romsPath + "/tests/Blaarg/cpu_instrs/individual/" + testName + ".gb";
 
     auto car  = std::make_shared<Cartridge>(testRomPath);
@@ -14,10 +16,10 @@ int main(int argc, char *argv[]) {
 
     gb->loadCartridge(car);
 
-    for(uint32_t i = 0; i < 10360000; ++i) {
-        std::cout << gb->getCPUDebugDump() << std::endl;
+    for(int i = 0; i < numberOfCycles; ++i) {
+        /*std::cout << gb->getCPUDebugDump() << std::endl;*/
         gb->emulateStep();
     }
-    /*std::cout << gb->getSerialOutput() << std::endl;*/
+    std::cout << gb->getSerialOutput() << std::endl;
     return 0;
 }

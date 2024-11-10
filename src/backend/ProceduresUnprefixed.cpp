@@ -3,7 +3,7 @@
 
 ProcArray CPU::getUnprefProcArray() {
     return {
-        [this] /*0x00*/ { nop(); },
+        [this] /*0x00*/ { return; },
         [this] /*0x01*/ { ld16(BC_, fetch16(PC_+1)); },
         [this] /*0x02*/ { ldd(BC_, A_); },
         [this] /*0x03*/ { inc(BC_); },
@@ -340,9 +340,9 @@ void CPU::orr(const u8 r) {
 }
 
 void CPU::cp(const u8 r) {
-    r16 res = A_ - r;
+    int16_t res = A_ - r;
     FlagZ_.set(!res);
-    FlagH_.set(Flag::checkH(A_, r, res.lo_));
+    FlagH_.set(Flag::checkH(A_, r, res & 0xFF));
     FlagC_.set(res < 0);
 }
 
@@ -486,17 +486,13 @@ void CPU::ldHLSP(const int8_t d) {
 }
 
 void CPU::addSP() {
-    int8_t val = fetch8(PC_+1);
-    FlagH_.set(Flag::checkH(SP_, val, SP_ + val));
-    FlagC_.set(SP_ + val > 0x00FF);
-    SP_ += val;
+    u16 res = SP_ + static_cast<int8_t>(fetch8(PC_+1));
+    FlagH_.set((res & 0xF) < (SP_ & 0xF));
+    FlagC_.set((res & 0xFF) < (SP_ & 0xFF));
+    SP_ = res;
 }
 
 /*################### misc ###################*/
-
-void CPU::nop() {
-    /* do nothing */
-}
 
 void CPU::scf() {
     /* done by handleFlags */
@@ -515,6 +511,7 @@ void CPU::ei() {
 }
 
 void CPU::di() {
+    /*IME_ = ;*/
     isDISet_ = true;
 }
 
