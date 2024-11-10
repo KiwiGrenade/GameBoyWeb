@@ -8,10 +8,11 @@
 
 TEST_CASE("memory.write/read") {
     InterruptController ic;
-    Joypad joypad = Joypad(ic);
-    Timer timer = Timer(ic);
-    SerialDataTransfer serial = SerialDataTransfer(ic);
-    Memory memory = Memory(ic, joypad, timer, serial);
+    Joypad joypad { ic };
+    Timer timer { ic };
+    SerialDataTransfer serial { ic };
+    PPU ppu { ic };
+    Memory memory { ic, timer, joypad, serial, ppu };
     u8 byte = GENERATE(take(1, random(1, 0xFF)));
 
     SECTION("ROM0") {
@@ -219,10 +220,11 @@ TEST_CASE("memory.write/read") {
 
 TEST_CASE("reset") {
     InterruptController ic;
-    Joypad joypad = Joypad(ic);
-    Timer timer = Timer(ic);
-    SerialDataTransfer serial = SerialDataTransfer(ic);
-    Memory memory = Memory(ic, joypad, timer, serial);
+    Joypad joypad { ic };
+    Timer timer { ic };
+    SerialDataTransfer serial { ic };
+    PPU ppu { ic };
+    Memory memory { ic, timer, joypad, serial, ppu };
 
     memory.reset();
 

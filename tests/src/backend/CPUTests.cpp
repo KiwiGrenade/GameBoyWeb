@@ -4,10 +4,12 @@
 
 struct CPUTests : CPU {
     InterruptController ic;
-    Joypad jp = Joypad(ic);
-    Timer timer = Timer(ic);
-    SerialDataTransfer serial = SerialDataTransfer(ic);
-    Memory memory = Memory(ic, jp, timer, serial);
+    Joypad joypad { ic };
+    Timer timer { ic };
+    SerialDataTransfer serial { ic };
+    PPU ppu { ic };
+    Memory memory { ic, timer, joypad, serial, ppu };
+
     CPUTests()
     :   CPU(ic, memory) {
         PC_ = 0xC000;

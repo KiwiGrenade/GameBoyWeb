@@ -5,13 +5,14 @@
 
 constexpr u16 Cartridge::romSize_;
 
-Memory::Memory(InterruptController& ic, Joypad& joypad, Timer& timer, SerialDataTransfer& serial)
+Memory::Memory(InterruptController& ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, PPU& ppu)
     : memory_(std::array<unsigned char, size_>{})
     , cartridge_(std::make_shared<Cartridge>())
     , ic_(ic)
     , joypad_(joypad)
     , timer_(timer)
     , serial_(serial)
+    , ppu_(ppu)
     , wroteToSram_(false) {
 }
 
