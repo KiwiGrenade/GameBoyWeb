@@ -174,7 +174,7 @@ TEST_CASE_METHOD(ProceduresPrefixedTests, "ProceduresPrefixedTests" ) {
                 *reg = 0b10001001;
             },
             [this] (r8* reg, unsigned int i) {
-                REQUIRE(*reg == 0b00010011);
+                REQUIRE(*reg == 0b00010010);
                 REQUIRE(FlagC_);
             }
         );
@@ -184,7 +184,7 @@ TEST_CASE_METHOD(ProceduresPrefixedTests, "ProceduresPrefixedTests" ) {
         SECTION("shouldSLACorrectly") {
             memory_.write(0b10001001, HL_);
             execute(0x26);
-            REQUIRE(fetch8(HL_) == 0b00010011);
+            REQUIRE(fetch8(HL_) == 0b00010010);
         }
         SECTION("shouldSetCarryFlag") {
             memory_.write(0b10001001, HL_);

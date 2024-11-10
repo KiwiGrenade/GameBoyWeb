@@ -65,27 +65,34 @@ InstrArray CPU::getInstrArray(const bool prefixed) {
     return instrArray;
 }
 
-void CPU::executeInterrupt(u8 i) {
+u8 CPU::executeInterrupt(u8 i) {
     isHalted_ = false;
     isStopped_ = false;
 
-    call(true, 0x0040 + i * 8);
+    if(not IME_)
+        return 0;
+
+    memory_.write(PC_.hi_, --SP_);
+    memory_.write(PC_.lo_, --SP_);
+    PC_ = 0x0040 + i * 8;
+
     ic_.disableInterrupt(i);
     IME_ = false;
+
+    return 5;
 }
 
 u8 CPU::handleInterrupts() {
-/*    // Interrupt Master Enable is disabled - do nothing*/
-    if(not IME_)
-        return 0;
+    u8 cycles = 0;
     if (u8 IF = ic_.getIF()) {
         u8 IE = ic_.getIE();
         for(u8 i = 0; i < 5; i++) {
-            if(Utils::getBit(IF, i) && Utils::getBit(IE, i))
-                executeInterrupt(i);
+            if(Utils::getBit(IF, i) && Utils::getBit(IE, i)) {
+                cycles += executeInterrupt(i);
+            }
         }
     }
-    return 0;
+    return cycles;
 }
 
 CPUDump CPU::getDebugDump() {
@@ -107,11 +114,10 @@ CPUDump CPU::getDebugDump() {
 
 u8 CPU::step() {
     u8 cycles { handleInterrupts() };
+    handleIME();
 
     if(cycles != 0)
         return cycles;
-
-    handleIME();
 
     isCondMet_ = true;
     incrementPC_ = true;

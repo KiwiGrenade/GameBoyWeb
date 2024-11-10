@@ -45,7 +45,7 @@ protected:
     InstrArray getInstrArray(const bool prefixed);
     ProcArray getUnprefProcArray();
     ProcArray getPrefProcArray();
-    void executeInterrupt(u8 i);
+    u8 executeInterrupt(u8 i);
     // returns number of M-cycles of an interrupt 
     u8 handleInterrupts();
     void handleIME();

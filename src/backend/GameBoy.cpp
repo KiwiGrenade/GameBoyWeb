@@ -35,7 +35,8 @@ void GameBoy::pause() {
 }
 
 void GameBoy::emulateStep() {
-    cpu_.step();
+    u8 cycles = cpu_.step();
+    timer_.update(cycles);
 }
 
 std::string GameBoy::getCPUDebugDump() {

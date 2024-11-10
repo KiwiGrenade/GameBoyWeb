@@ -17,7 +17,7 @@ void Timer::update(uint64_t cycles) {
     if(TAC_ & 0b100) {
         tima_ticks_ += cycles;
         // bit 0 and 1 - timer control (TAC)
-        u16 freq = frequencies[TAC_ & 0b11];
+        int freq = frequencies[TAC_ & 0b11];
         while(tima_ticks_ >= freq) {
             tima_ticks_ -= freq;
             ++TIMA_;

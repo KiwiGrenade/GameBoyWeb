@@ -50,25 +50,25 @@ TEST_CASE_METHOD(TimerTest, "update") {
         }
         SECTION("shouldSetFrequencyCorrectly") {
             TAC_ = 0b00000100;
-            update(256);
+            update(1024);
             REQUIRE(TIMA_ == 1);
 
             TAC_ = 0b00000101;
-            update(40);
+            update(160);
             REQUIRE(TIMA_ == 11);
 
             TAC_ = 0b00000110;
-            update(32);
+            update(128);
             REQUIRE(TIMA_ == 13);
 
             TAC_ = 0b00000111;
-            update(128);
+            update(512);
             REQUIRE(TIMA_ == 15);
         }
         SECTION("shouldOverflowAndRequestInterrupt") {
             TMA_ = 0xB9;
             TAC_ = 0b00000101;
-            update(1024);
+            update(1024 * 4);
             REQUIRE(TIMA_ == TMA_);
         }
     }

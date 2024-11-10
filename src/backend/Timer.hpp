@@ -31,5 +31,5 @@ protected:
     u8 TMA_ = 0;
     u8 TAC_ = 0;
     u16 DIV_ = 0;
-    static constexpr u16 frequencies[4] { 256, 4, 16, 64 };
+    static constexpr int frequencies[4] { 1024, 16, 64, 256 };
 };
