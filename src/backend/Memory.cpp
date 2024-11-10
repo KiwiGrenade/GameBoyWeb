@@ -90,6 +90,8 @@ void Memory::write(const u8 byte, const u16 addr) {
         }
         // LCD - Control, Status, Position, Scrolling, Palettes
         else if (0xFF40 <= addr && addr <= 0xFF4B) {
+            if(addr == 0xFF44) // Position
+                ppu_.setLY(0); // reset scanline on write
         }
         // set to non zero to disable Boot ROM
         else if (0xFF50 == addr) {
@@ -140,6 +142,7 @@ u8 Memory::read(const u16 addr) {
             return ic_.getIF();
         }
         else if (addr == 0xFF44) {
+            // TODO: Change this after LCD implementation
             return 0x90;
         }
         else
