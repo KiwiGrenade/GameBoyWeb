@@ -2,6 +2,7 @@
 
 #include "utils.hpp"
 #include "InterruptController.hpp"
+#include "GraphicTypes.hpp"
 
 class PPU {
 public:

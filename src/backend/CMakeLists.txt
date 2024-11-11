@@ -12,9 +12,12 @@ qt_add_library(InterruptController STATIC InterruptController.cpp)
 qt_add_library(SerialDataTransfer STATIC SerialDataTransfer.cpp)
 qt_add_library(DebugTypes STATIC DebugTypes.hpp)
 qt_add_library(PPU STATIC PPU.cpp)
+qt_add_library(GraphicTypes STATIC GraphicTypes.cpp)
 
+
+target_link_libraries(GraphicTypes PRIVATE Utils)
 target_link_libraries(InterruptController PRIVATE Utils)
-target_link_libraries(PPU PRIVATE InterruptController Utils)
+target_link_libraries(PPU PRIVATE GraphicTypes InterruptController Utils)
 target_link_libraries(SerialDataTransfer PRIVATE InterruptController Utils)
 target_link_libraries(Joypad PRIVATE InterruptController Utils)
 target_link_libraries(Timer PRIVATE InterruptController Utils)
