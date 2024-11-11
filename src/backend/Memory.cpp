@@ -89,11 +89,13 @@ void Memory::write(const u8 byte, const u16 addr) {
         else if (0xFF30 <= addr && addr <= 0xFF3F) {
         }
         // LCD - Control, Status, Position, Scrolling, Palettes
-        else if (0xFF40 <= addr && addr <= 0xFF4B) {
-            if(addr == 0xFF44) // Position
-                ppu_.setLY(0); // reset scanline on write
+        else if (addr != 0xFF46 && 0xFF40 <= addr && addr <= 0xFF4B) {
+            ppu_.write(byte, addr);
         }
         // set to non zero to disable Boot ROM
+        else if (0xFF46 == addr) {
+            /*dmaTransfer(byte);*/
+        }
         else if (0xFF50 == addr) {
         }
         else {
