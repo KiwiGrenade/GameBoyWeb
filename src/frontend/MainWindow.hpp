@@ -4,6 +4,8 @@
 #include <memory>
 
 #include "GameBoy.hpp"
+#include "Cartridge.hpp"
+#include "QtRenderer.hpp"
 /*#include "Disassembler.hpp"*/
 
 namespace Ui {
@@ -30,5 +32,6 @@ private:
     Ui::MainWindow *ui;
     std::shared_ptr<GameBoy> gameBoy_;
     std::shared_ptr<Cartridge> cartridge_;
+    std::shared_ptr<QtRenderer> renderer_;
     /*std::shared_ptr<Disassembler> disassembler_;*/
 };

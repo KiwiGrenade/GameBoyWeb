@@ -13,6 +13,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , gameBoy_(std::make_shared<GameBoy>())
+    , renderer_(std::make_shared<QtRenderer>(160, 144, this))
     /*, disassembler_(std::make_shared<Disassembler>())*/
 {
     ui->setupUi(this);
