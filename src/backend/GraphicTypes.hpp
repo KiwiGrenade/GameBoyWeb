@@ -15,11 +15,11 @@ public:
 
     void fill(const Color& c);
     inline void setPixelColor(uint64_t i, const Color &c) { data_[i] = c; };
-    Color getPixelColor(uint64_t i) { return data_[i]; };
-    void setPixelPriority(uint64_t i, u8 x) { pixelIds_[i] = x; };
-    u8 getPixelPriority(uint64_t i) { return pixelIds_[i]; };
-    inline u16 getHeight() { return height_; };
-    inline u16 getWidth() { return width_; };
+    inline Color getPixelColor(uint64_t i) const { return data_[i]; };
+    inline void setPixelPriority(uint64_t i, u8 x) { pixelIds_[i] = x; };
+    inline u8 getPixelPriority(uint64_t i) const { return pixelIds_[i]; };
+    inline u16 getHeight() const { return height_; };
+    inline u16 getWidth() const { return width_; };
 
 private:
     u16 height_;
