@@ -8,12 +8,70 @@ PPU::PPU(InterruptController& ic)
 
 void PPU::reset() {
     clock_ = 0;
-    scanlineCounter_ = 0;
+    scanline_ = 0;
     LCDC_ = 0x90;
     STAT_ = 0;
+    SCY_ = 0;
+    SCX_ = 0;
     LY_ = 0;
     LYC_ = 0;
+    BGP_ = 0xFC;
+    OBP0_ = 0xFF;
+    OBP1_ = 0xFF;
+    WY_ = 0;
+    WX_ = 0;
     statSignal_ = false;
+}
+
+u8 PPU::read(uint16_t addr)
+{
+    uint8_t b = 0xFF;
+    switch (addr)
+    {
+        case 0xFF40: b = LCDC_; break;
+        case 0xFF41: b = STAT_; break;
+        case 0xFF42: b = SCY_; break;
+        case 0xFF43: b = SCX_; break;
+        /*case 0xFF44: b = LY_; break;*/
+        case 0xFF44: return 0x90; // Blaargs test: cpu_instrs hotfix
+        case 0xFF45: b = LYC_; break;
+        // 0xFF46: dma transfer
+        case 0xFF47: b = BGP_; break;
+        case 0xFF48: b = OBP0_; break;
+        case 0xFF49: b = OBP1_; break;
+        case 0xFF4a: b = WY_; break;
+        case 0xFF4b: b = WX_; break;
+
+        default:
+            Utils::error("Could not read from PPU!");
+    }
+    return b;
+}
+
+void PPU::write(uint8_t b, uint16_t addr)
+{
+    switch (addr)
+    {
+        case 0xFF40: LCDC_ = b; break;
+        case 0xFF41:
+            // lower 3 bits of STAT are read only,
+            // write to upper 4 bits resets them 
+            STAT_ &= ~0xf8;
+            // set upper 4 bits
+            STAT_ |= b & 0xf8; break;
+        case 0xFF42: SCY_ = b; break;
+        case 0xFF43: SCX_ = b; break;
+        case 0xFF44: LY_ = b; break;
+        case 0xFF45: LYC_ = b; break;
+        // 0xFF46: DMA transfer
+        case 0xFF47: BGP_ = b; break;
+        case 0xFF48: OBP0_ = b; break;
+        case 0xFF49: OBP1_ = b; break;
+        case 0xFF4a: WY_ = b; break;
+        case 0xFF4b: WX_ = b; break;
+        default:
+            Utils::error("Could not read from PPU!");
+    }
 }
 
 void PPU::drawScanline() {
@@ -67,7 +125,7 @@ void PPU::handleHBlank() {
     ++LY_;
     // enter VBlank mode 1 
     if(LY_ == 144) {
-        scanlineCounter_ = 0;
+        scanline_ = 0;
         setMode(1);
         ic_.requestInterrupt(InterruptController::Type::VBlank);
         if(not isRenderer_)
