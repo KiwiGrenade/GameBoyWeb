@@ -24,7 +24,7 @@ CPU::CPU(InterruptController& ic, Memory& mmu)
 }
 
 void CPU::reset() {
-    /*cycles_ = 0;*/
+    cycles_ = 0;
 
     // registers
     AF_.setVal(0x01B0);
@@ -113,11 +113,11 @@ CPUDump CPU::getDebugDump() {
 }
 
 u8 CPU::step() {
-    u8 cycles { handleInterrupts() };
+    cycles_ = handleInterrupts();
     handleIME();
 
-    if(cycles != 0)
-        return cycles;
+    if(cycles_ != 0)
+        return cycles_;
 
     isCondMet_ = true;
     incrementPC_ = true;
@@ -150,11 +150,11 @@ u8 CPU::step() {
     auto instrCycles = instr.info_.getCycles();
     
     if(isCondMet_)
-        cycles += instrCycles.first;
+        cycles_ += instrCycles.first;
     else
-        cycles += instrCycles.second;
+        cycles_ += instrCycles.second;
 
-    return cycles;
+    return cycles_;
 }
 
 void CPU::handleFlags(const Utils::flagArray& flags) {

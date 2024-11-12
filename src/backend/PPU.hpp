@@ -18,6 +18,7 @@ public:
     void write(u8 byte, u16 addr);
     inline bool isEnabled() { return Utils::getBit(LCDC_, 7); };
     Texture getTile(uint16_t i) const;
+    inline u8 getMode() { return STAT_ & 3; };
 
 protected:
     enum class Layer { Background, Window, Sprite };
@@ -26,7 +27,6 @@ protected:
     void setMode(u8 model);
     u8 readVram(u8 bank, u16 addr) const;
     // getters
-    inline u8 getMode() { return STAT_ & 3; };
     Texture getLayer(Layer l) const;
     Texture getFrameBuffer(bool withBg, bool withWin, bool withSprt) const;
     std::array<u8, 32*32> getRawBackground();

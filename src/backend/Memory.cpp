@@ -1,12 +1,15 @@
 #include "Memory.hpp"
 #include "PPU.hpp"
+#include "CPU.hpp"
+#include "Ram.hpp"
 #include "Cartridge.hpp"
 #include "utils.hpp"
 #include <memory>
+#include <unistd.h>
 
 constexpr u16 Cartridge::romSize_;
 
-Memory::Memory(InterruptController& ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, PPU& ppu)
+Memory::Memory(InterruptController& ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, PPU& ppu, CPU& cpu)
     : memory_(std::array<unsigned char, size_>{})
     , cartridge_(std::make_shared<Cartridge>())
     , ic_(ic)
@@ -14,6 +17,7 @@ Memory::Memory(InterruptController& ic, Timer& timer, Joypad& joypad, SerialData
     , timer_(timer)
     , serial_(serial)
     , ppu_(ppu)
+    , cpu_(cpu)
     , wroteToSram_(false) {
 }
 
@@ -21,30 +25,48 @@ void Memory::loadCartridge(std::shared_ptr<Cartridge> cartridge) {
     cartridge_ = cartridge;
 }
 
+u8 Memory::readVram(u8 bank, u16 addr) const {
+    if ( 0x8000 <= addr || addr <= 0x9FFF )
+        return vram_.read(bank, addr - 0x8000);
+    return 0xFF;
+}
+
+void Memory::writeVram(u8 byte, u8 bank, u16 addr) {
+    if ( 0x8000 <= addr || addr <= 0x9FFF )
+        vram_.write(byte, bank, addr);
+}
+
 void Memory::write(const u8 byte, const u16 addr) {
-    if(isROM0(addr) || isROM1(addr) || isUndefined(addr)) {
+    if(not cartridge_)
         return;
-        /*cartridge_.write(addr, byte);*/
-        /*wroteToSram_ = false;*/
+
+    if(isROM0(addr) || isROM1(addr)) {
+        return;
+        /*cartridge_->write(byte, addr);*/
     }
     else if(isVRAM(addr)) {
-        memory_[addr] = byte;
+        if(not ppu_.isEnabled() || ppu_.getMode() != 3)
+            writeVram(byte, 0, addr);
     }
     else if(isERAM(addr)) {
-        memory_[addr] = byte;
+        /*cart->write(byte, addr);*/
+        /*wroteToSram_ = true;*/
     }
     else if(isWRAM0(addr)) {
-        memory_[addr] = byte;
+        wram_.write(byte, 0, addr - 0xC000);
     }
     else if(isWRAM1(addr)) {
-        memory_[addr] = byte;
+        wram_.write(byte, 1, addr - 0xD000);
     }
     else if(isECHO(addr)) {
-        memory_[addr] = byte;
-        memory_[addr-0x2000] = byte;
+        write(byte, addr - 0x2000);
     }
+    // only accessible if PPU enabled and mode is 0 or 1
     else if(isOAM(addr)) {
-        memory_[addr] = byte;
+        if(not ppu_.isEnabled() || ppu_.getMode() < 2)
+            oam_[addr - 0xFE00] = byte;
+    }
+    else if(isUndefined(addr)) {
     }
     else if(isIOPORT(addr)) {
         // joypad
@@ -95,16 +117,12 @@ void Memory::write(const u8 byte, const u16 addr) {
         }
         // set to non zero to disable Boot ROM
         else if (0xFF46 == addr) {
-            /*dmaTransfer(byte);*/
+            oamDmaTransfer(byte);
         }
-        else if (0xFF50 == addr) {
-        }
-        else {
-            memory_[addr] = byte;
-        }
+        io_[addr - 0xFF00] = byte;
     }
     else if(isHRAM(addr)) {
-        memory_[addr] = byte;
+        hram_[addr - 0xFF80] = byte;
     }
     else if (isIE(addr)) {
         ic_.setIE(byte);
@@ -112,12 +130,41 @@ void Memory::write(const u8 byte, const u16 addr) {
 }
 
 u8 Memory::read(const u16 addr) {
+    if(not cartridge_)
+        return 0xFF;
+    
+    u8 res = 0xFF;
+
     if(isROM0(addr) || isROM1(addr)) {
-        return cartridge_->read(addr);
+        res = cartridge_->read(addr);
+    }
+    else if(isVRAM(addr)) {
+        // VRAM is accessible if PPU is disabled or mode isn't 3
+        if(not ppu_.isEnabled() || ppu_.getMode() != 3)
+            res = readVram(0, addr);
+    }
+    else if(isERAM(addr)) {
+        /*res = cartridge_->read(addr);*/
+    }
+    else if(isWRAM0(addr)) {
+        res = wram_.read(0, addr - 0xC000);
+    }
+    else if(isWRAM1(addr)) {
+        res = wram_.read(1, addr - 0xD000);
+    }
+    else if(isECHO(addr)) {
+        return read(addr - 0x2000);
+    }
+    else if(isOAM(addr)) {
+        if(not ppu_.isEnabled() || ppu_.getMode() < 2)
+            res = oam_[addr - 0xFE00];
+    }
+    else if(isUndefined(addr)) {
+        res = 0xFF;
     }
     else if(isIOPORT(addr)) {
         if (addr == 0xFF00) {
-            return joypad_.read();
+            res = joypad_.read();
         }
         else if (0xFF01 <= addr && addr <= 0xFF02) {
             switch (addr) {
@@ -127,7 +174,7 @@ u8 Memory::read(const u16 addr) {
                     return serial_.getSC();
             }
         }
-        if (0xFF04 <= addr && addr <= 0xFF07) {
+        else if (0xFF04 <= addr && addr <= 0xFF07) {
             switch(addr) {
                 case 0xFF04:
                     return timer_.getDIV();
@@ -144,19 +191,29 @@ u8 Memory::read(const u16 addr) {
         else if (addr == 0xFF0F) {
             return ic_.getIF();
         }
-        else if (addr == 0xFF44) {
-            // TODO: Change this after LCD implementation
-            return 0x90;
+        else if(addr != 0xFF46 && 0xFF40 <= addr && addr <= 0xFF4B) {
+            if(addr == 0xFF44)
+                res = ppu_.read(addr);
         }
         else
-            return memory_[addr];
+            res = io_[addr - 0xFF00];
+    }
+    else if(isHRAM(addr)) {
+        res = hram_[addr - 0xFF80];
     }
     else if(isIE(addr)) {
         return ic_.getIE();
     }
-    else {
-        return memory_[addr];
-    }
+    return res;
+}
+
+void Memory::oamDmaTransfer(u8 byte) {
+    if(byte > 0xF1)
+        Utils::error("Attempted to write value outside 00-f1 in OAM DMA transfer!");
+
+    for(u8 i = 0; i < 0x9F; ++i)
+        oam_[i] = read(static_cast<u16>(byte << 8 | i));
+    cpu_.addCycles(160 * 4);
 }
 
 void Memory::reset() {
