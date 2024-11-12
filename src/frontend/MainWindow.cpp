@@ -1,5 +1,6 @@
+#include <QtWidgets>
 #include "MainWindow.hpp"
-#include "ui_MainWindow.h"
+
 
 #include <cstdint>
 #include <memory>
@@ -11,8 +12,8 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
     , gameBoy_(std::make_shared<GameBoy>())
+    , display_(new QLabel(this))
     , renderer_(std::make_shared<QtRenderer>(160, 144, this))
     /*, disassembler_(std::make_shared<Disassembler>())*/
 {

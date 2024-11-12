@@ -2,11 +2,29 @@
 
 #include <QMainWindow>
 #include <memory>
+#include <qevent.h>
 
 #include "GameBoy.hpp"
 #include "Cartridge.hpp"
 #include "QtRenderer.hpp"
-/*#include "Disassembler.hpp"*/
+
+class QAction;
+class QMenu;
+class QImage;
+class QLabel;
+class QTimer;
+
+struct Controls
+{
+    Qt::Key a {Qt::Key_D},
+            b {Qt::Key_S},
+            up {Qt::Key_Up},
+            down {Qt::Key_Down},
+            left {Qt::Key_Left},
+            right {Qt::Key_Right},
+            select {Qt::Key_Shift},
+            start {Qt::Key_Return};
+};
 
 namespace Ui {
 class MainWindow;
@@ -20,14 +38,16 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+protected:
+    void keyPressEvent(QKeyEvent *);
+    void keyReleaseEvent(QKeyEvent *);
+
 private slots:
-    void on_actionLoad_triggered();
-    void on_pushButton_released();
-    void on_actionStart_triggered();
-    void on_actionStop_triggered();
-    void on_actionPause_triggered();
+    void updateDisplay();
+    void openRom();
 
 private:
+    void loadRom(const QString& fileName);
     void closeEvent(QCloseEvent* event);
     Ui::MainWindow *ui;
     std::shared_ptr<GameBoy> gameBoy_;
