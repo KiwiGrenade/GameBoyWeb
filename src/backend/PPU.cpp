@@ -43,8 +43,8 @@ u8 PPU::read(uint16_t addr)
         case 0xFF41: b = STAT_; break;
         case 0xFF42: b = SCY_; break;
         case 0xFF43: b = SCX_; break;
-        /*case 0xFF44: b = LY_; break;*/
-        case 0xFF44: return 0x90; // Blaargs test: cpu_instrs hotfix
+        case 0xFF44: b = LY_; break;
+        /*case 0xFF44: return 0x90; // Blaargs test: cpu_instrs hotfix*/
         case 0xFF45: b = LYC_; break;
         // 0xFF46: dma transfer
         case 0xFF47: b = BGP_; break;
