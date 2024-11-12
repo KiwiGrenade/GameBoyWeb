@@ -8,6 +8,7 @@
 #include "DebugTypes.hpp"
 
 #include <QJsonObject>
+#include <cstdint>
 
 typedef RegisterPair    r16;
 typedef Register        r8;
@@ -23,11 +24,12 @@ public:
     void reset();
     CPUDump getDebugDump();
     inline bool isStopped() const { return isStopped_; };
+    inline void addCycles(uint64_t cycles) {cycles_ += cycles; };
 
 protected:
     Memory&                 memory_;
     InterruptController&    ic_;
-    /*uint64_t    cycles_; // T-cycles*/
+    uint64_t    cycles_; // T-cycles
 
     // helper flags 
     bool isPrefixed_;

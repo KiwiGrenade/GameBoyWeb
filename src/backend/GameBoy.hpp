@@ -32,8 +32,8 @@ public:
 
 protected:
     // flags
-    bool isPaused_;
-    bool isStopped_;
+    bool isPaused_ = false;
+    bool isStopped_ = false;
     InterruptController ic_;
     Timer timer_;
     Joypad joypad_;

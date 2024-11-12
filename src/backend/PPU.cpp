@@ -9,7 +9,6 @@
 #include <array>
 #include <cstdint>
 
-Palette PPU::dmgPalette = {{0xFFFF, 0x56B5, 0x294A, 0}};
 
 PPU::PPU(InterruptController& ic, Memory& memory, const CPU& cpu, Renderer* r)
     : ic_(ic)
@@ -138,7 +137,7 @@ Texture PPU::getTile(u16 i) const {
 }
 
 u8 PPU::readVram(u8 bank, u16 addr) const {
-    return 0;
+    return memory_.readVram(bank, addr);
 }
 
 void PPU::renderLayerLine(Texture& tex, Layer layer) {
@@ -494,3 +493,4 @@ void PPU::checkStatus() {
     }
 }
 
+Palette PPU::dmgPalette = {{0xFFFF, 0x56B5, 0x294A, 0}};

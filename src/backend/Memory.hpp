@@ -11,6 +11,7 @@
 #include "Joypad.hpp"
 #include "Timer.hpp"
 #include "SerialDataTransfer.hpp"
+#include "Ram.hpp"
 
 /* ######## Memory Map #########
  *
@@ -29,10 +30,15 @@
  */
 
 class PPU;
+class CPU;
+
+using WorkRam = Ram<0x1000>;
+using VRam = Ram<0x2000>;
+using ERam = Ram<0x2000>;
 
 class Memory {
 public:
-    Memory(InterruptController& ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, PPU& ppu);
+    Memory(InterruptController& ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, PPU& ppu, CPU& cpu);
     ~Memory() = default;
     
     u8 read(const u16 addr);
@@ -41,10 +47,14 @@ public:
     inline u8& getIE() { return memory_[0xFFFF]; }
     inline u8& getIF() { return memory_[0xFF0F]; }
     void loadCartridge(std::shared_ptr<Cartridge>);
+    u8 readVram(u8 bank, u16 addr) const;
+    void writeVram(u8 byte, u8 bank, u16 addr);
 
     static constexpr uint32_t size_ = 0x10000;
 
 protected:
+
+    void oamDmaTransfer(u8 byte);
 
     inline bool isROM0(const u16 addr) const { return addr <= 0x3FFF; };
     inline bool isROM1(const u16 addr) const { return 0x4000 <= addr && addr <= 0x7FFF; };
@@ -64,7 +74,15 @@ protected:
     Joypad& joypad_;
     SerialDataTransfer& serial_;
     PPU& ppu_;
+    CPU& cpu_;
     std::shared_ptr<Cartridge> cartridge_;
     std::array<u8, size_> memory_;
-    bool wroteToSram_;
+
+    // memory
+    VRam vram_ {1};
+    WorkRam wram_ {2};
+    std::array<u8, 0xA0> oam_ {};
+    std::array<u8, 0x80> io_ {};
+    std::array<u8, 0x7F> hram_ {};
+    bool wroteToSram_ = false;
 };

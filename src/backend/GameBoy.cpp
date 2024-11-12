@@ -11,7 +11,7 @@ GameBoy::GameBoy()
     , joypad_(Joypad(ic_))
     , serial_(SerialDataTransfer(ic_))
     , ppu_(PPU(ic_, memory_, cpu_))
-    , memory_(Memory(ic_, timer_, joypad_, serial_, ppu_))
+    , memory_(Memory(ic_, timer_, joypad_, serial_, ppu_, cpu_))
     , cpu_(CPU(ic_, memory_)) {
 }
 
@@ -57,7 +57,7 @@ uint64_t GameBoy::update(const uint32_t cyclesToExecute) {
         cyclesPassed += cpu_.step();
         // TODO: Check if this is right
         timer_.update(cyclesPassed);
-        // TODO: add upate ppu
+        /*ppu_.update(cyclesPassed);*/
     }
     return cyclesPassed;
 }
