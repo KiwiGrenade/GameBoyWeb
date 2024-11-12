@@ -10,7 +10,7 @@ GameBoy::GameBoy()
     , timer_(Timer(ic_))
     , joypad_(Joypad(ic_))
     , serial_(SerialDataTransfer(ic_))
-    , ppu_(PPU(ic_))
+    , ppu_(PPU(ic_, memory_, cpu_))
     , memory_(Memory(ic_, timer_, joypad_, serial_, ppu_))
     , cpu_(CPU(ic_, memory_)) {
 }

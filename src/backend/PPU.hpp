@@ -3,36 +3,69 @@
 #include "utils.hpp"
 #include "InterruptController.hpp"
 #include "GraphicTypes.hpp"
+#include <cstdint>
+
+class Renderer;
+class CPU;
+class Memory;
 
 class PPU {
 public:
-    PPU(InterruptController& ic);
-    void update(u16 cycles);
+    PPU(InterruptController& ic, Memory& memory, const CPU& cpu, Renderer* r = nullptr);
+    void update(uint32_t cycles);
     void reset();
     u8 read(u16 addr);
     void write(u8 byte, u16 addr);
+    inline bool isEnabled() { return Utils::getBit(LCDC_, 7); };
+    Texture getTile(uint16_t i) const;
 
 protected:
-    void setLCDStatus();
-    inline bool isLCDEnabled() { return Utils::getBit(LCDC_, 7); };
+    enum class Layer { Background, Window, Sprite };
+
     void checkStatus();
-    void loadSprites();
+    void setMode(u8 model);
+    u8 readVram(u8 bank, u16 addr) const;
+    // getters
+    inline u8 getMode() { return STAT_ & 3; };
+    Texture getLayer(Layer l) const;
+    Texture getFrameBuffer(bool withBg, bool withWin, bool withSprt) const;
+    std::array<u8, 32*32> getRawBackground();
+    Palette getSpritePalette(u8 idx) const;
+    Palette getBackgroundPalette(u8 idx) const;
+    // rendering
+    void renderLayerPixel(
+        Texture& tex,
+        Layer layer,
+        u8 x,
+        u8 y,
+        u8 texX,
+        u8 texY) const;
+    void renderLayerLine(Texture& tex, Layer layer);
+    void renderSpriteLine(Texture& tex);
     void renderScanline();
+    // sprites
+    void loadSprites();
+    void orderSprites(std::array<Sprite, 10> &s) const;
+    // handlers
     void handleOamScan();
     void handleVramRead();
     void handleHBlank();
     void handleVBlank();
-    void setMode(u8 model);
-    inline u8 getMode() { return STAT_ & 3; };
-    void drawScanline();
+    void drawwindowLine();
     void dmaTransfer(u8 b);
 
+    // GB modules
     InterruptController& ic_;
+    Memory& memory_;
+    const CPU& cpu_;
+    Renderer *renderer_;
     
+    std::array<Sprite, 40> sprites_ {};
+    static Palette dmgPalette;
+    uint32_t cycles_;
+    u16 windowLine_;
     bool statSignal_;
     bool isRenderer_;
-    uint32_t clock_;
-    u16 scanline_;
     
     // registers
     u8 LCDC_;   // 0xFF40

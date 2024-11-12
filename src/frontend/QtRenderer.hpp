@@ -4,23 +4,23 @@
 #include <mutex>
 
 #include "GraphicTypes.hpp"
+#include "Renderer.hpp"
 #include "utils.hpp"
 
-class QtRenderer : public QObject {
+class QtRenderer : public QObject, public Renderer {
     Q_OBJECT
     
     public:
     explicit QtRenderer(u16 w, u16 h, QObject *parent = nullptr);
 
-    void drawTexture(const Texture& tex, u16 x = 0, u16 y = 0);
-
+    void drawTexture(const Texture& tex, u16 x = 0, u16 y = 0) override;
     void clear();
 
     QImage getImage() const;
     QPixmap getPixmap() const;
 
     signals:
-        void showScreen();
+        void showScreen() override;
 
 private:
     mutable std::mutex buf_mutex_;
