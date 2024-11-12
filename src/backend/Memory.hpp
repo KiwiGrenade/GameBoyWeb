@@ -44,8 +44,6 @@ public:
     u8 read(const u16 addr);
     void write(const u8 byte, const u16 addr);
     void reset();
-    inline u8& getIE() { return memory_[0xFFFF]; }
-    inline u8& getIF() { return memory_[0xFF0F]; }
     void loadCartridge(std::shared_ptr<Cartridge>);
     u8 readVram(u8 bank, u16 addr) const;
     void writeVram(u8 byte, u8 bank, u16 addr);
@@ -55,19 +53,6 @@ public:
 protected:
 
     void oamDmaTransfer(u8 byte);
-
-    inline bool isROM0(const u16 addr) const { return addr <= 0x3FFF; };
-    inline bool isROM1(const u16 addr) const { return 0x4000 <= addr && addr <= 0x7FFF; };
-    inline bool isVRAM(const u16 addr) const { return 0x8000 <= addr && addr <= 0x9FFF; };
-    inline bool isERAM(const u16 addr) const { return 0xA000 <= addr && addr <= 0xBFFF; };
-    inline bool isWRAM0(const u16 addr) const { return 0xC000 <= addr && addr <= 0xCFFF; };
-    inline bool isWRAM1(const u16 addr) const { return 0xD000 <= addr && addr <= 0xDFFF; };
-    inline bool isECHO(const u16 addr) const { return 0xE000 <= addr && addr <= 0xFDFF; };
-    inline bool isOAM(const u16 addr) const { return 0xFE00 <= addr && addr <= 0xFE9F; };
-    inline bool isUndefined(const u16 addr) const { return 0xFEA0 <= addr && addr <= 0xFEFF; };
-    inline bool isIOPORT(const u16 addr) const { return 0xFF00 <= addr && addr <= 0xFF7F; };
-    inline bool isHRAM(const u16 addr) const { return 0xFF80 <= addr && addr <= 0xFFFE; };
-    inline bool isIE(const u16 addr) const { return addr == 0xFFFF; };
     
     InterruptController& ic_;
     Timer& timer_;
@@ -76,7 +61,6 @@ protected:
     PPU& ppu_;
     CPU& cpu_;
     std::shared_ptr<Cartridge> cartridge_;
-    std::array<u8, size_> memory_;
 
     // memory
     VRam vram_ {1};

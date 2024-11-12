@@ -10,8 +10,7 @@
 constexpr u16 Cartridge::romSize_;
 
 Memory::Memory(InterruptController& ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, PPU& ppu, CPU& cpu)
-    : memory_(std::array<unsigned char, size_>{})
-    , cartridge_(std::make_shared<Cartridge>())
+    : cartridge_(std::make_shared<Cartridge>())
     , ic_(ic)
     , joypad_(joypad)
     , timer_(timer)
@@ -26,49 +25,59 @@ void Memory::loadCartridge(std::shared_ptr<Cartridge> cartridge) {
 }
 
 u8 Memory::readVram(u8 bank, u16 addr) const {
-    if ( 0x8000 <= addr || addr <= 0x9FFF )
-        return vram_.read(bank, addr - 0x8000);
-    return 0xFF;
+    if ( addr < 0x8000 || addr > 0x9FFF )
+        return 0xFF;
+    return vram_.read(bank, addr - 0x8000);
 }
 
 void Memory::writeVram(u8 byte, u8 bank, u16 addr) {
-    if ( 0x8000 <= addr || addr <= 0x9FFF )
-        vram_.write(byte, bank, addr);
+    if (addr < 0x8000 || addr > 0x9FFF)
+        return;
+    vram_.write(byte, bank, addr - 0x8000);
 }
 
 void Memory::write(const u8 byte, const u16 addr) {
     if(not cartridge_)
         return;
 
-    if(isROM0(addr) || isROM1(addr)) {
+    // ROM
+    if(addr < 0x8000) {
         return;
         /*cartridge_->write(byte, addr);*/
     }
-    else if(isVRAM(addr)) {
+    // VRAM
+    else if(addr < 0xA000) {
         if(not ppu_.isEnabled() || ppu_.getMode() != 3)
-            writeVram(byte, 0, addr);
+            writeVram(byte, 0, addr - 0x8000);
     }
-    else if(isERAM(addr)) {
+    // ERAM
+    else if(addr < 0xC000) {
         /*cart->write(byte, addr);*/
         /*wroteToSram_ = true;*/
     }
-    else if(isWRAM0(addr)) {
+    // WRAM0
+    else if(addr < 0xD000) {
         wram_.write(byte, 0, addr - 0xC000);
     }
-    else if(isWRAM1(addr)) {
+    // WRAM1
+    else if(addr < 0xE000) {
         wram_.write(byte, 1, addr - 0xD000);
     }
-    else if(isECHO(addr)) {
+    // ERAM
+    else if(addr < 0xFE00) {
         write(byte, addr - 0x2000);
     }
+    // OAM
     // only accessible if PPU enabled and mode is 0 or 1
-    else if(isOAM(addr)) {
+    else if(addr < 0xFEA0) {
         if(not ppu_.isEnabled() || ppu_.getMode() < 2)
             oam_[addr - 0xFE00] = byte;
     }
-    else if(isUndefined(addr)) {
+    // Undefined
+    else if(addr < 0xFF00) {
     }
-    else if(isIOPORT(addr)) {
+    // IO
+    else if(addr < 0xFF80) {
         // joypad
         if(addr == 0xFF00) {
             joypad_.write(byte);
@@ -121,10 +130,12 @@ void Memory::write(const u8 byte, const u16 addr) {
         }
         io_[addr - 0xFF00] = byte;
     }
-    else if(isHRAM(addr)) {
+    // HRAM
+    else if(addr < 0xFFFF) {
         hram_[addr - 0xFF80] = byte;
     }
-    else if (isIE(addr)) {
+    // IE - InterruptController
+    else if (addr == 0xFFFF) {
         ic_.setIE(byte);
     }
 }
@@ -134,38 +145,49 @@ u8 Memory::read(const u16 addr) {
         return 0xFF;
     
     u8 res = 0xFF;
-
-    if(isROM0(addr) || isROM1(addr)) {
+    
+    // ROM bank
+    if(addr < 0x8000) {
         res = cartridge_->read(addr);
     }
-    else if(isVRAM(addr)) {
+    // VRAM
+    else if(addr < 0xA000) {
         // VRAM is accessible if PPU is disabled or mode isn't 3
         if(not ppu_.isEnabled() || ppu_.getMode() != 3)
             res = readVram(0, addr);
     }
-    else if(isERAM(addr)) {
+    // ERAM
+    else if(addr < 0xC000) {
         /*res = cartridge_->read(addr);*/
     }
-    else if(isWRAM0(addr)) {
+    // WRAM0
+    else if(addr < 0xD000) {
         res = wram_.read(0, addr - 0xC000);
     }
-    else if(isWRAM1(addr)) {
+    // WRAM1
+    else if(addr < 0xE000) {
         res = wram_.read(1, addr - 0xD000);
     }
-    else if(isECHO(addr)) {
+    // ECHO
+    else if(addr < 0xFE00) {
         return read(addr - 0x2000);
     }
-    else if(isOAM(addr)) {
-        if(not ppu_.isEnabled() || ppu_.getMode() < 2)
-            res = oam_[addr - 0xFE00];
+    // OAM
+    else if(addr < 0xFEA0) {
+        /*if(not ppu_.isEnabled() || ppu_.getMode() < 2)*/
+        res = oam_[addr - 0xFE00];
     }
-    else if(isUndefined(addr)) {
+    // undefined
+    else if(addr < 0xFF00) {
         res = 0xFF;
     }
-    else if(isIOPORT(addr)) {
+    // IO
+    else if(addr < 0xFF80) {
+        // Joypad
         if (addr == 0xFF00) {
             res = joypad_.read();
         }
+        // serial
         else if (0xFF01 <= addr && addr <= 0xFF02) {
             switch (addr) {
                 case 0xFF01:
@@ -174,6 +196,7 @@ u8 Memory::read(const u16 addr) {
                     return serial_.getSC();
             }
         }
+        // timer
         else if (0xFF04 <= addr && addr <= 0xFF07) {
             switch(addr) {
                 case 0xFF04:
@@ -184,13 +207,13 @@ u8 Memory::read(const u16 addr) {
                     return timer_.getTMA();
                 case 0xFF07:
                     return timer_.getTAC();
-                default:
-                    return 0;
             }
         }
+        // InterruptController
         else if (addr == 0xFF0F) {
             return ic_.getIF();
         }
+        // PPU
         else if(addr != 0xFF46 && 0xFF40 <= addr && addr <= 0xFF4B) {
             if(addr == 0xFF44)
                 res = ppu_.read(addr);
@@ -198,10 +221,12 @@ u8 Memory::read(const u16 addr) {
         else
             res = io_[addr - 0xFF00];
     }
-    else if(isHRAM(addr)) {
+    // HRAM
+    else if(addr < 0xFFFF) {
         res = hram_[addr - 0xFF80];
     }
-    else if(isIE(addr)) {
+    // EI - InterruptController
+    else if(addr == 0xFFFF) {
         return ic_.getIE();
     }
     return res;
@@ -211,13 +236,14 @@ void Memory::oamDmaTransfer(u8 byte) {
     if(byte > 0xF1)
         Utils::error("Attempted to write value outside 00-f1 in OAM DMA transfer!");
 
+    static_assert(std::tuple_size<decltype(oam_)>::value == 0xA0, "OAM is incorrect size, should be 0xA0");
+
     for(u8 i = 0; i < 0x9F; ++i)
         oam_[i] = read(static_cast<u16>(byte << 8 | i));
     cpu_.addCycles(160 * 4);
 }
 
 void Memory::reset() {
-    memory_.fill(0);
     ic_.reset();
     timer_.reset();
     joypad_.reset();
