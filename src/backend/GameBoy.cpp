@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include<QElapsedTimer>
+#include <mutex>
 
 GameBoy::GameBoy()
     : ic_(InterruptController())
@@ -19,22 +20,14 @@ GameBoy::~GameBoy() {
     stop();
 }
 
-void GameBoy::reset() {
-    ic_.reset();
-    timer_.reset();
-    joypad_.reset();
-    serial_.reset();
-    ppu_.reset();
-    memory_.reset();
-    cpu_.reset();
+void GameBoy::setRenderer(Renderer *r) {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    ppu_.setRenderer(r);
 }
 
-void GameBoy::stop() {
-    isStopped_ = true;
-}
-
-void GameBoy::pause() {
-    isPaused_ = !isPaused_;
+void GameBoy::loadCartridge(const std::shared_ptr<Cartridge> cartridge) {
+    memory_.loadCartridge(cartridge); 
+    isRomLoaded_ = true;
 }
 
 void GameBoy::emulateStep() {
@@ -62,36 +55,72 @@ uint64_t GameBoy::update(const uint32_t cyclesToExecute) {
     return cyclesPassed;
 }
 
+void GameBoy::stop() {
+    isStopped_ = true;
+    if(thread_.joinable())
+        thread_.join();
+}
+
+void GameBoy::pause() {
+    isPaused_ = true;
+}
+
+void GameBoy::resume() {
+    if(not isPaused_)
+        return;
+    std::lock_guard<std::mutex> lock(mutex_);
+    isPaused_ = false;
+    pause_cv_.notify_one();
+}
+
 void GameBoy::run() {
     isPaused_ = false;
     isStopped_ = false;
 
-    QElapsedTimer timer;
-    // time between loop iterations
-    uint64_t deltaTime = 0;
-    // time accumulator
-    uint64_t accuTime = 0;
-    // 4194304 (DMG-1 clocks/second) / 60 (frames / second)
-    constexpr uint32_t frequnecy = 4194304;
-    constexpr uint32_t fps = 60;
-    constexpr uint32_t nCyclesInWaitTime = frequnecy / fps;
-    // 1/60 of second in nanoseconds
-    constexpr uint32_t waitTimeNsecs = 16670000;
-    constexpr uint64_t maxWaitTimeNsecs = 1000000000;
-
-    timer.start();
-    uint64_t cycles = 0;
-    while(!isStopped_ && cycles < 1200000) {
-        deltaTime = timer.nsecsElapsed();
-        timer.restart();
-
-        if(deltaTime > maxWaitTimeNsecs)
-            deltaTime = maxWaitTimeNsecs;
-
-        accuTime += deltaTime;
-        for(;accuTime >= waitTimeNsecs; accuTime -= waitTimeNsecs) {
-            update(nCyclesInWaitTime);
-            qDebug() << "Emulator is running!" << Qt::endl;
-        }
+    while(not isStopped_) {
+        std::unique_lock<std::mutex> lock(mutex_);
+        pause_cv_.wait(lock, [this] { return !isPaused_; });
+        step(70224);
     }
+    isPaused_ = true;
 }
+
+void GameBoy::reset() {
+    stop();
+    ic_.reset();
+    timer_.reset();
+    joypad_.reset();
+    serial_.reset();
+    ppu_.reset();
+    memory_.reset();
+    cpu_.reset();
+    romTitle_ = {};
+    isRomLoaded_ = false;
+}
+
+uint64_t GameBoy::step(uint64_t n) {
+    uint64_t cyclesPassed = 0;
+    for(size_t i = 0; i < n; ++i) {
+        u16 cycles = cpu_.step();
+        ppu_.update(cyclesPassed);
+        timer_.update(cyclesPassed);
+        cyclesPassed += cycles;
+    }
+    return cyclesPassed;
+}
+
+
+void GameBoy::press(Joypad::Button b) {
+    joypad_.press(b);
+}
+
+
+void GameBoy::release(Joypad::Button b) {
+    joypad_.release(b);
+}
+
+bool GameBoy::isRunning() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return not isPaused_;
+}
+
