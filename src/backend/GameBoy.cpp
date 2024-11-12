@@ -57,7 +57,7 @@ uint64_t GameBoy::update(const uint32_t cyclesToExecute) {
         cyclesPassed += cpu_.step();
         // TODO: Check if this is right
         timer_.update(cyclesPassed);
-        /*ppu_.update(cyclesPassed);*/
+        ppu_.update(cyclesPassed);
     }
     return cyclesPassed;
 }
