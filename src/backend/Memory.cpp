@@ -1,4 +1,5 @@
 #include "Memory.hpp"
+#include "PPU.hpp"
 #include "Cartridge.hpp"
 #include "utils.hpp"
 #include <memory>

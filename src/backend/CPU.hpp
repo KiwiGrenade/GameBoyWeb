@@ -22,6 +22,7 @@ public:
     u8 step();
     void reset();
     CPUDump getDebugDump();
+    inline bool isStopped() const { return isStopped_; };
 
 protected:
     Memory&                 memory_;

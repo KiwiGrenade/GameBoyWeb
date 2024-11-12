@@ -11,7 +11,6 @@
 #include "Joypad.hpp"
 #include "Timer.hpp"
 #include "SerialDataTransfer.hpp"
-#include "PPU.hpp"
 
 /* ######## Memory Map #########
  *
@@ -28,6 +27,8 @@
  * FF80-FFFE High RAM (HRAM)
  * FFFF Interrupt Enable Register 
  */
+
+class PPU;
 
 class Memory {
 public:
