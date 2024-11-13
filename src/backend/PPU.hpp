@@ -19,7 +19,10 @@ public:
     inline bool isEnabled() { return Utils::getBit(LCDC_, 7); };
     Texture getTile(uint16_t i) const;
     inline u8 getMode() { return STAT_ & 3; };
-    inline void setRenderer(Renderer *r) { renderer_ = r; };
+    void setRenderer(Renderer *r) {
+        renderer_ = r;
+        isRenderer_ = true;
+    };
 
 protected:
     enum class Layer { Background, Window, Sprite };

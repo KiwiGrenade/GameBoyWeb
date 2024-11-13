@@ -43,8 +43,8 @@ u8 PPU::read(uint16_t addr)
         case 0xFF41: b = STAT_; break;
         case 0xFF42: b = SCY_; break;
         case 0xFF43: b = SCX_; break;
-        case 0xFF44: b = LY_; break;
-        /*case 0xFF44: return 0x90; // Blaargs test: cpu_instrs hotfix*/
+        /*case 0xFF44: b = LY_; break;*/
+        case 0xFF44: return 0x90; // Blaargs test: cpu_instrs hotfix
         case 0xFF45: b = LYC_; break;
         // 0xFF46: dma transfer
         case 0xFF47: b = BGP_; break;
@@ -63,7 +63,9 @@ void PPU::write(uint8_t b, uint16_t addr)
 {
     switch (addr)
     {
-        case 0xFF40: LCDC_ = b; break;
+        case 0xFF40:
+            LCDC_ = b;
+            break;
         case 0xFF41:
             // lower 3 bits of STAT are read only,
             // write to upper 4 bits resets them 
@@ -81,7 +83,7 @@ void PPU::write(uint8_t b, uint16_t addr)
         case 0xFF4a: WY_ = b; break;
         case 0xFF4b: WX_ = b; break;
         default:
-            Utils::error("Could not read from PPU!");
+            Utils::error("Could not write to PPU!");
     }
 }
 
@@ -89,6 +91,7 @@ void PPU::update(uint32_t cycles) {
     cycles_ += cycles;
 
     if(not isEnabled()) {
+        /*Utils::warning("PPU not enabled!");*/
         cycles_ = 0;
         LY_ = 0;
         setMode(0);
@@ -100,9 +103,11 @@ void PPU::update(uint32_t cycles) {
     switch (getMode()) {
         // mode 2 - scan for OAM sprites
         case 2:
+            Utils::warning("oam scna!");
             handleOamScan();
             break;
         case 3:
+            Utils::warning("Vram read !");
             handleVramRead();
             break;
         case 0:
@@ -206,8 +211,8 @@ void PPU::renderLayerPixel(Texture& tex, Layer layer, u8 x, u8 y, u8 texX, u8 te
         adr += (y % 8) * 2;
     
     // get one row of pixels (2 consecutive bytes)
-    u8 loByte = readVram(bank, adr);
-    u8 hiByte = readVram(bank, adr+1);
+    u8 loByte = readVram(0, adr);
+    u8 hiByte = readVram(0, adr+1);
     // get pixel offset of tile (take horizontal flip into account)
     u8 pxOffset = 
         Utils::getBit(tileAttr, 5)
@@ -393,25 +398,27 @@ void PPU::renderSpriteLine(Texture& tex) {
 void PPU::renderScanline() {
     Texture tex {160, 1};
     // STOP mode: if LCD is on -> set to all white, else all black
+    Utils::warning("render scanline!");
     if(not cpu_.isStopped()) {
         Color c = isEnabled() ? 0xFFFF : 0;
         tex.fill(c);
     }
     else {
         if(LCDC_ & 1) {
+            Utils::warning("render background!");
             renderLayerLine(tex, Layer::Background);
             if(Utils::getBit(LCDC_, 5))
                 renderLayerLine(tex, Layer::Window);
         }
         else {
-            Color c(0xFFFF);
+            Utils::warning("fill with whatever!");
+            Color c(0xFFF);
             tex.fill(c);
         }
         if(Utils::getBit(LCDC_, 1))
             renderSpriteLine(tex);
     }
     renderer_->drawTexture(tex, 0, LY_);
-
 }
 
 // OAM_SCAN mode 2 -> 3
@@ -419,6 +426,7 @@ void PPU::handleOamScan() {
     if(cycles_ < 80)
         return;
     cycles_ -= 80;
+    std::cout << "reading from VRAM" << std::endl;
     loadSprites();
     // entering VRAM_READ
     setMode(3);
@@ -426,6 +434,7 @@ void PPU::handleOamScan() {
 
 // VRAM_READ mode 3 -> 0
 void PPU::handleVramRead() {
+    std::cout << "reading from VRAM" << std::endl;
     if(cycles_ < 172)
         return;
     cycles_ -= 172;
@@ -448,8 +457,9 @@ void PPU::handleHBlank() {
         windowLine_ = 0;
         setMode(1);
         ic_.requestInterrupt(InterruptController::Type::VBlank);
-        if(not isRenderer_)
+        if(not isRenderer_) {
             return;
+        }
         renderer_->showScreen();
     }
     // enter OAM_SCAN mode 2
@@ -458,6 +468,7 @@ void PPU::handleHBlank() {
     }
 }
 
+// VBlank
 void PPU::handleVBlank() {
     if(cycles_ < 456)
         return;
