@@ -16,7 +16,7 @@ TEST_CASE("individual") {
             gb->loadCartridge(car);
 
             for(uint32_t i = 0; i < 8000000; ++i) {
-                gb->emulateStep();
+                gb->step(1);
             }
 
             std::string testOutput = gb->getSerialOutput();
@@ -36,7 +36,7 @@ TEST_CASE("cpu_instrs", "[tag1], [tag2]") {
     gb->loadCartridge(car);
 
     for(uint32_t i = 0; i < 480000000; ++i) {
-        gb->emulateStep();
+        gb->step(1);
     }
 
     std::string testOutput = gb->getSerialOutput();
