@@ -43,6 +43,7 @@ void Memory::write(const u8 byte, const u16 addr) {
     // ROM
     if(addr < 0x8000) {
         return;
+        Utils::warning("Write to ROM");
         /*cartridge_->write(byte, addr);*/
     }
     // VRAM
@@ -52,8 +53,10 @@ void Memory::write(const u8 byte, const u16 addr) {
     }
     // ERAM
     else if(addr < 0xC000) {
+        /*eram_.write(byte, 0, addr - 0xB0000);*/
         /*cart->write(byte, addr);*/
         /*wroteToSram_ = true;*/
+        /*Utils::warning("Write to ERAM");*/
     }
     // WRAM0
     else if(addr < 0xD000) {
@@ -63,7 +66,7 @@ void Memory::write(const u8 byte, const u16 addr) {
     else if(addr < 0xE000) {
         wram_.write(byte, 1, addr - 0xD000);
     }
-    // ERAM
+    // ECHO
     else if(addr < 0xFE00) {
         write(byte, addr - 0x2000);
     }
@@ -158,6 +161,7 @@ u8 Memory::read(const u16 addr) {
     }
     // ERAM
     else if(addr < 0xC000) {
+        /*eram_.read(0, addr - 0xB000);*/
         /*res = cartridge_->read(addr);*/
     }
     // WRAM0
@@ -215,8 +219,7 @@ u8 Memory::read(const u16 addr) {
         }
         // PPU
         else if(addr != 0xFF46 && 0xFF40 <= addr && addr <= 0xFF4B) {
-            if(addr == 0xFF44)
-                res = ppu_.read(addr);
+            res = ppu_.read(addr);
         }
         else
             res = io_[addr - 0xFF00];

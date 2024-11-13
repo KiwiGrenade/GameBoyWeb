@@ -1,6 +1,7 @@
 #include "GameBoy.hpp"
 #include "InterruptController.hpp"
 #include "SerialDataTransfer.hpp"
+#include "utils.hpp"
 #include <cstdint>
 
 #include<QElapsedTimer>
@@ -28,11 +29,6 @@ void GameBoy::setRenderer(Renderer *r) {
 void GameBoy::loadCartridge(const std::shared_ptr<Cartridge> cartridge) {
     memory_.loadCartridge(cartridge); 
     isRomLoaded_ = true;
-}
-
-void GameBoy::emulateStep() {
-    u8 cycles = cpu_.step();
-    timer_.update(cycles);
 }
 
 std::string GameBoy::getCPUDebugDump() {
@@ -109,6 +105,15 @@ uint64_t GameBoy::step(uint64_t n) {
     return cyclesPassed;
 }
 
+void GameBoy::runConcurrently()
+{
+    if(not isRomLoaded_) {
+        Utils::error("Rom is not loaded!");
+    }
+    stop();
+    auto runFunction = [this] { this-> run(); };
+    thread_ = std::thread(runFunction);
+}
 
 void GameBoy::press(Joypad::Button b) {
     joypad_.press(b);

@@ -17,9 +17,9 @@ int main(int argc, char *argv[]) {
     gb->loadCartridge(car);
 
     for(int i = 0; i < numberOfCycles; ++i) {
-        /*std::cout << gb->getCPUDebugDump() << std::endl;*/
-        gb->emulateStep();
+        std::cout << gb->getCPUDebugDump() << std::endl;
+        gb->step(1);
     }
-    std::cout << gb->getSerialOutput() << std::endl;
+    /*std::cout << gb->getSerialOutput() << std::endl;*/
     return 0;
 }
