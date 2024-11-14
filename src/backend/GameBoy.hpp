@@ -24,7 +24,8 @@ public:
     
     void runConcurrently();
     void setRenderer(Renderer *r);
-    void execute(uint32_t cycles);
+    void executeNCycles(uint64_t cycles);
+    uint32_t step();
 
     void stop();
     void pause();

@@ -43,10 +43,11 @@ std::string GameBoy::getSerialOutput() {
 uint64_t GameBoy::update(const uint32_t cyclesToExecute) {
     uint64_t cyclesPassed = 0;
     while(cyclesPassed < cyclesToExecute) {
-        cyclesPassed += cpu_.step();
-        // TODO: Check if this is right
-        timer_.update(cyclesPassed);
+        size_t oldCycles = cpu_.getCycles();
+        cpu_.step();
+        cyclesPassed += (cpu_.getCycles() - oldCycles);
         ppu_.update(cyclesPassed);
+        timer_.update(cyclesPassed);
     }
     return cyclesPassed;
 }
@@ -72,11 +73,12 @@ void GameBoy::resume() {
 void GameBoy::run() {
     isPaused_ = false;
     isStopped_ = false;
-
-    while(not isStopped_) {
+    
+    for(int i = 0; i < 2; i++) {
+    /*while(not isStopped_) {*/
         std::unique_lock<std::mutex> lock(mutex_);
         pause_cv_.wait(lock, [this] { return !isPaused_; });
-        step(70224);
+        executeNCycles(70224);
     }
     isPaused_ = true;
 }
@@ -94,14 +96,20 @@ void GameBoy::reset() {
     isRomLoaded_ = false;
 }
 
-uint64_t GameBoy::step(uint64_t n) {
+void GameBoy::executeNCycles(uint64_t cycles) {
     uint64_t cyclesPassed = 0;
-    for(size_t i = 0; i < n; ++i) {
-        u16 cycles = cpu_.step();
-        ppu_.update(cyclesPassed);
-        timer_.update(cyclesPassed);
-        cyclesPassed += cycles;
+    while(cyclesPassed < cycles) {
+        cyclesPassed += step();
     }
+}
+
+uint32_t GameBoy::step() {
+    uint32_t cyclesPassed = 0;
+    size_t oldCycles {cpu_.getCycles()};
+    cpu_.step();
+    cyclesPassed += (cpu_.getCycles() - oldCycles);
+    ppu_.update(cyclesPassed);
+    timer_.update(cyclesPassed);
     return cyclesPassed;
 }
 

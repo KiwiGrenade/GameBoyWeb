@@ -65,12 +65,12 @@ InstrArray CPU::getInstrArray(const bool prefixed) {
     return instrArray;
 }
 
-u8 CPU::executeInterrupt(u8 i) {
+void CPU::executeInterrupt(u8 i) {
     isHalted_ = false;
     isStopped_ = false;
 
     if(not IME_)
-        return 0;
+        return;
 
     memory_.write(PC_.hi_, --SP_);
     memory_.write(PC_.lo_, --SP_);
@@ -79,20 +79,21 @@ u8 CPU::executeInterrupt(u8 i) {
     ic_.disableInterrupt(i);
     IME_ = false;
 
-    return 5;
+    cycles_ += 5;
 }
 
-u8 CPU::handleInterrupts() {
-    u8 cycles = 0;
+bool CPU::handleInterrupts() {
+    bool res = false;
     if (u8 IF = ic_.getIF()) {
         u8 IE = ic_.getIE();
         for(u8 i = 0; i < 5; i++) {
             if(Utils::getBit(IF, i) && Utils::getBit(IE, i)) {
-                cycles += executeInterrupt(i);
+                executeInterrupt(i);
+                res = true;
             }
         }
     }
-    return cycles;
+    return res;
 }
 
 CPUDump CPU::getDebugDump() {
@@ -112,18 +113,18 @@ CPUDump CPU::getDebugDump() {
     );
 }
 
-u8 CPU::step() {
-    cycles_ = handleInterrupts();
+void CPU::step() {
+    handleInterrupts();
+    /*    return;*/
     handleIME();
-
-    if(cycles_ != 0)
-        return cycles_;
 
     isCondMet_ = true;
     incrementPC_ = true;
 
-    if(isHalted_)
-        return 4;
+    if(isHalted_)  {
+        cycles_ += 4;
+        return;
+    }
 
     int opcode = fetch8(PC_);
 
@@ -153,8 +154,6 @@ u8 CPU::step() {
         cycles_ += instrCycles.first;
     else
         cycles_ += instrCycles.second;
-
-    return cycles_;
 }
 
 void CPU::handleFlags(const Utils::flagArray& flags) {

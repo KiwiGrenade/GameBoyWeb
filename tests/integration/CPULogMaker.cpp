@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
 
     for(int i = 0; i < numberOfCycles; ++i) {
         std::cout << gb->getCPUDebugDump() << std::endl;
-        gb->step(1);
+        gb->step();
     }
     /*std::cout << gb->getSerialOutput() << std::endl;*/
     return 0;
