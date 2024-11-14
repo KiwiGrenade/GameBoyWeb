@@ -8,7 +8,6 @@
 #include "utils.hpp"
 #include <array>
 #include <cstdint>
-#include <iterator>
 
 
 PPU::PPU(InterruptController& ic, const CPU& cpu, Renderer* r)
@@ -244,6 +243,9 @@ void PPU::renderLayerPixel(Texture& tex, Layer layer, u8 x, u8 y, u8 texX, u8 te
     // pixel color index
     // bit of (lo/hi) byte is the (lo/hi) bit of the 2-bit color palette index
     u8 pxIdx = static_cast<u8>(hiBit << 1 | loBit);
+    /*if(x % 2 == 0) {*/
+    /*    pxIdx = 3;*/
+    /*}*/
     // 0 -> highest priority
     // pxIdx == 0 -> lowest priority
     u8 priority = (pxIdx == 0) ? 2 : 1;
@@ -411,23 +413,23 @@ void PPU::renderSpriteLine(Texture& tex) {
 void PPU::renderScanline() {
     Texture tex {160, 1};
     // STOP mode: if LCD is on -> set to all white, else all black
-    if(false && cpu_.isStopped()) {
-        Color c = isEnabled() ? 0xFFFF : 0;
-        tex.fill(c);
+    /*if(false && cpu_.isStopped()) {*/
+    /*    Color c = isEnabled() ? 0xFFFF : 0;*/
+    /*    tex.fill(c);*/
+    /*}*/
+    /*else {*/
+    if(Utils::getBit(LCDC_, 0)) {
+        renderLayerLine(tex, Layer::Background);
+        if(Utils::getBit(LCDC_, 5))
+            renderLayerLine(tex, Layer::Window);
     }
     else {
-        if(Utils::getBit(LCDC_, 0)) {
-            renderLayerLine(tex, Layer::Background);
-            if(Utils::getBit(LCDC_, 5))
-                renderLayerLine(tex, Layer::Window);
-        }
-        else {
-            Color c(0xFFF);
-            tex.fill(c);
-        }
-        if(Utils::getBit(LCDC_, 1))
-            renderSpriteLine(tex);
+        Color c(0xFFF);
+        tex.fill(c);
     }
+    if(Utils::getBit(LCDC_, 1))
+        renderSpriteLine(tex);
+    /*}*/
     if(isRenderer_)
     renderer_->drawTexture(tex, 0, LY_);
 }
