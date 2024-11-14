@@ -1,17 +1,16 @@
 #include "Memory.hpp"
 #include "PPU.hpp"
-#include "CPU.hpp"
 #include "Ram.hpp"
 #include "Cartridge.hpp"
+#include "Processor.hpp"
 #include "utils.hpp"
 #include <memory>
 #include <unistd.h>
 
 constexpr u16 Cartridge::romSize_;
 
-Memory::Memory(InterruptController& ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, PPU& ppu, CPU& cpu)
+Memory::Memory(Timer& timer, Joypad& joypad, SerialDataTransfer& serial, PPU& ppu, Processor& cpu)
     : cartridge_(std::make_shared<Cartridge>())
-    , ic_(ic)
     , joypad_(joypad)
     , timer_(timer)
     , serial_(serial)
@@ -126,9 +125,9 @@ void Memory::write(const u8 byte, const u16 addr) {
             timer_.write(byte, addr);
         }
         // Interrupts
-        else if (0xFF0F == addr) {
-            ic_.setIF(byte);
-        }
+        /*else if (0xFF0F == addr) {*/
+        /*    ic_.setIF(byte);*/
+        /*}*/
         // LCD - Control, Status, Position, Scrolling, Palettes
         else if (addr != 0xFF46 && 0xFF40 <= addr && addr <= 0xFF4B) {
             ppu_.write(byte, addr);
@@ -145,7 +144,7 @@ void Memory::write(const u8 byte, const u16 addr) {
     }
     // IE - InterruptController
     else if (addr == 0xFFFF) {
-        ic_.setIE(byte);
+        ie_ = byte;
     }
 }
 
@@ -211,9 +210,9 @@ u8 Memory::read(const u16 addr) {
             res = timer_.read(addr);
         }
         // InterruptController
-        else if (addr == 0xFF0F) {
-            res = ic_.getIF();
-        }
+        /*else if (addr == 0xFF0F) {*/
+        /*    res = ic_.getIF();*/
+        /*}*/
         // PPU
         else if(addr != 0xFF46 && 0xFF40 <= addr && addr <= 0xFF4B) {
             res = ppu_.read(addr);
@@ -227,7 +226,7 @@ u8 Memory::read(const u16 addr) {
     }
     // EI - InterruptController
     else if(addr == 0xFFFF) {
-        return ic_.getIE();
+        res = ie_;
     }
     return res;
 }
@@ -242,7 +241,6 @@ void Memory::oamDmaTransfer(u8 byte) {
 }
 
 void Memory::reset() {
-    ic_.reset();
     timer_.reset();
     joypad_.reset();
     serial_.reset();

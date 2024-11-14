@@ -1,6 +1,6 @@
 #include "PPU.hpp"
 
-#include "CPU.hpp"
+#include "Processor.hpp"
 #include "Memory.hpp"
 #include "Renderer.hpp"
 #include "GraphicTypes.hpp"
@@ -10,9 +10,8 @@
 #include <cstdint>
 
 
-PPU::PPU(InterruptController& ic, const CPU& cpu, Renderer* r)
-    : ic_(ic)
-    , cpu_(cpu)
+PPU::PPU(Processor& cpu, Renderer* r)
+    : cpu_(cpu)
     , renderer_(r){
 }
 
@@ -62,8 +61,8 @@ u8 PPU::read(uint16_t addr)
         case 0xFF41: b = STAT_; break;
         case 0xFF42: b = SCY_; break;
         case 0xFF43: b = SCX_; break;
-        case 0xFF44: b = LY_; break;
-        /*case 0xFF44: return 0x90; // Blaargs test: cpu_instrs hotfix*/
+        /*case 0xFF44: b = LY_; break;*/
+        case 0xFF44: return 0x90; // Blaargs test: cpu_instrs hotfix
         case 0xFF45: b = LYC_; break;
         // 0xFF46: dma transfer
         case 0xFF47: b = BGP_; break;
@@ -413,10 +412,10 @@ void PPU::renderSpriteLine(Texture& tex) {
 void PPU::renderScanline() {
     Texture tex {160, 1};
     // STOP mode: if LCD is on -> set to all white, else all black
-    /*if(false && cpu_.isStopped()) {*/
-    /*    Color c = isEnabled() ? 0xFFFF : 0;*/
-    /*    tex.fill(c);*/
-    /*}*/
+    if(false && cpu_.stopped()) {
+        Color c = isEnabled() ? 0xFFFF : 0;
+        tex.fill(c);
+    }
     /*else {*/
     if(Utils::getBit(LCDC_, 0)) {
         renderLayerLine(tex, Layer::Background);
@@ -471,7 +470,7 @@ void PPU::handleHBlank() {
             windowLine_ = 0;
             Utils::setBit(STAT_, 1, false);
             Utils::setBit(STAT_, 0, true);
-            ic_.requestInterrupt(InterruptController::Type::VBlank);
+            cpu_.request_interrupt(Processor::Interrupt::VBLANK);
             if(isRenderer_)
                 renderer_->showScreen();
         }
@@ -513,7 +512,7 @@ void PPU::checkStatus() {
     if(isLYC || isVBL || isOAM || isHBL) {
         // STAT interrupt is requested only if signal goes from 0 to 1
         if(not statSignal_)
-            ic_.requestInterrupt(InterruptController::Type::LCD);
+            cpu_.request_interrupt(Processor::Interrupt::LCD_STAT);
         statSignal_ = true;
     }
     else {

@@ -5,6 +5,7 @@
 #include <ostream>
 #include <functional>
 
+#include "InterruptController.hpp"
 #include "register_pair.hpp"
 #include "DebugTypes.hpp"
 #include "Memory.hpp"
@@ -27,7 +28,7 @@ class Processor
               std::function<void(uint8_t, uint16_t)> wr);
     void step();
     void reset(bool force_dmg = false);
-    CPUDump dump() const noexcept;
+    CPUDump getDebugDump() const noexcept;
     void request_interrupt(Interrupt i);
     void toggle_double_speed();
 
@@ -37,10 +38,10 @@ class Processor
     uint16_t hl() const noexcept { return hl_; }
     uint16_t sp() const noexcept { return sp_; }
     uint16_t pc() const noexcept { return pc_; }
-    uint32_t cycles() const noexcept { return cycles_; }
+    uint32_t getCycles() const noexcept { return cycles_; }
     // Manually add cycles to cycle count. This is useful for OAM DMA transfers: they need to take
     // 160 machine cycles (640 clock cycles).
-    void add_cycles(uint32_t c);
+    void addCycles(uint32_t c);
     bool stopped() const noexcept { return stpd_; }
     bool halted() const noexcept { return hltd_; }
     bool double_speed() const noexcept { return double_speed_; }

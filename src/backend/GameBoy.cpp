@@ -7,15 +7,7 @@
 #include<QElapsedTimer>
 #include <mutex>
 
-GameBoy::GameBoy()
-    : ic_(InterruptController())
-    , timer_(Timer(ic_))
-    , joypad_(Joypad(ic_))
-    , serial_(SerialDataTransfer(ic_))
-    , ppu_(PPU(ic_, cpu_))
-    , memory_(Memory(ic_, timer_, joypad_, serial_, ppu_, cpu_))
-    , cpu_(CPU(ic_, memory_)) {
-}
+GameBoy::GameBoy() {}
 
 GameBoy::~GameBoy() {
     stop();
@@ -86,7 +78,6 @@ void GameBoy::run() {
 
 void GameBoy::reset() {
     stop();
-    ic_.reset();
     timer_.reset();
     joypad_.reset();
     serial_.reset();
