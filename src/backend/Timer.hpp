@@ -10,14 +10,8 @@ public:
 
     void update(uint64_t cycles);
     void reset();
-    inline u8 getDIV() { return DIV_; };
-    inline void setDIV(u8 val) { DIV_ = val; };
-    inline u8 getTIMA() { return TIMA_; };
-    inline void setTIMA(u8 val) { TIMA_ = val; };
-    inline u8 getTMA() { return TMA_; };
-    inline void setTMA(u8 val) { TMA_ = val; };
-    inline u8 getTAC() { return TAC_; };
-    inline void setTAC(u8 val) { TAC_ = val; };
+    u8 read(u16 addr) const;
+    void write(u8 byte, u16 addr);
 
 protected:
     void timaOverflow();

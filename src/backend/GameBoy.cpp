@@ -12,7 +12,7 @@ GameBoy::GameBoy()
     , timer_(Timer(ic_))
     , joypad_(Joypad(ic_))
     , serial_(SerialDataTransfer(ic_))
-    , ppu_(PPU(ic_, memory_, cpu_))
+    , ppu_(PPU(ic_, cpu_))
     , memory_(Memory(ic_, timer_, joypad_, serial_, ppu_, cpu_))
     , cpu_(CPU(ic_, memory_)) {
 }
@@ -74,10 +74,11 @@ void GameBoy::run() {
     isPaused_ = false;
     isStopped_ = false;
     
-    for(int i = 0; i < 2; i++) {
-    /*while(not isStopped_) {*/
+    /*for(int i = 0; i < 16509; i++) {*/
+    while(not isStopped_) {
         std::unique_lock<std::mutex> lock(mutex_);
         pause_cv_.wait(lock, [this] { return !isPaused_; });
+        /*step();*/
         executeNCycles(70224);
     }
     isPaused_ = true;
