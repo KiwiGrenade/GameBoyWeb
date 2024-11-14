@@ -1,13 +1,14 @@
 #include "SerialDataTransfer.hpp"
+#include "Processor.hpp"
 
-SerialDataTransfer::SerialDataTransfer(InterruptController& ic) 
-    : ic_(ic) {
+SerialDataTransfer::SerialDataTransfer(Processor& cpu) 
+    : cpu_(cpu) {
     reset();
 }
 
 void SerialDataTransfer::writeToTestOutput() {
     testOutput_.push_back(SB_);
-    ic_.requestInterrupt(InterruptController::Type::Serial);
+    cpu_.request_interrupt(Processor::Interrupt::SERIAL);
 }
 
 std::vector<char> SerialDataTransfer::getTestOutput() {

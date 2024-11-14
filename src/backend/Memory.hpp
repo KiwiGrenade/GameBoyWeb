@@ -30,11 +30,10 @@
  */
 
 class PPU;
-class CPU;
 
 class Memory {
 public:
-    Memory(InterruptController& ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, PPU& ppu, CPU& cpu);
+    Memory(Timer& timer, Joypad& joypad, SerialDataTransfer& serial, PPU& ppu, Processor& cpu);
     ~Memory() = default;
     
     u8 read(const u16 addr);
@@ -49,17 +48,17 @@ protected:
 
     void oamDmaTransfer(u8 byte);
     
-    InterruptController& ic_;
     Timer& timer_;
     Joypad& joypad_;
     SerialDataTransfer& serial_;
     PPU& ppu_;
-    CPU& cpu_;
+    Processor& cpu_;
     std::shared_ptr<Cartridge> cartridge_;
 
     // memory
     WorkRam wram_ {2};
     std::array<u8, 0x80> io_ {};
     std::array<u8, 0x7F> hram_ {};
+    u8 ie_ = 0;
     bool wroteToSram_ = false;
 };

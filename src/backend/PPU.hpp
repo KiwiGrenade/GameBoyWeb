@@ -7,12 +7,12 @@
 #include <cstdint>
 
 class Renderer;
-class CPU;
+class Processor;
 class Memory;
 
 class PPU {
 public:
-    PPU(InterruptController& ic, const CPU& cpu, Renderer* r = nullptr);
+    PPU(Processor& cpu, Renderer* r = nullptr);
     void update(size_t cycles);
     void reset();
     u8 read(u16 addr);
@@ -63,8 +63,7 @@ protected:
     void dmaTransfer(u8 b);
 
     // GB modules
-    InterruptController& ic_;
-    const CPU& cpu_;
+    Processor& cpu_;
     Renderer *renderer_;
     
     // memory

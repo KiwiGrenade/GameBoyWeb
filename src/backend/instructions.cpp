@@ -1,13 +1,10 @@
 #include <cstdint>
-#include "processor.hpp"
+#include "Processor.hpp"
 
 // change the nth bit of b to x
 #define CHANGE_BIT(b, n, x) b ^= (-x ^ b) & (1UL << n)
 #define CLEAR_BIT(b, n) b &= ~(1UL << n)
 #define SET_BIT(b, n) b |= (1UL << n)
-
-namespace qtboy
-{
 
 inline bool half_check(const uint8_t a, const uint8_t b, const uint8_t res)
 {
@@ -502,5 +499,3 @@ void Processor::set_i(uint8_t n, uint16_t adr)
     write(b, adr);
 }
 
-
-}

@@ -2,11 +2,11 @@
 
 #include "utils.hpp"
 
-#include "InterruptController.hpp"
+class Processor;
 
 class Timer {
 public:
-    Timer(InterruptController& ic);
+    Timer(Processor& cpu);
 
     void update(uint64_t cycles);
     void reset();
@@ -16,7 +16,7 @@ public:
 protected:
     void timaOverflow();
 
-    InterruptController& ic_;
+    Processor& cpu_;
 
     int div_ticks_;
     int tima_ticks_;

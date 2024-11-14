@@ -15,7 +15,7 @@
 #include "Timer.hpp"
 #include "PPU.hpp"
 #include "Memory.hpp"
-#include "CPU.hpp"
+#include "Processor.hpp"
 
 class GameBoy {
 public:
@@ -54,11 +54,12 @@ protected:
     mutable std::mutex mutex_;
     // flags
     bool isPaused_ = false;
-    InterruptController ic_;
-    Timer timer_;
-    Joypad joypad_;
-    SerialDataTransfer serial_;
-    PPU ppu_;
-    Memory memory_;
-    CPU cpu_;
+    Timer timer_ {cpu_};
+    Joypad joypad_ {cpu_};
+    SerialDataTransfer serial_ {cpu_};
+    PPU ppu_ {cpu_};
+    Memory memory_ {timer_, joypad_, serial_, ppu_, cpu_};
+    Processor cpu_ {[this](uint16_t adr){ return memory_.read(adr); }, // memory read callback
+        [this](uint8_t b, uint16_t adr){ memory_.write(b, adr); } // memory write callback 
+    };
 };

@@ -2,7 +2,8 @@
 #include <chrono>
 #include <ctime>
 
-#include "processor.hpp"
+#include "Processor.hpp"
+#include "InterruptController.hpp"
 #include "register_pair.hpp"
 #include "instruction_info.hpp"
 
@@ -31,15 +32,15 @@
 
 Processor::Processor(std::function<uint8_t(uint16_t)> rd,
     std::function<void(uint8_t, uint16_t)> wr)
-    : read {std::move(rd)},
-      write {std::move(wr)}
+    : read {std::move(rd)}
+    , write {std::move(wr)}
 {
     reset();
 }
 
 void Processor::reset(bool force_dmg)
 {
-    af_ = force_dmg ? 0x01b0 : 0x11b0;
+    af_ = 0x01b0;
     bc_ = 0x0013;
     de_ = 0x00d8;
     hl_ = 0x014d;
@@ -56,7 +57,7 @@ void Processor::reset(bool force_dmg)
     double_speed_ = false;
 }
 
-void Processor::add_cycles(uint32_t c)
+void Processor::addCycles(uint32_t c)
 {
     cycles_ += c;
 }
@@ -801,7 +802,7 @@ void Processor::step()
     return;
 }
 
-CPUDump Processor::dump() const noexcept
+CPUDump Processor::getDebugDump() const noexcept
 {
     return {{read(pc_), read(pc_+1), read(pc_+2), read(pc_+3)}, A, F, B, C, D, E, H, L, SP, PC };
 }
