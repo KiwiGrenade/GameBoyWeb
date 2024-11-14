@@ -20,16 +20,17 @@ public:
     CPU(InterruptController& ic, Memory& mmu);
     ~CPU() = default;
     
-    u8 step();
+    void step();
     void reset();
     CPUDump getDebugDump();
     inline bool isStopped() const { return isStopped_; };
     inline void addCycles(uint64_t cycles) {cycles_ += cycles; };
+    inline uint32_t getCycles() { return cycles_; };
 
 protected:
     Memory&                 memory_;
     InterruptController&    ic_;
-    uint64_t    cycles_; // T-cycles
+    uint32_t    cycles_ {0}; // T-cycles
 
     // helper flags 
     bool isPrefixed_;
@@ -48,9 +49,9 @@ protected:
     InstrArray getInstrArray(const bool prefixed);
     ProcArray getUnprefProcArray();
     ProcArray getPrefProcArray();
-    u8 executeInterrupt(u8 i);
+    void executeInterrupt(u8 i);
     // returns number of M-cycles of an interrupt 
-    u8 handleInterrupts();
+    bool handleInterrupts();
     void handleIME();
     void handleFlags(const Utils::flagArray& flags);
 
