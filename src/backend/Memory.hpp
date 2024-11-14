@@ -32,10 +32,6 @@
 class PPU;
 class CPU;
 
-using WorkRam = Ram<0x1000>;
-using VRam = Ram<0x2000>;
-using ERam = Ram<0x2000>;
-
 class Memory {
 public:
     Memory(InterruptController& ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, PPU& ppu, CPU& cpu);
@@ -45,8 +41,7 @@ public:
     void write(const u8 byte, const u16 addr);
     void reset();
     void loadCartridge(std::shared_ptr<Cartridge>);
-    u8 readVram(u8 bank, u16 addr) const;
-    void writeVram(u8 byte, u8 bank, u16 addr);
+    void initIo();
 
     static constexpr uint32_t size_ = 0x10000;
 
@@ -63,9 +58,7 @@ protected:
     std::shared_ptr<Cartridge> cartridge_;
 
     // memory
-    VRam vram_ {1};
     WorkRam wram_ {2};
-    std::array<u8, 0xA0> oam_ {};
     std::array<u8, 0x80> io_ {};
     std::array<u8, 0x7F> hram_ {};
     bool wroteToSram_ = false;

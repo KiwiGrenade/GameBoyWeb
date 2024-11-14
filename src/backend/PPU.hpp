@@ -3,6 +3,7 @@
 #include "utils.hpp"
 #include "InterruptController.hpp"
 #include "GraphicTypes.hpp"
+#include "Ram.hpp"
 #include <cstdint>
 
 class Renderer;
@@ -11,7 +12,7 @@ class Memory;
 
 class PPU {
 public:
-    PPU(InterruptController& ic, Memory& memory, const CPU& cpu, Renderer* r = nullptr);
+    PPU(InterruptController& ic, const CPU& cpu, Renderer* r = nullptr);
     void update(size_t cycles);
     void reset();
     u8 read(u16 addr);
@@ -23,13 +24,16 @@ public:
         renderer_ = r;
         isRenderer_ = true;
     };
+    u8 readVram(u8 bank, u16 addr) const;
+    void writeVram(u8 byte, u8 bank, u16 addr);
+    u8 readOam(u16 addr) const;
+    void writeOam(u8 byte, u16 addr);
 
 protected:
     enum class Layer { Background, Window, Sprite };
 
     void checkStatus();
     void setMode(u8 model);
-    u8 readVram(u8 bank, u16 addr) const;
     // getters
     Texture getLayer(Layer l) const;
     Texture getFrameBuffer(bool withBg, bool withWin, bool withSprt) const;
@@ -60,9 +64,12 @@ protected:
 
     // GB modules
     InterruptController& ic_;
-    Memory& memory_;
     const CPU& cpu_;
     Renderer *renderer_;
+    
+    // memory
+    std::array<u8, 0xA0> oam_ {};
+    VRam vram_ {1};
     
     std::array<Sprite, 40> sprites_ {};
     static Palette dmgPalette;
@@ -72,8 +79,8 @@ protected:
     bool isRenderer_ = false;
     
     // registers
-    u8 LCDC_ = 0x90;   // 0xFF40
-    u8 STAT_;   // 0xFF41
+    u8 LCDC_ = 0x91;   // 0xFF40
+    u8 STAT_ = 0x81;   // 0xFF41
     u8 SCY_;    // 0xFF42
     u8 SCX_;    // 0xFF43
     u8 LY_;     // 0xFF44

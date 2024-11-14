@@ -32,6 +32,26 @@ void Timer::timaOverflow() {
     ic_.requestInterrupt(InterruptController::Type::Timer);
 }
 
+u8 Timer::read(u16 addr) const {
+    u8 b = 0xFF;
+    switch (addr) {
+        case 0xFF04: b = (DIV_ >> 8); break;
+        case 0xFF05: b = TIMA_; break;
+        case 0xFF06: b = TMA_; break;
+        case 0xFF07: b = TAC_; break;
+    }
+    return b;
+}
+
+void Timer::write(u8 byte, u16 addr) {
+    switch (addr) {
+        case 0xFF04: DIV_ = 0; break;
+        case 0xFF05: TIMA_ = byte; break;
+        case 0xFF06: TMA_ = byte; break;
+        case 0xFF07: TAC_ = byte; break;
+    }
+}
+
 void Timer::reset() {
     div_ticks_ = 0;
     tima_ticks_ = 0;

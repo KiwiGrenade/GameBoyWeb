@@ -18,22 +18,47 @@ Memory::Memory(InterruptController& ic, Timer& timer, Joypad& joypad, SerialData
     , ppu_(ppu)
     , cpu_(cpu)
     , wroteToSram_(false) {
+    initIo();
 }
 
 void Memory::loadCartridge(std::shared_ptr<Cartridge> cartridge) {
     cartridge_ = cartridge;
 }
 
-u8 Memory::readVram(u8 bank, u16 addr) const {
-    if ( addr < 0x8000 || addr > 0x9FFF )
-        return 0xFF;
-    return vram_.read(bank, addr - 0x8000);
-}
-
-void Memory::writeVram(u8 byte, u8 bank, u16 addr) {
-    if (addr < 0x8000 || addr > 0x9FFF)
-        return;
-    vram_.write(byte, bank, addr - 0x8000);
+void Memory::initIo() {
+    io_[0x00] = 0xff;
+    io_[0x05] = 0x00;   // TIMA
+    io_[0x06] = 0x00;   // TMA
+    io_[0x07] = 0x00;   // TAC
+    io_[0x10] = 0x80;   // NR10
+    io_[0x11] = 0xBF;   // NR11
+    io_[0x12] = 0xF3;   // NR12
+    io_[0x14] = 0xBF;   // NR14
+    io_[0x16] = 0x3F;   // NR21
+    io_[0x17] = 0x00;   // NR22
+    io_[0x19] = 0xBF;   // NR24
+    io_[0x1A] = 0x7F;   // NR30
+    io_[0x1B] = 0xFF;   // NR31
+    io_[0x1C] = 0x9F;   // NR32
+    io_[0x1E] = 0xBF;   // NR33
+    io_[0x20] = 0xFF;   // NR41
+    io_[0x21] = 0x00;   // NR42
+    io_[0x22] = 0x00;   // NR43
+    io_[0x23] = 0xBF;   // NR44
+    io_[0x24] = 0x77;   // NR50
+    io_[0x25] = 0xF3;   // NR51
+    io_[0x26] = 0xF1;   // NR52 (0xf1-GB, 0xF0-SGB)
+    io_[0x40] = 0x91;   // LCDC
+    io_[0x42] = 0x00;   // SCY
+    io_[0x43] = 0x00;   // SCX
+    io_[0x44] = 0x91;   // LY
+    io_[0x45] = 0x00;   // LYC
+    io_[0x47] = 0xFC;   // BGP
+    io_[0x48] = 0xFF;   // OBP0
+    io_[0x49] = 0xFF;   // OBP1
+    io_[0x4A] = 0x00;   // WY
+    io_[0x4B] = 0x00;   // WX
+    io_[0xFF] = 0x00;   // IE
 }
 
 void Memory::write(const u8 byte, const u16 addr) {
@@ -49,7 +74,7 @@ void Memory::write(const u8 byte, const u16 addr) {
     // VRAM
     else if(addr < 0xA000) {
         if(not ppu_.isEnabled() || ppu_.getMode() != 3)
-            writeVram(byte, 0, addr - 0x8000);
+            ppu_.writeVram(byte, 0, addr - 0x8000);
     }
     // ERAM
     else if(addr < 0xC000) {
@@ -74,7 +99,7 @@ void Memory::write(const u8 byte, const u16 addr) {
     // only accessible if PPU enabled and mode is 0 or 1
     else if(addr < 0xFEA0) {
         if(not ppu_.isEnabled() || ppu_.getMode() < 2)
-            oam_[addr - 0xFE00] = byte;
+            ppu_.writeOam(byte, addr - 0xFE00);
     }
     // Undefined
     else if(addr < 0xFF00) {
@@ -98,30 +123,11 @@ void Memory::write(const u8 byte, const u16 addr) {
         }
         // Timer and divider
         else if (0xFF04 <= addr && addr <= 0xFF07) {
-            switch(addr) {
-                case 0xFF04:
-                    timer_.setDIV(0);
-                    break;
-                case 0xFF05:
-                    timer_.setTIMA(byte);
-                    break;
-                case 0xFF06:
-                    timer_.setTMA(byte);
-                    break;
-                case 0xFF07:
-                    timer_.setTAC(byte);
-                    break;
-            }
+            timer_.write(byte, addr);
         }
         // Interrupts
         else if (0xFF0F == addr) {
             ic_.setIF(byte);
-        }
-        // Audio - obsolete
-        else if (0xFF10 <= addr && addr <= 0xFF26) {
-        }
-        // Wave pattern - obsolote
-        else if (0xFF30 <= addr && addr <= 0xFF3F) {
         }
         // LCD - Control, Status, Position, Scrolling, Palettes
         else if (addr != 0xFF46 && 0xFF40 <= addr && addr <= 0xFF4B) {
@@ -157,7 +163,7 @@ u8 Memory::read(const u16 addr) {
     else if(addr < 0xA000) {
         // VRAM is accessible if PPU is disabled or mode isn't 3
         if(not ppu_.isEnabled() || ppu_.getMode() != 3)
-            res = readVram(0, addr);
+            res = ppu_.readVram(0, addr);
     }
     // ERAM
     else if(addr < 0xC000) {
@@ -178,8 +184,8 @@ u8 Memory::read(const u16 addr) {
     }
     // OAM
     else if(addr < 0xFEA0) {
-        /*if(not ppu_.isEnabled() || ppu_.getMode() < 2)*/
-        res = oam_[addr - 0xFE00];
+        if(not ppu_.isEnabled() || ppu_.getMode() < 2)
+        res = ppu_.readOam(addr - 0xFE00);
     }
     // undefined
     else if(addr < 0xFF00) {
@@ -202,20 +208,11 @@ u8 Memory::read(const u16 addr) {
         }
         // timer
         else if (0xFF04 <= addr && addr <= 0xFF07) {
-            switch(addr) {
-                case 0xFF04:
-                    return timer_.getDIV();
-                case 0xFF05:
-                    return timer_.getTIMA();
-                case 0xFF06:
-                    return timer_.getTMA();
-                case 0xFF07:
-                    return timer_.getTAC();
-            }
+            res = timer_.read(addr);
         }
         // InterruptController
         else if (addr == 0xFF0F) {
-            return ic_.getIF();
+            res = ic_.getIF();
         }
         // PPU
         else if(addr != 0xFF46 && 0xFF40 <= addr && addr <= 0xFF4B) {
@@ -239,10 +236,8 @@ void Memory::oamDmaTransfer(u8 byte) {
     if(byte > 0xF1)
         Utils::error("Attempted to write value outside 00-f1 in OAM DMA transfer!");
 
-    static_assert(std::tuple_size<decltype(oam_)>::value == 0xA0, "OAM is incorrect size, should be 0xA0");
-
     for(u8 i = 0; i < 0x9F; ++i)
-        oam_[i] = read(static_cast<u16>(byte << 8 | i));
+        ppu_.writeOam(read(static_cast<u16>(byte << 8 | i)), i);
     cpu_.addCycles(160 * 4);
 }
 

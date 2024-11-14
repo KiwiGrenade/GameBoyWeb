@@ -8,11 +8,11 @@
 #include "utils.hpp"
 #include <array>
 #include <cstdint>
+#include <iterator>
 
 
-PPU::PPU(InterruptController& ic, Memory& memory, const CPU& cpu, Renderer* r)
+PPU::PPU(InterruptController& ic, const CPU& cpu, Renderer* r)
     : ic_(ic)
-    , memory_(memory)
     , cpu_(cpu)
     , renderer_(r){
 }
@@ -34,6 +34,26 @@ void PPU::reset() {
     statSignal_ = false;
 }
 
+u8 PPU::readVram(u8 bank, u16 addr) const {
+    if ( addr < 0x8000 || addr > 0x9FFF )
+        return 0xFF;
+    return vram_.read(bank, addr - 0x8000);
+}
+
+void PPU::writeVram(u8 byte, u8 bank, u16 addr) {
+    if (addr < 0x8000 || addr > 0x9FFF)
+        return;
+    vram_.write(byte, bank, addr - 0x8000);
+}
+
+u8 PPU::readOam(u16 addr) const {
+    return oam_[addr];
+}
+
+void PPU::writeOam(u8 byte, u16 addr) {
+    oam_[addr] = byte;
+}
+
 u8 PPU::read(uint16_t addr)
 {
     uint8_t b = 0xFF;
@@ -43,8 +63,8 @@ u8 PPU::read(uint16_t addr)
         case 0xFF41: b = STAT_; break;
         case 0xFF42: b = SCY_; break;
         case 0xFF43: b = SCX_; break;
-        /*case 0xFF44: b = LY_; break;*/
-        case 0xFF44: return 0x90; // Blaargs test: cpu_instrs hotfix
+        case 0xFF44: b = LY_; break;
+        /*case 0xFF44: return 0x90; // Blaargs test: cpu_instrs hotfix*/
         case 0xFF45: b = LYC_; break;
         // 0xFF46: dma transfer
         case 0xFF47: b = BGP_; break;
@@ -91,10 +111,13 @@ void PPU::update(size_t cycles) {
     cycles_ += cycles;
 
     if(not isEnabled()) {
-        /*Utils::warning("PPU not enabled!");*/
         cycles_ = 0;
-        LY_ = 0;
-        STAT_ &= 0xFC;
+        // set mode 0
+        Utils::setBit(STAT_, 1, false);
+        Utils::setBit(STAT_, 0, false);
+        if(cycles_ >= 70224)
+            cycles_ -= 70224;
+
         return;
     }
 
@@ -102,17 +125,17 @@ void PPU::update(size_t cycles) {
 
     switch (getMode()) {
         // mode 2 - scan for OAM sprites
-        case 2:
-            handleOamScan();
-            break;
-        case 3:
-            handleVramRead();
-            break;
         case 0:
             handleHBlank();
             break;
         case 1:
             handleVBlank();
+            break;
+        case 2:
+            handleOamScan();
+            break;
+        case 3:
+            handleVramRead();
             break;
     }
 }
@@ -137,10 +160,6 @@ Texture PPU::getTile(u16 i) const {
         }
     }
     return tex;
-}
-
-u8 PPU::readVram(u8 bank, u16 addr) const {
-    return memory_.readVram(bank, addr);
 }
 
 void PPU::renderLayerLine(Texture& tex, Layer layer) {
@@ -246,10 +265,11 @@ Texture PPU::getLayer(Layer l) const {
 }
 
 std::array<u8, 32*32> PPU::getRawBackground() {
-    u16 bgMap = Utils::getBit(LCDC_, 3) ? 0x9C00 : 0x9800;
+    // 1C00 and 1800 because we're getting from VRAM, which begins at address 0x8000
+    u16 bgMap = Utils::getBit(LCDC_, 3) ? 0x1C00 : 0x1800;
     std::array<u8, 32*32> bg {};
     for(u16 i = 0; i < 32*32; ++i)
-        bg[i] = memory_.read(bgMap + i);
+        bg[i] = vram_.read(0, bgMap + i);
     return bg;
 }
 
@@ -276,11 +296,12 @@ Texture PPU::getFrameBuffer(bool withBg, bool withWin, bool withSprt) const {
 void PPU::loadSprites() {
     u8 i = 0;
     // sprites are 4 bytes each
-    for(u16 adr = 0xFE00; adr < 0xFEA0; adr += 4, ++i) {
-        sprites_[i].y = memory_.read(adr);
-        sprites_[i].x = memory_.read(adr+1);
-        sprites_[i].tile = memory_.read(adr+2);
-        sprites_[i].attribute = memory_.read(adr+3);
+    // oam resides at 0xFE00 - 0xFEFF
+    for(u16 adr = 0; adr < 0xA0; adr += 4, ++i) {
+        sprites_[i].y = oam_[adr];
+        sprites_[i].x = oam_[adr+1];
+        sprites_[i].tile = oam_[adr+2];
+        sprites_[i].attribute = oam_[adr+3];
         sprites_[i].id = i;
     }
 }
@@ -390,50 +411,48 @@ void PPU::renderSpriteLine(Texture& tex) {
 void PPU::renderScanline() {
     Texture tex {160, 1};
     // STOP mode: if LCD is on -> set to all white, else all black
-    /*Utils::warning("render scanline!");*/
     if(false && cpu_.isStopped()) {
         Color c = isEnabled() ? 0xFFFF : 0;
         tex.fill(c);
     }
     else {
-        /*std::cout << static_cast<int32_t>(LCDC_) << std::endl;*/
-        if(LCDC_ & 1) {
-            /*Utils::warning("render background!");*/
+        if(Utils::getBit(LCDC_, 0)) {
             renderLayerLine(tex, Layer::Background);
             if(Utils::getBit(LCDC_, 5))
                 renderLayerLine(tex, Layer::Window);
         }
         else {
-            /*Utils::warning("fill with whatever!");*/
             Color c(0xFFF);
             tex.fill(c);
         }
         if(Utils::getBit(LCDC_, 1))
             renderSpriteLine(tex);
     }
+    if(isRenderer_)
     renderer_->drawTexture(tex, 0, LY_);
 }
 
 // OAM_SCAN mode 2 -> 3
 void PPU::handleOamScan() {
-    /*std::cout << "oamSCAN: " << static_cast<uint32_t>(cycles_) << std::endl;*/
     if(cycles_ >= 80) {
+
         cycles_ -= 80;
-        loadSprites();
-        // entering VRAM_READ
+
         Utils::setBit(STAT_, 1, true);
         Utils::setBit(STAT_, 0, true);
+
+        loadSprites();
+        // entering VRAM_READ
     }
 }
 
 // VRAM_READ mode 3 -> 0
 void PPU::handleVramRead() {
-    /*std::cout << "Vram read: " << static_cast<uint32_t>(cycles_) << std::endl;*/
     if(cycles_ >= 172) {
         cycles_ -= 172;
-        if(not isRenderer_)
-            return;
-        renderScanline();
+        if(isRenderer_)
+            renderScanline();
+
         // entering HBlank
         Utils::setBit(STAT_, 1, false);
         Utils::setBit(STAT_, 0, false);
@@ -442,7 +461,6 @@ void PPU::handleVramRead() {
 
 // HBLANK mode 0 -> 1, 0 -> 2
 void PPU::handleHBlank() {
-    /*std::cout << "hblank: " << static_cast<uint32_t>(cycles_) << std::endl;*/
     if(cycles_ >= 204) {
         cycles_ -= 204;
         ++LY_;
@@ -452,9 +470,8 @@ void PPU::handleHBlank() {
             Utils::setBit(STAT_, 1, false);
             Utils::setBit(STAT_, 0, true);
             ic_.requestInterrupt(InterruptController::Type::VBlank);
-            if(not isRenderer_)
-                return;
-            renderer_->showScreen();
+            if(isRenderer_)
+                renderer_->showScreen();
         }
         // enter OAM_SCAN mode 2
         else {
@@ -466,13 +483,12 @@ void PPU::handleHBlank() {
 
 // VBlank
 void PPU::handleVBlank() {
-    /*std::cout << "vblank: " << static_cast<uint32_t>(cycles_) << std::endl;*/
     if(cycles_ >= 456) {
         cycles_ -= 456;
 
         ++LY_;
         // enter OAM_SCAN mode 2
-        if(LY_ > 153) {
+        if(LY_ == 153) {
             Utils::setBit(STAT_, 1, true);
             Utils::setBit(STAT_, 0, false);
 
