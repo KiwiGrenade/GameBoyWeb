@@ -15,7 +15,7 @@ GameBoy::~GameBoy() {
 
 void GameBoy::setRenderer(Renderer *r) {
     const std::lock_guard<std::mutex> lock(mutex_);
-    ppu_.setRenderer(r);
+    ppu_.set_renderer(r);
 }
 
 void GameBoy::loadCartridge(const std::shared_ptr<Cartridge> cartridge) {
@@ -38,7 +38,7 @@ uint64_t GameBoy::update(const uint32_t cyclesToExecute) {
         size_t oldCycles = cpu_.getCycles();
         cpu_.step();
         cyclesPassed += (cpu_.getCycles() - oldCycles);
-        ppu_.update(cyclesPassed);
+        ppu_.step(cyclesPassed);
         timer_.update(cyclesPassed);
     }
     return cyclesPassed;
@@ -100,7 +100,7 @@ uint32_t GameBoy::step() {
     size_t oldCycles {cpu_.getCycles()};
     cpu_.step();
     cyclesPassed += (cpu_.getCycles() - oldCycles);
-    ppu_.update(cyclesPassed);
+    ppu_.step(cyclesPassed);
     timer_.update(cyclesPassed);
     return cyclesPassed;
 }

@@ -31,5 +31,5 @@ target_link_libraries(Memory PUBLIC CPU Ram Timer Joypad SerialDataTransfer PPU 
 # target_link_libraries(Disassembler PRIVATE Utils Memory Qt6::Core Qt6::Widgets)
 target_link_libraries(RegisterPair PUBLIC Utils)
 # target_link_libraries(Instruction PRIVATE Utils)
-target_link_libraries(CPU PRIVATE Utils RegisterPair Instruction DebugTypes)
+target_link_libraries(CPU PRIVATE Utils RegisterPair DebugTypes)
 target_link_libraries(GameBoy PRIVATE Joypad Timer Memory CPU SerialDataTransfer PPU Renderer)
