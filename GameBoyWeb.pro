@@ -6,49 +6,48 @@
 QT = core gui widgets
 
 HEADERS = \
-   $$PWD/src/backend/Cartridge.hpp \
-   $$PWD/src/backend/CPU.hpp \
-   $$PWD/src/backend/Disassembler.hpp \
-   $$PWD/src/backend/GameBoy.hpp \
-   $$PWD/src/backend/Instruction.hpp \
-   $$PWD/src/backend/Memory.hpp \
-   $$PWD/src/backend/RegisterPair.hpp \
-   $$PWD/src/backend/utils.hpp \
-   $$PWD/src/frontend/MainWindow.hpp
+   $$PWD/src/Cartridge.hpp \
+   $$PWD/src/DebugTypes.hpp \
+   $$PWD/src/GameBoy.hpp \
+   $$PWD/src/GraphicTypes.hpp \
+   $$PWD/src/Instruction.hpp \
+   $$PWD/src/instruction_info.hpp \
+   $$PWD/src/InterruptController.hpp \
+   $$PWD/src/Joypad.hpp \
+   $$PWD/src/MainWindow.hpp \
+   $$PWD/src/Memory.hpp \
+   $$PWD/src/PPU.hpp \
+   $$PWD/src/Processor.hpp \
+   $$PWD/src/QtRenderer.hpp \
+   $$PWD/src/Ram.hpp \
+   $$PWD/src/RegisterPair.hpp \
+   $$PWD/src/Renderer.hpp \
+   $$PWD/src/Rom.hpp \
+   $$PWD/src/SerialDataTransfer.hpp \
+   $$PWD/src/Timer.hpp \
+   $$PWD/src/utils.hpp
 
 SOURCES = \
-   $$PWD/res/opcodes.json \
-   $$PWD/src/backend/Cartridge.cpp \
-   $$PWD/src/backend/CMakeLists.txt \
-   $$PWD/src/backend/CPU.cpp \
-   $$PWD/src/backend/Disassembler.cpp \
-   $$PWD/src/backend/GameBoy.cpp \
-   $$PWD/src/backend/Instruction.cpp \
-   $$PWD/src/backend/Memory.cpp \
-   $$PWD/src/backend/ProceduresPrefixed.cpp \
-   $$PWD/src/backend/ProceduresUnprefixed.cpp \
-   $$PWD/src/backend/utils.cpp \
-   $$PWD/src/frontend/CMakeLists.txt \
-   $$PWD/src/frontend/MainWindow.cpp \
-   $$PWD/src/frontend/MainWindow.ui \
-   $$PWD/src/CMakeLists.txt \
+   $$PWD/src/Cartridge.cpp \
+   $$PWD/src/GameBoy.cpp \
+   $$PWD/src/GraphicTypes.cpp \
+   $$PWD/src/Instruction.cpp \
+   $$PWD/src/instructions.cpp \
+   $$PWD/src/InterruptController.cpp \
+   $$PWD/src/Joypad.cpp \
    $$PWD/src/main.cpp \
-   # $$PWD/tests/src/backend/CartridgeTests.cpp \
-   # $$PWD/tests/src/backend/CMakeLists.txt \
-   # $$PWD/tests/src/backend/CPUTests.cpp \
-   # $$PWD/tests/src/backend/MemoryTests.cpp \
-   # $$PWD/tests/src/backend/ProceduresPrefixedTests.cpp \
-   # $$PWD/tests/src/backend/ProceduresUnprefixedTests.cpp \
-   # $$PWD/tests/src/backend/RegisterPairTests.cpp \
-   # $$PWD/tests/src/backend/UtilsTests.cpp \
-   $$PWD/CMakeLists.txt \
-   # $$PWD/LICENSE.md \
-   # $$PWD/README.md
+   $$PWD/src/MainWindow.cpp \
+   $$PWD/src/Memory.cpp \
+   $$PWD/src/PPU.cpp \
+   $$PWD/src/Processor.cpp \
+   $$PWD/src/QtRenderer.cpp \
+   $$PWD/src/Ram.cpp \
+   $$PWD/src/Rom.cpp \
+   $$PWD/src/SerialDataTransfer.cpp \
+   $$PWD/src/Timer.cpp \
+   $$PWD/src/utils.cpp
 
-INCLUDEPATH = \
-   $$PWD/src/backend/ \
-   $$PWD/src/frontend/ \
-
+INCLUDEPATH =
 
 #DEFINES = 
 

@@ -4,14 +4,14 @@
 
 namespace Utils {
 
-std::string uint8_tToHexString(const uint8_t& byte) {
-    std::stringstream ss;
-    ss << "0x" << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(byte);
-    std::string res = ss.str();
-    // capitalise last 2 letters
-    std::transform(res.end() - 2, res.end(), res.end() - 2, ::toupper);
-    return res;
-}
+// std::string uint8_tToHexString(const uint8_t& byte) {
+//     std::stringstream ss;
+//     ss << "0x" << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(byte);
+//     std::string res = ss.str();
+//     // capitalise last 2 letters
+//     std::transform(res.end() - 2, res.end(), res.end() - 2, ::toupper);
+//     return res;
+// }
 
 
 QJsonObject getInstrMapJsonObjectFromFile(const bool prefixed) {

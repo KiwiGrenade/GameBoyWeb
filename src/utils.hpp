@@ -38,7 +38,7 @@ enum class Flag : char {
 
 typedef std::array<Flag, 4> flagArray;
 
-std::string uint8_tToHexString(const uint8_t& byte);
+// std::string uint8_tToHexString(const uint8_t& byte);
 
 // json object extraction
 QJsonObject getInstrMapJsonObjectFromFile(const bool prefixed);

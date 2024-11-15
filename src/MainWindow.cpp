@@ -105,9 +105,17 @@ void MainWindow::updateFps()
 
 void MainWindow::openRom()
 {
-    QString fileName = QFileDialog::getOpenFileName(this);
-    if (!fileName.isEmpty())
+    auto fileContentReady = [this](const QString& fileName, const QByteArray& fileContent) {
+        if(fileName.isEmpty())
+        {
+            //TODO: Replace this with error() from utils.hpp
+            std::cout << "No file was selected! Exiting!" << std::endl;
+            exit(1);
+        }
         loadRom(fileName);
+    };
+
+    QFileDialog::getOpenFileContent(" ROMs (*.gb)", fileContentReady);
 }
 
 void MainWindow::showDebugger()

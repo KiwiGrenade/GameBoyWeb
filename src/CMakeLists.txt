@@ -1,10 +1,50 @@
 qt_add_executable(GameBoyEmu main.cpp)
 
-target_include_directories(GameBoyEmu PRIVATE frontend backend)
+qt_add_library(Utils STATIC utils.cpp)
+qt_add_library(Memory STATIC Memory.cpp)
+qt_add_library(GameBoy STATIC GameBoy.cpp)
+# qt_add_library(Disassembler STATIC Disassembler.cpp)
+qt_add_library(CPU STATIC Processor.cpp instructions.cpp)
+qt_add_library(RegisterPair STATIC RegisterPair.hpp)
+# qt_add_library(Instruction STATIC Instruction.cpp)
+qt_add_library(Cartridge STATIC Cartridge.cpp)
+qt_add_library(Timer STATIC Timer.cpp)
+qt_add_library(Joypad STATIC Joypad.cpp)
+# qt_add_library(InterruptController STATIC InterruptController.cpp)
+qt_add_library(SerialDataTransfer STATIC SerialDataTransfer.cpp)
+qt_add_library(DebugTypes STATIC DebugTypes.hpp)
+qt_add_library(PPU STATIC PPU.cpp)
+qt_add_library(GraphicTypes STATIC GraphicTypes.cpp)
+qt_add_library(Renderer STATIC Renderer.hpp)
+qt_add_library(Ram STATIC Ram.cpp)
+
+qt_add_library(MainWindow STATIC MainWindow.cpp)
+qt_add_library(QtRenderer STATIC QtRenderer.cpp)
+# target_include_directories(GameBoyEmu PRIVATE frontend backend)
+
+target_include_directories(QtRenderer PRIVATE ${CMAKE_SOURCE_DIR}/includes)
+target_include_directories(MainWindow PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../backend)
+
+
+# target_link_libraries(Renderer PRIVATE PPU)
+# target_link_libraries(InterruptController PRIVATE CPU)
+target_link_libraries(Ram PRIVATE Utils)
+target_link_libraries(GraphicTypes PRIVATE Utils)
+target_link_libraries(PPU PRIVATE Memory Renderer GraphicTypes CPU Utils)
+target_link_libraries(SerialDataTransfer PRIVATE CPU Utils)
+target_link_libraries(RegisterPair PUBLIC Utils)
+target_link_libraries(Joypad PRIVATE CPU Utils)
+target_link_libraries(Timer PRIVATE CPU Utils)
+target_link_libraries(Cartridge PRIVATE Qt6::Core)
+target_link_libraries(Utils PUBLIC Qt6::Core)
+target_link_libraries(Memory PUBLIC CPU Ram Timer Joypad SerialDataTransfer PPU Cartridge Utils Qt6::Core)
+
+target_link_libraries(CPU PRIVATE Utils RegisterPair DebugTypes)
+target_link_libraries(GameBoy PRIVATE Joypad Timer Memory CPU SerialDataTransfer PPU Renderer)
+target_link_libraries(QtRenderer PUBLIC Qt6::Widgets Renderer Utils GraphicTypes)
+target_link_libraries(MainWindow PRIVATE Qt6::Widgets Utils GameBoy Cartridge QtRenderer)
 
 target_link_libraries(GameBoyEmu PRIVATE Qt6::Widgets MainWindow)
 
 target_compile_options(GameBoyEmu PRIVATE -pthread)
 
-add_subdirectory(backend)
-add_subdirectory(frontend)
