@@ -49,7 +49,7 @@ protected:
     InstrArray getInstrArray(const bool prefixed);
     ProcArray getUnprefProcArray();
     ProcArray getPrefProcArray();
-    void executeInterrupt(u8 i);
+    bool executeInterrupt(u8 i);
     // returns number of M-cycles of an interrupt 
     bool handleInterrupts();
     void handleIME();

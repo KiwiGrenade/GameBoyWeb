@@ -65,35 +65,43 @@ InstrArray CPU::getInstrArray(const bool prefixed) {
     return instrArray;
 }
 
-void CPU::executeInterrupt(u8 i) {
+bool CPU::executeInterrupt(u8 i) {
     isHalted_ = false;
     isStopped_ = false;
 
     if(not IME_)
-        return;
+        return false;
 
     memory_.write(PC_.hi_, --SP_);
     memory_.write(PC_.lo_, --SP_);
-    PC_ = 0x0040 + i * 8;
+    PC_.hi_ = 0;
+    PC_.lo_ = 0x40 + i * 8;
 
     ic_.disableInterrupt(i);
     IME_ = false;
 
     cycles_ += 5;
+    return true;
 }
 
 bool CPU::handleInterrupts() {
-    bool res = false;
-    if (u8 IF = ic_.getIF()) {
-        u8 IE = ic_.getIE();
-        for(u8 i = 0; i < 5; i++) {
-            if(Utils::getBit(IF, i) && Utils::getBit(IE, i)) {
-                executeInterrupt(i);
-                res = true;
-            }
-        }
+    u8 enable = ic_.getIE();
+    u8 flag = ic_.getIF();
+    u8 req = enable & flag;
+    bool serviced = false;
+    if(Utils::getBit(req, 0)) {
+        serviced = executeInterrupt(0);
     }
-    return res;
+    if(Utils::getBit(req, 1)) {
+        serviced = executeInterrupt(2);
+    }
+    if(Utils::getBit(req, 3)) {
+        serviced = executeInterrupt(3);
+    }
+    if(Utils::getBit(req, 4)) {
+        serviced = executeInterrupt(4);
+    }
+    return serviced;
 }
 
 CPUDump CPU::getDebugDump() {
@@ -114,8 +122,8 @@ CPUDump CPU::getDebugDump() {
 }
 
 void CPU::step() {
-    handleInterrupts();
-    /*    return;*/
+    if(handleInterrupts())
+        return;
     handleIME();
 
     isCondMet_ = true;

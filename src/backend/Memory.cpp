@@ -1,8 +1,10 @@
 #include "Memory.hpp"
+#include "InterruptController.hpp"
+#include "Timer.hpp"
+#include "Joypad.hpp"
+#include "SerialDataTransfer.hpp"
 #include "PPU.hpp"
 #include "CPU.hpp"
-#include "Ram.hpp"
-#include "Cartridge.hpp"
 #include "utils.hpp"
 #include <memory>
 #include <unistd.h>
@@ -12,8 +14,8 @@ constexpr u16 Cartridge::romSize_;
 Memory::Memory(InterruptController& ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, PPU& ppu, CPU& cpu)
     : cartridge_(std::make_shared<Cartridge>())
     , ic_(ic)
-    , joypad_(joypad)
     , timer_(timer)
+    , joypad_(joypad)
     , serial_(serial)
     , ppu_(ppu)
     , cpu_(cpu)
@@ -73,8 +75,8 @@ void Memory::write(const u8 byte, const u16 addr) {
     }
     // VRAM
     else if(addr < 0xA000) {
-        if(not ppu_.isEnabled() || ppu_.getMode() != 3)
-            ppu_.writeVram(byte, 0, addr - 0x8000);
+        if(not ppu_.enabled() || ppu_.mode() != 3)
+            vram_.write(byte, 0, addr - 0x8000);
     }
     // ERAM
     else if(addr < 0xC000) {
@@ -98,8 +100,8 @@ void Memory::write(const u8 byte, const u16 addr) {
     // OAM
     // only accessible if PPU enabled and mode is 0 or 1
     else if(addr < 0xFEA0) {
-        if(not ppu_.isEnabled() || ppu_.getMode() < 2)
-            ppu_.writeOam(byte, addr - 0xFE00);
+        if(not ppu_.enabled() || ppu_.mode() < 2)
+            oam_[addr - 0xFE00] = addr;
     }
     // Undefined
     else if(addr < 0xFF00) {
@@ -131,7 +133,7 @@ void Memory::write(const u8 byte, const u16 addr) {
         }
         // LCD - Control, Status, Position, Scrolling, Palettes
         else if (addr != 0xFF46 && 0xFF40 <= addr && addr <= 0xFF4B) {
-            ppu_.write(byte, addr);
+            ppu_.write_reg(byte, addr);
         }
         // set to non zero to disable Boot ROM
         else if (0xFF46 == addr) {
@@ -162,8 +164,8 @@ u8 Memory::read(const u16 addr) {
     // VRAM
     else if(addr < 0xA000) {
         // VRAM is accessible if PPU is disabled or mode isn't 3
-        if(not ppu_.isEnabled() || ppu_.getMode() != 3)
-            res = ppu_.readVram(0, addr);
+        if(not ppu_.enabled() || ppu_.mode() != 3)
+            vram_.read(0, addr-0x8000);
     }
     // ERAM
     else if(addr < 0xC000) {
@@ -184,8 +186,8 @@ u8 Memory::read(const u16 addr) {
     }
     // OAM
     else if(addr < 0xFEA0) {
-        if(not ppu_.isEnabled() || ppu_.getMode() < 2)
-        res = ppu_.readOam(addr - 0xFE00);
+        if(not ppu_.enabled() || ppu_.mode() < 2)
+            res = oam_[addr - 0xFE00];
     }
     // undefined
     else if(addr < 0xFF00) {
@@ -216,7 +218,7 @@ u8 Memory::read(const u16 addr) {
         }
         // PPU
         else if(addr != 0xFF46 && 0xFF40 <= addr && addr <= 0xFF4B) {
-            res = ppu_.read(addr);
+            res = ppu_.read_reg(addr);
         }
         else
             res = io_[addr - 0xFF00];
@@ -227,22 +229,40 @@ u8 Memory::read(const u16 addr) {
     }
     // EI - InterruptController
     else if(addr == 0xFFFF) {
-        return ic_.getIE();
+        res = ic_.getIE();
     }
     return res;
 }
 
-void Memory::oamDmaTransfer(u8 byte) {
-    if(byte > 0xF1)
-        Utils::error("Attempted to write value outside 00-f1 in OAM DMA transfer!");
+uint8_t Memory::vram_read(uint8_t bank, uint16_t a) const
+{
+    if (a < 0x8000 || a > 0x9fff)
+        return 0xff; // not in range of VRAM
+    return vram_.read(bank, a-0x8000);
+}
 
-    for(u8 i = 0; i < 0x9F; ++i)
-        ppu_.writeOam(read(static_cast<u16>(byte << 8 | i)), i);
-    cpu_.addCycles(160 * 4);
+void Memory::vram_write(uint8_t b, uint8_t bank, uint16_t a)
+{
+    if (a < 0x8000 || a > 0x9fff)
+        return; // not in range of VRAM
+    vram_.write(b, bank, a-0x8000);
+}
+
+void Memory::oamDmaTransfer(u8 byte) {
+    if (byte > 0xf1) // only defined for range between 00-f1
+        throw std::runtime_error {"Attempted to write value outside 00-f1 for OAM DMA transfer"};
+    // make sure OAM is the correct size (not really necessary but just to make sure OAM DMA
+    // doesn't access out of bounds.
+    static_assert(std::tuple_size<decltype(oam_)>::value == 0xa0,
+                  "OAM is incorrect size, should be 0xa0)");
+    // copy from XX00-XX9f to oam (fe00-fe9f), where XXh = b
+    for (uint8_t i {0}; i < 0x9f; ++i)
+        oam_[i] = read(static_cast<uint16_t>(byte << 8 | i));
+    // OAM DMA transfer should take 160 machine cycles (160*4 clock cycles)
+    cpu_.addCycles(160*4);
 }
 
 void Memory::reset() {
-    ic_.reset();
     timer_.reset();
     joypad_.reset();
     serial_.reset();

@@ -28,8 +28,8 @@ QPixmap QtRenderer::getPixmap() const {
 }
 
 void QtRenderer::drawTexture(const Texture& tex, u16 xOffset, u16 yOffset) {
-    const u16 w { tex.getWidth() };
-    const u16 h { tex.getHeight() };
+    const u16 w { tex.width() };
+    const u16 h { tex.height() };
     {
         const std::lock_guard<std::mutex> lock(buf_mutex_);
         for(uint32_t i = 0; i < w * h; ++i) {
@@ -40,7 +40,7 @@ void QtRenderer::drawTexture(const Texture& tex, u16 xOffset, u16 yOffset) {
                 continue;
             int j = y * width_ + x;
             // represent in RGB555
-            Color c = tex.getPixelColor(i);
+            Color c = tex.pixel(i);
             buf_[2*j] = c & 0xFF;
             buf_[2*j+1] = c >> 8;
         }
