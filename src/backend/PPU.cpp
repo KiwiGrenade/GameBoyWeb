@@ -1,523 +1,807 @@
 #include "PPU.hpp"
-
-#include "Processor.hpp"
 #include "Memory.hpp"
+#include "Processor.hpp"
 #include "Renderer.hpp"
-#include "GraphicTypes.hpp"
-#include "InterruptController.hpp"
-#include "utils.hpp"
-#include <array>
-#include <cstdint>
 
+#include <iostream>
+#include <string>
+#include <cmath>
+#include <algorithm>
 
-PPU::PPU(Processor& cpu, Renderer* r)
-    : cpu_(cpu)
-    , renderer_(r){
-}
+#define CHANGE_BIT(b, n, x) b ^= (-x ^ b) & (1UL << n)
+#define CLEAR_BIT(b, n) b &= ~(1UL << n)
+#define SET_BIT(b, n) b |= (1UL << n)
 
-void PPU::reset() {
-    cycles_ = 0;
-    windowLine_ = 0;
-    LCDC_ = 0x90;
-    STAT_ = 0;
-    SCY_ = 0;
-    SCX_ = 0;
-    LY_ = 0;
-    LYC_ = 0;
-    BGP_ = 0xFC;
-    OBP0_ = 0xFF;
-    OBP1_ = 0xFF;
-    WY_ = 0;
-    WX_ = 0;
-    statSignal_ = false;
-}
+/* GBC colour correction factors */
+#define GBC_CC_R  0.87
+#define GBC_CC_G  0.66
+#define GBC_CC_B  0.79
+#define GBC_CC_RG 0.115
+#define GBC_CC_RB 0.14
+#define GBC_CC_GR 0.18
+#define GBC_CC_GB 0.07
+#define GBC_CC_BR -0.05
+#define GBC_CC_BG 0.225
 
-u8 PPU::readVram(u8 bank, u16 addr) const {
-    if ( addr < 0x8000 || addr > 0x9FFF )
-        return 0xFF;
-    return vram_.read(bank, addr - 0x8000);
-}
+Ppu::Ppu(Memory &m,
+         Processor &p,
+         Renderer *r)
+    : memory_ {m},
+      cpu_ {p},
+      renderer_ {r}
+{}
 
-void PPU::writeVram(u8 byte, u8 bank, u16 addr) {
-    if (addr < 0x8000 || addr > 0x9FFF)
-        return;
-    vram_.write(byte, bank, addr - 0x8000);
-}
-
-u8 PPU::readOam(u16 addr) const {
-    return oam_[addr];
-}
-
-void PPU::writeOam(u8 byte, u16 addr) {
-    oam_[addr] = byte;
-}
-
-u8 PPU::read(uint16_t addr)
+void Ppu::reset()
 {
-    uint8_t b = 0xFF;
-    switch (addr)
-    {
-        case 0xFF40: b = LCDC_; break;
-        case 0xFF41: b = STAT_; break;
-        case 0xFF42: b = SCY_; break;
-        case 0xFF43: b = SCX_; break;
-        /*case 0xFF44: b = LY_; break;*/
-        case 0xFF44: return 0x90; // Blaargs test: cpu_instrs hotfix
-        case 0xFF45: b = LYC_; break;
-        // 0xFF46: dma transfer
-        case 0xFF47: b = BGP_; break;
-        case 0xFF48: b = OBP0_; break;
-        case 0xFF49: b = OBP1_; break;
-        case 0xFF4a: b = WY_; break;
-        case 0xFF4b: b = WX_; break;
+    clock_ = 0;
+    window_line_ = 0;
+    lcdc_ = 0x90;
+    stat_ = 0x00;
+    scy_ = 0;
+    scx_ = 0;
+    ly_ = 0;
+    lyc_ = 0;
+    bgp_ = 0xfc;
+    obp0_ = 0xff;
+    obp1_ = 0xff;
+    wy_ = 0;
+    wx_ = 0;
+    sprites_ = {};
+    stat_signal_ = false;
+    // CGB registers
+    cgb_mode_ = false;
+    bgpd_ = {};
+    obpd_ = {};
+    bgpi_ = 0;
+    obpi_ = 0;
+}
 
-        default:
-            Utils::error("Could not read from PPU!");
+void Ppu::enable_cgb(bool is_cgb)
+{
+    cgb_mode_ = is_cgb;
+}
+
+void Ppu::step(size_t cycles)
+{
+    // PPU operates on 4.194 MHz clock, 1 clock = 1/4 cycle
+    clock_ += cycles;
+    if (!(lcdc_ & 0x80)) // bit 7
+    {
+        clock_ = 0;
+        ly_ = 0;
+        stat_ &= 0xfc; // mode 0
+        return; // don't execute if master bit is off
+    }
+    check_stat();
+    switch (stat_ & 3) // bit 0-1
+    {
+        // mode 2: scan for OAM sprites
+        case 2:
+            oam_scan();
+            break;
+        // OAM/VRAM read
+        // end of mode 3 = end of scan line
+        case 3:
+            vram_read();
+            break;
+        // HBLANK
+        case 0:
+            hblank();
+            break;
+        // VBLANK
+        case 1:
+            vblank();
+            break;
+    }
+}
+
+int Ppu::mode() const
+{
+    return stat_ & 3;
+}
+
+int Ppu::clock() const
+{
+    return clock_;
+}
+
+bool Ppu::enabled() const
+{
+    return lcdc_ & 0x80;
+}
+
+uint8_t Ppu::read_reg(uint16_t adr)
+{
+    uint8_t b = 0xff;
+    switch (adr)
+    {
+        case 0xff40: b = lcdc_; break;
+        case 0xff41: b = stat_; break;
+        case 0xff42: b = scy_; break;
+        case 0xff43: b = scx_; break;
+        case 0xff44: b = ly_; break;
+        case 0xff45: b = lyc_; break;
+        // ff46: DMA transfer
+        case 0xff47: b = bgp_; break;
+        case 0xff48: b = obp0_; break;
+        case 0xff49: b = obp1_; break;
+        case 0xff4a: b = wy_; break;
+        case 0xff4b: b = wx_; break;
+
+        // CGB registers
+        case 0xff68: b = bgpi_; break;
+        case 0xff69: b = bgpd_[bgpi_ & 0x3f]; break;
+        case 0xff6a: b = obpi_; break;
+        case 0xff6b: b = obpd_[obpi_ & 0x3f]; break;
+
+        default: break;
+            /*throw qtboy::Exception("Attempted to read invalid PPU register.",*/
+            /*                         __FILE__, __LINE__);*/
     }
     return b;
 }
 
-void PPU::write(uint8_t b, uint16_t addr)
+void Ppu::write_reg(uint8_t b, uint16_t adr)
 {
-    switch (addr)
+    switch (adr)
     {
-        case 0xFF40:
-            LCDC_ = b;
-            break;
-        case 0xFF41:
+        case 0xff40: lcdc_ = b; break;
+        case 0xff41:
+        {
             // lower 3 bits of STAT are read only,
-            // write to upper 4 bits resets them 
-            STAT_ &= ~0xf8;
+            // only write to upper 4 bits
+            // clear upper 4 bits
+            stat_ &= ~0xf8;
             // set upper 4 bits
-            STAT_ |= b & 0xf8; break;
-        case 0xFF42: SCY_ = b; break;
-        case 0xFF43: SCX_ = b; break;
-        case 0xFF44: LY_ = b; break;
-        case 0xFF45: LYC_ = b; break;
-        // 0xFF46: DMA transfer
-        case 0xFF47: BGP_ = b; break;
-        case 0xFF48: OBP0_ = b; break;
-        case 0xFF49: OBP1_ = b; break;
-        case 0xFF4a: WY_ = b; break;
-        case 0xFF4b: WX_ = b; break;
-        default:
-            Utils::error("Could not write to PPU!");
+            stat_ |= b & 0xf8;
+        } break;
+        case 0xff42: scy_ = b; break;
+        case 0xff43: scx_ = b; break;
+        case 0xff44: ly_ = b; break;
+        case 0xff45: lyc_ = b; break;
+        // ff46: DMA transfer
+        case 0xff47: bgp_ = b; break;
+        case 0xff48: obp0_ = b; break;
+        case 0xff49: obp1_ = b; break;
+        case 0xff4a: wy_ = b; break;
+        case 0xff4b: wx_ = b; break;
+
+        // CGB registers
+        case 0xff68: bgpi_ = b; break; // background palette index
+        case 0xff69:
+        {
+            // bits 0-5 in bgpi used to index in background palette memory
+            // bit 7 enables auto increment after writting
+            bgpd_[bgpi_ & 0x3f] = b;
+            if (bgpi_ & 0x80)
+                ++bgpi_;
+        } break;
+        case 0xff6a: obpi_ = b; break;
+        case 0xff6b:
+        {
+            // bits 0-5 in obpi used to index in object palette memory
+            // bit 7 enables auto increment after writting
+            obpd_[obpi_ & 0x3f] = b;
+            if (obpi_ & 0x80)
+                ++obpi_;
+        } break;
+
+        default: break;
+            /*throw qtboy::Exception("Attempted to write invalid PPU register.",*/
+            /*                         __FILE__, __LINE__);*/
     }
 }
 
-void PPU::update(size_t cycles) {
-    cycles_ += cycles;
 
-    if(not isEnabled()) {
-        cycles_ = 0;
-        // set mode 0
-        Utils::setBit(STAT_, 1, false);
-        Utils::setBit(STAT_, 0, false);
-        if(cycles_ >= 70224)
-            cycles_ -= 70224;
-
-        return;
-    }
-
-    checkStatus();
-
-    switch (getMode()) {
-        // mode 2 - scan for OAM sprites
-        case 0:
-            handleHBlank();
-            break;
-        case 1:
-            handleVBlank();
-            break;
-        case 2:
-            handleOamScan();
-            break;
-        case 3:
-            handleVramRead();
-            break;
-    }
+void Ppu::set_renderer(Renderer *r)
+{
+    renderer_ = r;
 }
 
-Texture PPU::getTile(u16 i) const {
-    Texture tex(8, 8);
-    u16 tileBase = 0x8000;
-    for(u8 byte = 0; byte < 16; byte += 2) {
-        u16 idx = byte + tileBase + i * 16;
-        u8 loByte = readVram(0, idx);
-        u8 hiByte = readVram(0, idx + 1);
-
-        for(u8 pix = 0; pix < 8; ++pix) {
-            bool hiBit = Utils::getBit(hiByte, 7-pix);
-            bool loBit = Utils::getBit(loByte, 7-pix);
-
-            u8 colorIdx = static_cast<u8>(hiBit << 1 | loBit);
-            Color c = dmgPalette[colorIdx];
-            u8 p = (byte / 2) * 8 + pix;
-            tex.setPixelColor(p, c);
-            tex.setPixelPriority(p, 0);
-        }
-    }
-    return tex;
-}
-
-void PPU::renderLayerLine(Texture& tex, Layer layer) {
-    // Window won't draw if current line isn't a window line
-    if(layer == Layer::Window && LY_ < WY_)
-        return;
-    // y of current layer
-    u8 y = 0;
-    if(layer == Layer::Background)
-        y = LY_ + SCY_;
-    else if(layer == Layer::Window)
-        y = windowLine_;
-    
-    // draw pixels in windowLine
-    u8 windowPixelsDrawn = 0;
-    for(u8 xPix = 0; xPix < 160; ++xPix) {
-        if(layer == Layer::Window) {
-            // check if windows is later in line
-            if(xPix < WX_ - 7)
-                continue;
-            // windows isn't in this line
-            else if(WX_ < 7 || WX_ > 166 || WY_ > 143)
-                return;
-        }
-
-        u8 x = (layer == Layer::Background) ? xPix + SCX_ : xPix - (WX_-7);
-        renderLayerPixel(tex, layer, x, y, xPix, 0);
-        ++windowPixelsDrawn;
-    }
-    if(layer == Layer::Window && windowPixelsDrawn != 0)
-        ++windowLine_;
-}
-
-// render layer pixel at (texX, texY) with color from (x, y) in vram
-void PPU::renderLayerPixel(Texture& tex, Layer layer, u8 x, u8 y, u8 texX, u8 texY) const {
-    u16 tileMap = 0x9800;
-    if(layer == Layer::Background) {
-        tileMap = Utils::getBit(LCDC_, 3) ? 0x9C00 : 0x9800;
-    }
-    else if(layer == Layer::Window) {
-        tileMap = Utils::getBit(LCDC_, 6) ? 0x9C00 : 0x9800;
-    }
-
-    // tile data offset in VRAM
-    u16 tileBase = Utils::getBit(LCDC_, 4) ? 0x8000 : 0x9000;
-    u8 tileX = x >> 3;
-    u8 tileY = y >> 3;
-    u16 tileIdx = (tileY*32) + tileX + tileMap;
-    u8 tileAttr = 0;
-    u8 tileDataI = readVram(0, tileIdx);
-    u8 bank = Utils::getBit(tileAttr, 3) ? 1 : 0;
-    u16 adr = 0;
-
-    // 0x9000 -> signed addressing
-    if(tileBase == 0x9000)
-        adr = tileBase + static_cast<int8_t>(tileDataI) * 16;
-    // 0x8000 -> unsigned addressing
-    else
-        adr = tileBase + tileDataI * 16;
-    
-    // point addr to the right byte in tile data, based on y position
-    // take into account vectical flip
-    if(Utils::getBit(tileAttr, 6))
-        adr += (7 - (y % 8)) * 2;
-    else
-        adr += (y % 8) * 2;
-    
-    // get one row of pixels (2 consecutive bytes)
-    u8 loByte = readVram(0, adr);
-    u8 hiByte = readVram(0, adr+1);
-    // get pixel offset of tile (take horizontal flip into account)
-    u8 pxOffset = 
-        Utils::getBit(tileAttr, 5)
-        ? 7 - (x % 8)
-        : (x % 8);
-    
-    // get corresponding bits from 2 bytes
-    bool hiBit = Utils::getBit(hiByte, 7 - pxOffset);
-    bool loBit = Utils::getBit(loByte, 7 - pxOffset);
-    Palette pal(getBackgroundPalette(tileAttr & 7));
-    
-    // pixel color index
-    // bit of (lo/hi) byte is the (lo/hi) bit of the 2-bit color palette index
-    u8 pxIdx = static_cast<u8>(hiBit << 1 | loBit);
-    /*if(x % 2 == 0) {*/
-    /*    pxIdx = 3;*/
-    /*}*/
-    // 0 -> highest priority
-    // pxIdx == 0 -> lowest priority
-    u8 priority = (pxIdx == 0) ? 2 : 1;
-    if(Utils::getBit(tileAttr, 7))
-        priority = 0;
-    uint32_t texIdx = texX + texY * tex.getWidth();
-    tex.setPixelColor(texIdx, pal[pxIdx]);
-    tex.setPixelPriority(texIdx, priority);
-}
-
-Texture PPU::getLayer(Layer l) const {
-    Texture tex(256, 256);
-    for(uint32_t y = 0; y < 256; ++y) {
-        for(uint32_t x = 0; x < 256; ++x) {
-            renderLayerPixel(tex, l, x, y, x, y);
-        }
-    }
-    return tex;
-}
-
-std::array<u8, 32*32> PPU::getRawBackground() {
-    // 1C00 and 1800 because we're getting from VRAM, which begins at address 0x8000
-    u16 bgMap = Utils::getBit(LCDC_, 3) ? 0x1C00 : 0x1800;
-    std::array<u8, 32*32> bg {};
-    for(u16 i = 0; i < 32*32; ++i)
-        bg[i] = vram_.read(0, bgMap + i);
-    return bg;
-}
-
-Texture PPU::getFrameBuffer(bool withBg, bool withWin, bool withSprt) const {
-    Texture frame = withBg ? getLayer(Layer::Background) : Texture(256, 256);
-    if(withWin) {
-        Texture window(getLayer(Layer::Window));
-        // copy window layer onto frame buffer in correct position
-        for(u16 y = 0; y < 256; ++y) {
-            for(u16 x = 0; x < 256; ++x) {
-                u16 wx = WX_ - 7 - SCX_ + x;
-                u16 wy = WY_ - SCY_ + y;
-                if(wx > 0xFF || wy > 0xFF || wx >= SCX_+160 || wy >= SCY_+144)
+Texture Ppu::get_framebuffer(bool with_bg, bool with_win,
+                             bool with_sprites) const
+{
+    Texture frame = with_bg ? get_layer(Layer::Background) : Texture(256, 256);
+    if (with_win)
+    {
+        Texture window(get_layer(Layer::Window));
+        // copy window layer onto frame buffer layer in the correct position
+        for (uint16_t y = 0; y < 256; ++y)
+        {
+            for (uint16_t x = 0; x < 256; ++x)
+            {
+                uint16_t wx = wx_-7 - scx_ + x;
+                uint16_t wy = wy_ - scy_ + y;
+                if (wx > 0xff || wy > 0xff
+                    || wx >= scx_+160 || wy >= scy_+144)
                     continue;
-                uint32_t wIdx = wx + wy * 256;
-                frame.setPixelColor(wIdx, window.getPixelColor(x+y*256));
+                unsigned wi = wx+wy*256;
+                frame.set_pixel(wi, window.pixel(x+y*256));
             }
         }
     }
     return frame;
 }
 
-
-void PPU::loadSprites() {
-    u8 i = 0;
-    // sprites are 4 bytes each
-    // oam resides at 0xFE00 - 0xFEFF
-    for(u16 adr = 0; adr < 0xA0; adr += 4, ++i) {
-        sprites_[i].y = oam_[adr];
-        sprites_[i].x = oam_[adr+1];
-        sprites_[i].tile = oam_[adr+2];
-        sprites_[i].attribute = oam_[adr+3];
-        sprites_[i].id = i;
+Texture Ppu::get_tile(uint8_t bank, uint16_t i) const
+{
+    // DMG only has 1 VRAM bank, only allow reading multiple banks if CGB
+    if (bank > 0 && !cgb_mode_)
+        return {};
+    Texture tex(8,8);
+    uint16_t tile_base = 0x8000;
+    for (uint8_t byte = 0; byte < 16; byte += 2)
+    {
+        uint8_t lo_byte = read_vram(bank, byte+tile_base+i*16);
+        uint8_t hi_byte = read_vram(bank, byte+tile_base+i*16+1);
+        for (uint8_t px = 0; px < 8; ++px)
+        {
+            bool hi_bit = hi_byte & 1 << (7-px);
+            bool lo_bit = lo_byte & 1 << (7-px);
+            uint8_t color_i = static_cast<uint8_t>(hi_bit << 1 | lo_bit);
+            Color c = dmg_palette[color_i];
+            uint8_t p = (byte/2)*8+px;
+            tex.set_pixel(p, c);
+            tex.set_pixel_priority(p, 0); // irrelevant
+        }
     }
+    return tex;
 }
 
-void PPU::orderSprites(std::array<Sprite, 10>& s) const {
-    std::sort(s.begin(), s.end(), [](const Sprite& a, const Sprite& b) {
-        return (a.x == b.x) ? (a.id > b.id) : (a.x > b.x);
-    });
+Texture Ppu::get_layer(Layer l) const
+{
+    Texture tex(256, 256);
+    for (unsigned y = 0; y < 256; ++y)
+    {
+        for (unsigned x = 0; x < 256; ++x)
+        {
+            render_layer_pixel(tex, l, x, y, x, y);
+        }
+    }
+    return tex;
 }
 
-Palette PPU::getBackgroundPalette(u8 idx) const {
-    Palette pal {};
-    for(u8 i = 0; i < 4; ++i)
-        pal[i] = dmgPalette[((BGP_ >> i*2) & 3)];
-    return pal;
+std::array<uint8_t, 32*32> Ppu::get_raw_background()
+{
+    uint16_t bg_map = ((lcdc_ & (1 << 3)) ? 0x9c00 : 0x9800);
+    std::array<uint8_t, 32*32> raw {};
+    for (int i = 0; i < 32*32; ++i)
+        raw[i] = read(bg_map+i);
+    return raw;
 }
 
-Palette PPU::getSpritePalette(u8 idx) const {
-    Palette pal {};
-    u8 obp = idx ? OBP1_ : OBP0_;
-    for(u8 i = 1; i < 4; ++i)
-        pal[i] = dmgPalette[((obp >> i*2) & 3)];
-    pal[0] = dmgPalette[0]; // 00 in sprite palette is always transparent
-    return pal;
+Ppu::Dump Ppu::dump_values() const
+{
+    return Dump
+    {
+        lcdc_, stat_,
+        scy_, scx_,
+        ly_, lyc_,
+        bgp_, obp0_, obp1_,
+        wy_, wx_,
+        bgpi_, bgpd_, obpi_, obpd_
+    };
 }
 
-void PPU::renderSpriteLine(Texture& tex) {
-    const u16 tileData = 0x8000;
-    // 0 -> 8 x 8, 1 -> 8 x 16
-    const u8 spriteH = Utils::getBit(LCDC_, 2) ? 16 : 8;
-    u8 spritesDrawn = 0;
-    // sprite priority list
-    // get first 10 sprites and reorder
-    // so that lowest priority is drawn first
-    std::array<Sprite, 10> orderedSprites {};
-    for(u8 i = 0; i < 40; ++i) {
-        Sprite& s = sprites_[i];
-        // sprite is off screen, so skip
-        if(s.y == 0 || s.y >= 160)
+uint8_t Ppu::read(uint16_t adr) const
+{
+    return memory_.read(adr);
+}
+
+void Ppu::write(uint8_t b, uint16_t adr)
+{
+    memory_.write(b, adr);
+}
+
+uint8_t Ppu::read_vram(uint8_t bank, uint16_t adr) const
+{
+    return memory_.vram_read(bank, adr);
+}
+
+void Ppu::write_vram(uint8_t b, uint8_t bank, uint16_t adr)
+{
+    memory_.vram_write(b, bank, adr);
+}
+
+void Ppu::render_scanline()
+{
+    Texture tex {160, 1};
+    // STOP mode: if LCD is on, set to all white, if off, all black
+    if (false && cpu_.stopped())
+    {
+        Color c = (lcdc_ & 0x80) ? 0xffff : 0;
+        tex.fill(c);
+    }
+    else
+    {
+        if (lcdc_ & 1 || cgb_mode_) // bg/window enable
+        {
+            render_layer_line(tex, Ppu::Layer::Background);
+            if (lcdc_ & 1 << 5) // window display enable
+                render_layer_line(tex, Ppu::Layer::Window);
+        }
+        // background and window appear white if lcdc bit 0 is cleared
+        else
+        {
+            Color c(0xffff);
+            tex.fill(c);
+        }
+        if (lcdc_ & 1 << 1) // OBJ display enable
+            render_sprite_line(tex);
+    }
+    renderer_->drawTexture(tex, 0, ly_);
+}
+
+void Ppu::render_layer_line(Texture &tex, Ppu::Layer layer)
+{
+    // don't draw windo if the current line isn't a window line
+    if (layer == Ppu::Layer::Window && ly_ < wy_)
+        return;
+    // current y-coordinate of the 256x256 layer
+    uint8_t y = 0;
+    if (layer == Ppu::Layer::Background)
+        y = ly_ + scy_;
+    else if (layer == Ppu::Layer::Window)
+        y = window_line_;
+    // draw each pixel in the scanline
+    uint8_t window_pxs_drawn = 0;
+    for (uint8_t x_px = 0; x_px < 160; ++x_px)
+    {
+        // don't draw window if it doesn't appear yet
+        if (layer == Ppu::Layer::Window)
+        {
+            // x: window could appear later in the line
+            if (x_px < wx_-7)
+                continue;
+            // y: window does not appear at all in this line
+            else if (wx_ < 7 || wx_ > 166 || wy_ > 143)
+                return;
+        }
+        // current x-coordinate of the 256x256 layer
+        uint8_t x = (layer == Ppu::Layer::Background)
+                ? x_px + scx_
+                : x_px - (wx_-7);
+        render_layer_pixel(tex, layer, x, y, x_px, 0);
+        ++window_pxs_drawn;
+    }
+    if (layer == Ppu::Layer::Window && window_pxs_drawn != 0)
+        ++window_line_;
+}
+
+// render the layer pixel at (tex_x,tex_y) with the color at (x, y) in VRAM
+void Ppu::render_layer_pixel(Texture &tex, Ppu::Layer layer,
+                             uint8_t x, uint8_t y,
+                             uint8_t tex_x, uint8_t tex_y) const
+{
+    uint16_t tile_map = 0x9800;
+    if (layer == Ppu::Layer::Background)
+    {
+        tile_map = ((lcdc_ & (1 << 3)) ? 0x9c00 : 0x9800);
+
+    }
+    else if (layer == Ppu::Layer::Window)
+    {
+        tile_map = ((lcdc_ & (1 << 6)) ? 0x9c00 : 0x9800);
+    }
+    // tile data offset in VRAM
+    uint16_t tile_base = (lcdc_ & 1 << 4) ? 0x8000 : 0x9000;
+    // x-index into the tile BG map (tile_map) of the tile to draw
+    uint8_t tile_x = x >> 3; // tiles are 8 px wide
+    // y tile index into the tile map
+    uint8_t tile_y = y >> 3; // tiles are 8 px tall
+    // index into tile BG map of the tile to draw
+    uint16_t tile_i = (tile_y*32) + tile_x + tile_map;
+    // CGB only: corresponding tile attributeibutes held in parallel location
+    // in VRAM bank 1
+    uint8_t tile_attribute = cgb_mode_ ? read_vram(1, tile_i) : 0;
+    // index of the tile in tile data of the tile to draw
+    uint8_t tile_data_i = read_vram(0, tile_i);
+    // bank containing the tile data
+    uint8_t bank = (tile_attribute & 1 << 3) ? 1 : 0;
+    // location to read tile data from
+    uint16_t adr = 0;
+    // 0x9000 base uses signed addressing
+    if (tile_base == 0x9000)
+    {
+       // starting address of the data for the tile (1 tile is 16 bytes)
+       adr = tile_base+static_cast<int8_t>(tile_data_i)*16;
+    }
+    // 0x8000 uses unsigned addressing
+    else
+    {
+       // starting address of the data for the tile (1 tile is 16 bytes)
+       adr = tile_base+tile_data_i*16;
+    }
+    // point address to the right byte in the tile data based on y pos
+    // take into account vertical flip if specified in tile attributeibute (CGB)
+    if (tile_attribute & 1 << 6) // vertical flip
+        adr += (7 - (y % 8)) * 2;
+    else
+        adr += (y % 8) * 2;
+    // get two bytes (one row of pixels) from the tile data
+    uint8_t lo_byte = read_vram(bank, adr);
+    uint8_t hi_byte = read_vram(bank, adr+1);
+    // get the pixel offset of the tile (0-7) (tiles are 8x8)
+    // take into account horizontal flip
+    uint8_t px_offset = (x % 8);
+    if (tile_attribute & 1 << 5)
+        px_offset = 7 - (x % 8);
+    // get 2 corresponding bits, 1 from each byte
+    // most significant bits of both bytes represent color of first
+    // (or last) pixel
+    bool hi_bit = (hi_byte & 1 << (7-px_offset));
+    bool lo_bit = (lo_byte & 1 << (7-px_offset));
+    Palette pal(get_bg_palette(tile_attribute & 7));
+    // get pixel color index
+    // bit of hi byte is the hi bit of the 2-bit color index in the palette
+    // bit of lo byte is the lo bit of the 2-bit color index in the palette
+    uint8_t px_i = static_cast<uint8_t>(hi_bit << 1 | lo_bit);
+    // 0 = highest priority (appears above everything else)
+    // px_index == 0 has lowest priority
+    uint8_t priority = (px_i == 0) ? 2 : 1;
+    if (tile_attribute & 1 << 7) // ensure highest priority
+        priority = 0;
+    // CGB: when LCDC bit 0 is cleared, sprites always appear above bg/window
+    if (cgb_mode_ && !(lcdc_ & 1))
+        priority = 3;
+    // index into texture
+    unsigned tex_i = tex_x + tex_y * tex.width();
+    tex.set_pixel(tex_i, pal[px_i]);
+    tex.set_pixel_priority(tex_i, priority);
+}
+
+void Ppu::render_sprite_line(Texture &tex)
+{
+    const uint16_t tile_data = 0x8000;
+    // 0=8x8, 1=8x16
+    const uint8_t sprite_h = lcdc_ & 1 << 2 ? 16 : 8;
+    uint8_t sprites_drawn = 0;
+    // sprite priority list: get first 10 sprites, then reorder so the lowest
+    // priority is drawn first
+    std::array<Sprite, 10> ordered_sprites {};
+    for (uint8_t i = 0; i < 40; ++i)
+    {
+        Sprite &s = sprites_[i];
+        // skip if sprite is offscreen
+        if (s.y == 0 || s.y >= 160)
             continue;
-        // stop drawing sprites if 10 already on screen
-        if(spritesDrawn == 10)
+        // stop drawing sprites if more than 10 are already on this scanline
+        if (sprites_drawn == 10)
             break;
-        // line number relative to sprite start
-        u8 ln = LY_ - (s.y-16);
-        // ignore sprite if no part of it is on this line
-        if(ln > spriteH - 1 || LY_ < s.y-16)
-            continue;
-        orderedSprites[spritesDrawn] = s;
-        ++spritesDrawn;
-    }
-    // draw in OAM memory order
-    orderSprites(orderedSprites);
-    for(Sprite s : orderedSprites) {
-        u8 tileIdx;
         // line number relative to start of sprite
-        u8 ln = LY_ - (s.y-16);
-        bool yFlip = Utils::getBit(s.attribute, 6);
-        // lower half of 8x16 sprite
-        if(ln > 7) {
-            tileIdx = yFlip ? s.tile & 0xFE : s.tile | 0x01;
+        uint8_t ln = ly_ - (s.y-16);
+        // ignore sprite if no part of it falls on this line
+        if (ln > sprite_h-1 || ly_ < s.y-16)
+            continue;
+        ordered_sprites[sprites_drawn] = s;
+        ++sprites_drawn;
+    }
+    // first object in OAM has highest priority, so draw first
+    order_sprites(ordered_sprites);
+    for (Sprite s : ordered_sprites)
+    {
+        uint8_t tile_i;
+        // line number relative to start of sprite
+        uint8_t ln = ly_ - (s.y-16);
+        bool y_flip = s.attribute & 1 << 6;
+        if (ln > 7) // lower half of an 8x16 sprite
+        {
+            tile_i = (y_flip)
+                    ? s.tile & 0xfe
+                    : s.tile | 0x01;
         }
-        else {
-            // upper half of 8x16 sprite
-            if(spriteH == 16) {
-                tileIdx = yFlip ? s.tile | 0x01 : s.tile & 0xFE;
+        else
+        {
+            if (sprite_h == 16) // upper half of an 8x16 sprite
+            {
+                tile_i = (y_flip)
+                        ? s.tile | 0x01
+                        : s.tile & 0xfe;
             }
-            // 8x8 sprite
-            else {
-                tileIdx = s.tile;
+            else // 8x8 sprite
+            {
+                tile_i = s.tile;
             }
         }
-
-        u16 adr = tileData+tileIdx*16;
-
-        if(yFlip)
+        uint16_t adr = tile_data+tile_i*16;
+        if (y_flip)
             adr += (7 - (ln % 8)) * 2;
         else
             adr += (ln % 8) * 2;
-
-        u8 loByte = readVram(0, adr);
-        u8 hiByte = readVram(0, adr+1);
-        u8 palIdx = Utils::getBit(s.attribute, 4);
-        Palette pal = getSpritePalette(palIdx);
-        bool objPrio = Utils::getBit(s.attribute, 7);
-
-        for(u8 px = 0; px < 8; ++px) {
-            u8 x = s.x - 8 + px;
-            bool onScreen = x < 160;
-            u8 bgPriority = tex.getPixelPriority(x);
-            if(onScreen &&
-                    ((not objPrio && bgPriority > 0)
-                    || (objPrio < bgPriority))) {
-                bool xFlip = Utils::getBit(s.attribute, 5);
-                u8 offset = xFlip ? px : 7 - px;
-                bool hiBit = Utils::getBit(hiByte, offset); 
-                bool loBit = Utils::getBit(loByte, offset); 
-                u8 p = static_cast<u8>(hiBit << 1 | loBit);
-                // draw only if not transparent
-                if (p != 0)
-                    tex.setPixelPriority(x, pal[p]);
+        // CGB Only: attributeibute bit 3 specifies VRAM bank, otherwise 0
+        uint8_t bank = (cgb_mode_ && s.attribute & 1 << 3) ? 1 : 0;
+        uint8_t low_byte = read_vram(bank, adr);
+        uint8_t high_byte = read_vram(bank, adr+1);
+        // if CGB: palette is in attributeibute bits 0-2, otherwise bit 4
+        uint8_t pal_idx = (cgb_mode_) ? (s.attribute & 7) : (s.attribute & 1 << 4);
+        Palette pal = get_sprite_palette(pal_idx);
+        bool ob_priority = s.attribute & 1 << 7;
+        for (uint8_t px = 0; px < 8; ++px)
+        {
+            uint8_t x = s.x-8 + px;
+            bool on_screen = (x < 160 && x > 0);
+            uint8_t bg_priority = tex.pixel_priority(x);
+            // only draw pixel if on screen and if priority is 0 and bg pixel priority
+            // IS NOT 0, or if priority is 1
+            // and bg pixel is >=2 (transparent)
+            if (on_screen
+                    && ( (ob_priority == 0 && bg_priority > 0)
+                        || (ob_priority < bg_priority)))
+            {
+                bool x_flip = s.attribute & 1 << 5;
+                bool hi_bit = (high_byte & 1 << (x_flip ? px : 7-px));
+                bool lo_bit = (low_byte & 1 << (x_flip ? px : 7-px));
+                uint8_t p = static_cast<uint8_t>(hi_bit << 1 | lo_bit);
+                if (p != 0) // only draw if not transparent
+                    tex.set_pixel(x, pal[p]);
             }
         }
     }
 }
 
-void PPU::renderScanline() {
-    Texture tex {160, 1};
-    // STOP mode: if LCD is on -> set to all white, else all black
-    if(false && cpu_.stopped()) {
-        Color c = isEnabled() ? 0xFFFF : 0;
-        tex.fill(c);
+std::array<Texture, 40> Ppu::get_sprites() const
+{
+    std::array<Texture, 40> out {};
+    int i = 0;
+    for (const Sprite &s : sprites_)
+    {
+        uint8_t bank = s.attribute & 1 << 3 ? 1 : 0;
+        out[i++] = get_tile(bank, s.tile);
     }
-    /*else {*/
-    if(Utils::getBit(LCDC_, 0)) {
-        renderLayerLine(tex, Layer::Background);
-        if(Utils::getBit(LCDC_, 5))
-            renderLayerLine(tex, Layer::Window);
-    }
-    else {
-        Color c(0xFFF);
-        tex.fill(c);
-    }
-    if(Utils::getBit(LCDC_, 1))
-        renderSpriteLine(tex);
-    /*}*/
-    if(isRenderer_)
-    renderer_->drawTexture(tex, 0, LY_);
+    return out;
 }
 
-// OAM_SCAN mode 2 -> 3
-void PPU::handleOamScan() {
-    if(cycles_ >= 80) {
-
-        cycles_ -= 80;
-
-        Utils::setBit(STAT_, 1, true);
-        Utils::setBit(STAT_, 0, true);
-
-        loadSprites();
-        // entering VRAM_READ
+void Ppu::order_sprites(std::array<Sprite, 10> &s) const
+{
+    // CGB mode: lower OAM # = higher priority
+    if (cgb_mode_)
+    {
+        std::reverse(s.begin(), s.end());
+    }
+    // DMG mode: lower X priority = higher priority, tie breaker: lower OAM
+    else
+    {
+        std::sort(s.begin(), s.end(), [](const Sprite &a, const Sprite &b)
+        {
+            return (a.x == b.x) ? (a.id > b.id) : (a.x > b.x);
+        });
     }
 }
 
-// VRAM_READ mode 3 -> 0
-void PPU::handleVramRead() {
-    if(cycles_ >= 172) {
-        cycles_ -= 172;
-        if(isRenderer_)
-            renderScanline();
+Palette Ppu::get_bg_palette(uint8_t idx) const
+{
+    Palette pal {};
+    // CGB stores palettes in background palette memoery (bgpm)
+    if (cgb_mode_)
+    {
+        uint8_t pal_idx = idx * 8;
+        // each palette is 8 bytes long (2 per color)
+        for (uint8_t i = 0; i < 4; ++i)
+        {
+            // RGB = 2 bytes (lo byte first)
+            uint16_t rgb = static_cast<uint16_t>(
+                        bgpd_[pal_idx+i*2] | bgpd_[pal_idx+i*2+1] << 8);
+            // xbbb bbgg gggr rrrr
+            pal[i] = color_correct(rgb);
+        }
+    }
+    // DMG only has one grayscale palette
+    else
+    {
+        for (uint8_t i {0}; i < 4; ++i)
+            pal[i] = dmg_palette[((bgp_ >> i*2) & 3)];
+    }
+    return pal;
+}
 
-        // entering HBlank
-        Utils::setBit(STAT_, 1, false);
-        Utils::setBit(STAT_, 0, false);
+Palette Ppu::get_sprite_palette(uint8_t idx) const
+{
+    Palette pal {};
+    if (cgb_mode_)
+    {
+        uint8_t pal_idx = idx * 8;
+        // each palette is 8 bytes long (2 per color)
+        for (uint8_t i = 0; i < 4; ++i)
+        {
+            // RGB = 2 bytes (lo byte first)
+            uint16_t rgb = static_cast<uint16_t>(
+                        obpd_[pal_idx+i*2] | obpd_[pal_idx+i*2+1] << 8);
+            // xbbb bbgg gggr rrrr
+            pal[i] = color_correct(rgb);
+        }
+    }
+    else
+    {
+        uint8_t obp = idx ? obp1_ : obp0_;
+        for (uint8_t i {1}; i < 4; ++i)
+            pal[i] = dmg_palette[((obp >> i*2) & 3)];
+        pal[0] = dmg_palette[0]; // 00 in sprite palette is always transparent
+    }
+    return pal;
+}
+
+Color Ppu::color_correct(const Color &c) const
+{
+    const unsigned r = c & 0x1f,
+            g = c >> 5 & 0x1f,
+            b = c >> 10 & 0x1f;
+    unsigned rFinal = 0, gFinal = 0, bFinal = 0;
+
+    static const float rgbMax = 31.0;
+    static const float rgbMaxInv = 1.0 / rgbMax;
+    const float colorCorrectionBrightness = brightness;
+
+    if (color_correction == Color_correction::Fast)
+    {
+        // Gambatte method. Fast, but inaccurate
+        rFinal = ((r * 13) + (g * 2) + b) >> 4;
+        gFinal = ((g * 3) + b) >> 2;
+        bFinal = ((r * 3) + (g * 2) + (b * 11)) >> 4;
+
+    }
+    else if (color_correction == Color_correction::Proper)
+    {
+        // Use Pokefan531's "gold standard" GBC colour correction
+        // (https://forums.libretro.com/t/real-gba-and-ds-phat-colors/1540/174)
+        // NB: The results produced by this implementation are ever so slightly
+        // different from the output of the gbc-colour shader. This is due to the
+        // fact that we have to tolerate rounding errors here that are simply not
+        // an issue when tweaking the final image with a post-processing shader.
+        // *However:* the difference is so tiny small that 99.9% of users will
+        // never notice, and the result is still 100x better than the 'fast'
+        // colour correction method.
+        //
+        // Constants
+        static const float targetGamma = 2.2;
+        static const float displayGammaInv = 1.0 / targetGamma;
+        // Perform gamma expansion
+        float adjustedGamma = targetGamma - colorCorrectionBrightness;
+        float rFloat = std::pow(static_cast<float>(r) * rgbMaxInv, adjustedGamma);
+        float gFloat = std::pow(static_cast<float>(g) * rgbMaxInv, adjustedGamma);
+        float bFloat = std::pow(static_cast<float>(b) * rgbMaxInv, adjustedGamma);
+        // Perform colour mangling
+        float rCorrect = (GBC_CC_R  * rFloat) + (GBC_CC_GR * gFloat) + (GBC_CC_BR * bFloat);
+        float gCorrect = (GBC_CC_RG * rFloat) + (GBC_CC_G  * gFloat) + (GBC_CC_BG * bFloat);
+        float bCorrect = (GBC_CC_RB * rFloat) + (GBC_CC_GB * gFloat) + (GBC_CC_B  * bFloat);
+        // Range check...
+        rCorrect = rCorrect > 0.0f ? rCorrect : 0.0f;
+        gCorrect = gCorrect > 0.0f ? gCorrect : 0.0f;
+        bCorrect = bCorrect > 0.0f ? bCorrect : 0.0f;
+        // Perform gamma compression
+        rCorrect = std::pow(rCorrect, displayGammaInv);
+        gCorrect = std::pow(gCorrect, displayGammaInv);
+        bCorrect = std::pow(bCorrect, displayGammaInv);
+        // Range check...
+        rCorrect = rCorrect > 1.0f ? 1.0f : rCorrect;
+        gCorrect = gCorrect > 1.0f ? 1.0f : gCorrect;
+        bCorrect = bCorrect > 1.0f ? 1.0f : bCorrect;
+        // Perform image darkening, if required
+        // Convert back to 8bit unsigned
+        rFinal = static_cast<unsigned>((rCorrect * rgbMax) + 0.5) & 0x1F;
+        gFinal = static_cast<unsigned>((gCorrect * rgbMax) + 0.5) & 0x1F;
+        bFinal = static_cast<unsigned>((bCorrect * rgbMax) + 0.5) & 0x1F;
+    }
+    else
+    {
+        rFinal = r;
+        gFinal = g;
+        bFinal = b;
+    }
+
+    return rFinal << 10 | gFinal << 5 | bFinal;
+}
+
+void Ppu::load_sprites()
+{
+    uint8_t i = 0;
+    for (uint16_t adr = 0xfe00; adr < 0xfea0; adr += 4) // sprites are 4 bytes
+    {
+        sprites_[i].y = read(adr);
+        sprites_[i].x = read(adr+1);
+        sprites_[i].tile = read(adr+2);
+        sprites_[i].attribute = read(adr+3);
+        sprites_[i].id = i;
+        ++i;
     }
 }
 
-// HBLANK mode 0 -> 1, 0 -> 2
-void PPU::handleHBlank() {
-    if(cycles_ >= 204) {
-        cycles_ -= 204;
-        ++LY_;
-        // enter VBlank mode 1 
-        if(LY_ == 144) {
-            windowLine_ = 0;
-            Utils::setBit(STAT_, 1, false);
-            Utils::setBit(STAT_, 0, true);
+// OAM_SCAN mode 2
+void Ppu::oam_scan()
+{
+    if (clock_ >= 80)
+    {
+        clock_ -= 80;
+        load_sprites();
+        SET_BIT(stat_, 1);
+        SET_BIT(stat_, 0); // mode 3
+    }
+}
+
+// VRAM_READ mode 3
+void Ppu::vram_read()
+{
+    if (clock_ >= 172)
+    {
+        clock_ -= 172;
+        if (renderer_)
+            render_scanline();
+        // enter hblank
+        CLEAR_BIT(stat_, 1);
+        CLEAR_BIT(stat_, 0); // mode 0
+        /*if (cgb_mode_)*/
+            /*memory_.hblank_dma();*/
+    }
+}
+
+// HBLANK mode 0
+void Ppu::hblank()
+{
+    if (clock_ >= 204)
+    {
+        clock_ -= 204;
+        ++ly_;
+        if (ly_ == 144)
+        {
+            // enter vblank
+            window_line_ = 0;
+            CLEAR_BIT(stat_, 1); // mode 1
+            SET_BIT(stat_, 0);
             cpu_.request_interrupt(Processor::Interrupt::VBLANK);
-            if(isRenderer_)
+            if (renderer_)
                 renderer_->showScreen();
         }
-        // enter OAM_SCAN mode 2
-        else {
-            Utils::setBit(STAT_, 1, true);
-            Utils::setBit(STAT_, 0, false);
+        else
+        {
+            // enter oam_scan
+            SET_BIT(stat_, 1); // mode 2
+            CLEAR_BIT(stat_, 0);
         }
     }
 }
 
-// VBlank
-void PPU::handleVBlank() {
-    if(cycles_ >= 456) {
-        cycles_ -= 456;
-
-        ++LY_;
-        // enter OAM_SCAN mode 2
-        if(LY_ == 153) {
-            Utils::setBit(STAT_, 1, true);
-            Utils::setBit(STAT_, 0, false);
-
-            LY_ = 0;
+// VBLANK mode 1
+void Ppu::vblank()
+{
+    if (clock_ >= 456)
+    {
+        clock_ -= 456;
+        ++ly_;
+        if (ly_ > 153)
+        {
+            // restart scanning modes
+            SET_BIT(stat_, 1); // mode 2
+            CLEAR_BIT(stat_, 0);
+            ly_ = 0;
         }
     }
 }
 
-void PPU::checkStatus() {
-    u8 mode = getMode();
-    bool isLYC { LY_ == LYC_ && Utils::getBit(STAT_, 6) };
-    bool isVBL { mode == 0 && Utils::getBit(STAT_, 3) };
-    bool isOAM { mode == 2 && Utils::getBit(STAT_, 5) };
-    bool isHBL { mode == 1 && 
-        (Utils::getBit(STAT_, 4) || Utils::getBit(STAT_, 5))
-    };
-
-    Utils::setBit(STAT_, 2, LY_ == LYC_);
-
-    if(isLYC || isVBL || isOAM || isHBL) {
-        // STAT interrupt is requested only if signal goes from 0 to 1
-        if(not statSignal_)
+void Ppu::check_stat()
+{
+    int mod = mode();
+    bool lyc_comp = (ly_ == lyc_ && stat_ & (1 << 6));
+    bool vbl_chk = (mod == 0 && stat_ & (1 << 3));
+    bool oam_chk = (mod == 2 && stat_ & (1 << 5));
+    bool hbl_chk = (mod == 1
+                    && ((stat_ & 1 << 4) || (stat_ & 1 << 5)));
+    if (ly_ == lyc_)
+        SET_BIT(stat_, 2);
+    else
+        CLEAR_BIT(stat_, 2);
+    if (lyc_comp || vbl_chk || oam_chk || hbl_chk)
+    {
+        // STAT interrupt is only request when signal goes from 0->1
+        if (!stat_signal_)
             cpu_.request_interrupt(Processor::Interrupt::LCD_STAT);
-        statSignal_ = true;
+        stat_signal_ = true;
     }
-    else {
-        statSignal_ = false;
+    else
+    {
+        stat_signal_ = false;
     }
 }
 
-Palette PPU::dmgPalette = {{0xFFFF, 0x56B5, 0x294A, 0}};
+Palette Ppu::dmg_palette =
+{{
+    0xffff, 0x56b5, 0x294a, 0
+}};
