@@ -28,12 +28,12 @@
 class Timer;
 class Joypad;
 class SerialDataTransfer;
-class PPU;
+class Ppu;
 class Processor;
 
 class Memory {
 public:
-    Memory(Timer& timer, Joypad& joypad, SerialDataTransfer& serial, PPU& ppu, Processor& cpu);
+    Memory(Timer& timer, Joypad& joypad, SerialDataTransfer& serial, Ppu& ppu, Processor& cpu);
     
     u8 read(const u16 addr);
     void write(const u8 byte, const u16 addr);
@@ -53,13 +53,15 @@ protected:
     Timer& timer_;
     Joypad& joypad_;
     SerialDataTransfer& serial_;
-    PPU& ppu_;
+    Ppu& ppu_;
     Processor& cpu_;
     std::shared_ptr<Cartridge> cartridge_;
 
     // memory
+    VRam vram_ {1};
     WorkRam wram_ {2};
     std::array<u8, 0x80> io_ {};
+    std::array<u8, 0xA0> oam_ {};
     std::array<u8, 0x7F> hram_ {};
     u8 ie_ = 0;
     bool wroteToSram_ = false;
