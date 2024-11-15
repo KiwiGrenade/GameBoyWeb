@@ -184,7 +184,7 @@ u8 Memory::read(const u16 addr) {
     }
     // OAM
     else if(addr < 0xFEA0) {
-        if(not ppu_.enabled() || ppu_.mode() < 2)
+        /*if(not ppu_.enabled() || ppu_.mode() < 2)*/
             res = oam_[addr - 0xFE00];
     }
     // undefined
