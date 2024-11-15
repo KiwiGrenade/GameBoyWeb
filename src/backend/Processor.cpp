@@ -3,7 +3,7 @@
 #include <ctime>
 
 #include "Processor.hpp"
-#include "register_pair.hpp"
+#include "RegisterPair.hpp"
 #include "instruction_info.hpp"
 
 #define B bc_.hi

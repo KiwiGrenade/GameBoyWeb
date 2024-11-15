@@ -37,7 +37,7 @@ void MainWindow::loadRom(const QString &fileName)
     std::shared_ptr<Cartridge> car = std::make_shared<Cartridge>(fileName.toStdString());
     std::cout << fileName.toStdString() << std::endl;
     gameBoy_->loadCartridge(car);
-    gameBoy_->runConcurrently();
+    gameBoy_->start();
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event)

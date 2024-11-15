@@ -5,7 +5,7 @@
 #include <ostream>
 #include <functional>
 
-#include "register_pair.hpp"
+#include "RegisterPair.hpp"
 #include "DebugTypes.hpp"
 
 class Processor

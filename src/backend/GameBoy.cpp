@@ -9,12 +9,8 @@
 
 GameBoy::GameBoy() {}
 
-GameBoy::~GameBoy() {
-    stop();
-}
-
 void GameBoy::setRenderer(Renderer *r) {
-    const std::lock_guard<std::mutex> lock(mutex_);
+    /*const std::lock_guard<std::mutex> lock(mutex_);*/
     ppu_.set_renderer(r);
 }
 
@@ -44,12 +40,6 @@ uint64_t GameBoy::update(const uint32_t cyclesToExecute) {
     return cyclesPassed;
 }
 
-void GameBoy::stop() {
-    isStopped_ = true;
-    if(thread_.joinable())
-        thread_.join();
-}
-
 void GameBoy::pause() {
     isPaused_ = true;
 }
@@ -57,25 +47,28 @@ void GameBoy::pause() {
 void GameBoy::resume() {
     if(not isPaused_)
         return;
-    std::lock_guard<std::mutex> lock(mutex_);
+    /*std::lock_guard<std::mutex> lock(mutex_);*/
     isPaused_ = false;
-    pause_cv_.notify_one();
+    /*pause_cv_.notify_one();*/
 }
 
 void GameBoy::run() {
+    if(not isRomLoaded_) {
+        Utils::error("Rom is not loaded!");
+    }
     isPaused_ = false;
     isStopped_ = false;
     
     while(not isStopped_) {
-        std::unique_lock<std::mutex> lock(mutex_);
-        pause_cv_.wait(lock, [this] { return !isPaused_; });
+        /*std::unique_lock<std::mutex> lock(mutex_);*/
+        /*pause_cv_.wait(lock, [this] { return !isPaused_; });*/
         executeNCycles(70224);
     }
     isPaused_ = true;
 }
 
 void GameBoy::reset() {
-    stop();
+    /*stop();*/
     timer_.reset();
     joypad_.reset();
     serial_.reset();
@@ -103,16 +96,6 @@ uint32_t GameBoy::step() {
     return cyclesPassed;
 }
 
-void GameBoy::runConcurrently()
-{
-    if(not isRomLoaded_) {
-        Utils::error("Rom is not loaded!");
-    }
-    stop();
-    auto runFunction = [this] { this-> run(); };
-    thread_ = std::thread(runFunction);
-}
-
 void GameBoy::press(Joypad::Button b) {
     joypad_.press(b);
 }
@@ -123,7 +106,6 @@ void GameBoy::release(Joypad::Button b) {
 }
 
 bool GameBoy::isRunning() const {
-    std::lock_guard<std::mutex> lock(mutex_);
     return not isPaused_;
 }
 

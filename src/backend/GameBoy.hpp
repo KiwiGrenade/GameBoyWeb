@@ -6,6 +6,7 @@
 
 #include <QByteArray>
 #include <QThread>
+#include <QReadWriteLock>
 #include <thread>
 
 #include "Cartridge.hpp"
@@ -16,21 +17,22 @@
 #include "Memory.hpp"
 #include "Processor.hpp"
 
-class GameBoy {
+class GameBoy : public QThread{
+    Q_OBJECT
 public:
     GameBoy();
-    ~GameBoy();
+    ~GameBoy() = default;
     
-    void runConcurrently();
     void setRenderer(Renderer *r);
     void executeNCycles(uint64_t cycles);
     uint32_t step();
+    void execute(uint32_t cycles);
+    void run() override;
 
     void stop();
     void pause();
     void resume();
     void reset();
-    uint64_t step(uint64_t cycles);
 
     void press(Joypad::Button button);
     void release(Joypad::Button button);
@@ -42,15 +44,15 @@ public:
     uint64_t update(uint32_t nCycles);
 
 protected:
-    void run();
     std::string romTitle_ {};
     bool isRomLoaded_ = false;
 
-    std::thread thread_;
+    /*std::thread thread_;*/
     
-    std::condition_variable pause_cv_;
-    std::atomic<bool> isStopped_ = false;
-    mutable std::mutex mutex_;
+    /*std::condition_variable pause_cv_;*/
+    bool isStopped_ = false;
+    /*std::atomic<bool> isStopped_ = false;*/
+    /*mutable std::mutex mutex_;*/
     // flags
     bool isPaused_ = false;
     Timer timer_ {cpu_};
