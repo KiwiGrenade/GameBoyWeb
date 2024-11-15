@@ -186,8 +186,7 @@ u8 Memory::read(const u16 addr) {
     }
     // OAM
     else if(addr < 0xFEA0) {
-        if(not ppu_.enabled() || ppu_.mode() < 2)
-            res = oam_[addr - 0xFE00];
+        res = oam_[addr - 0xFE00];
     }
     // undefined
     else if(addr < 0xFF00) {
@@ -249,14 +248,7 @@ void Memory::vram_write(uint8_t b, uint8_t bank, uint16_t a)
 }
 
 void Memory::oamDmaTransfer(u8 byte) {
-    if (byte > 0xf1) // only defined for range between 00-f1
-        throw std::runtime_error {"Attempted to write value outside 00-f1 for OAM DMA transfer"};
-    // make sure OAM is the correct size (not really necessary but just to make sure OAM DMA
-    // doesn't access out of bounds.
-    static_assert(std::tuple_size<decltype(oam_)>::value == 0xa0,
-                  "OAM is incorrect size, should be 0xa0)");
-    // copy from XX00-XX9f to oam (fe00-fe9f), where XXh = b
-    for (uint8_t i {0}; i < 0x9f; ++i)
+    for (uint8_t i {0}; i < 0x9F; ++i)
         oam_[i] = read(static_cast<uint16_t>(byte << 8 | i));
     // OAM DMA transfer should take 160 machine cycles (160*4 clock cycles)
     cpu_.addCycles(160*4);
