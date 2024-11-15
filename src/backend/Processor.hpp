@@ -5,11 +5,8 @@
 #include <ostream>
 #include <functional>
 
-#include "InterruptController.hpp"
 #include "register_pair.hpp"
 #include "DebugTypes.hpp"
-#include "Memory.hpp"
-
 
 class Processor
 {

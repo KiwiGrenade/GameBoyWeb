@@ -3,7 +3,6 @@
 #include <ctime>
 
 #include "Processor.hpp"
-#include "InterruptController.hpp"
 #include "register_pair.hpp"
 #include "instruction_info.hpp"
 

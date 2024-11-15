@@ -1,7 +1,8 @@
 #include "Memory.hpp"
+#include "Timer.hpp"
+#include "Joypad.hpp"
+#include "SerialDataTransfer.hpp"
 #include "PPU.hpp"
-#include "Ram.hpp"
-#include "Cartridge.hpp"
 #include "Processor.hpp"
 #include "utils.hpp"
 #include <memory>
@@ -72,8 +73,8 @@ void Memory::write(const u8 byte, const u16 addr) {
     }
     // VRAM
     else if(addr < 0xA000) {
-        if(not ppu_.isEnabled() || ppu_.getMode() != 3)
-            ppu_.writeVram(byte, 0, addr - 0x8000);
+        if(not ppu_.enabled() || ppu_.mode() != 3)
+            vram_.write(byte, 0, addr - 0x8000);
     }
     // ERAM
     else if(addr < 0xC000) {
@@ -144,7 +145,7 @@ void Memory::write(const u8 byte, const u16 addr) {
     }
     // IE - InterruptController
     else if (addr == 0xFFFF) {
-        ie_ = byte;
+        ic_.setIE(byte);
     }
 }
 
@@ -162,7 +163,7 @@ u8 Memory::read(const u16 addr) {
     else if(addr < 0xA000) {
         // VRAM is accessible if PPU is disabled or mode isn't 3
         if(not ppu_.isEnabled() || ppu_.getMode() != 3)
-            res = ppu_.readVram(0, addr);
+            res = ppu_.readVram(0, addr-0x8000);
     }
     // ERAM
     else if(addr < 0xC000) {
@@ -183,8 +184,9 @@ u8 Memory::read(const u16 addr) {
     }
     // OAM
     else if(addr < 0xFEA0) {
-        if(not ppu_.isEnabled() || ppu_.getMode() < 2)
-        res = ppu_.readOam(addr - 0xFE00);
+        if(not ppu_.enabled() || ppu_.getMode() < 2)
+            
+            res = ppu_.readOam(addr - 0xFE00);
     }
     // undefined
     else if(addr < 0xFF00) {

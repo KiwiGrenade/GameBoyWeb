@@ -9,7 +9,6 @@
 #include <thread>
 
 #include "Cartridge.hpp"
-#include "InterruptController.hpp"
 #include "Joypad.hpp"
 #include "SerialDataTransfer.hpp"
 #include "Timer.hpp"
@@ -57,7 +56,7 @@ protected:
     Timer timer_ {cpu_};
     Joypad joypad_ {cpu_};
     SerialDataTransfer serial_ {cpu_};
-    PPU ppu_ {cpu_};
+    PPU ppu_ {memory_, cpu_};
     Memory memory_ {timer_, joypad_, serial_, ppu_, cpu_};
     Processor cpu_ {[this](uint16_t adr){ return memory_.read(adr); }, // memory read callback
         [this](uint8_t b, uint16_t adr){ memory_.write(b, adr); } // memory write callback 
