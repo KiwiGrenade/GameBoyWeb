@@ -4,60 +4,70 @@
 
 Joypad::Joypad(Processor& cpu)
     : cpu_(cpu)
-    , inputDevice_(InputDevice::Nothing)
+    , selectButtons_(false)
+    , selectPad_(false)
     , buttons_(0) {
 }
 
 void Joypad::press(const Button b) {
-    Utils::setBit(buttons_, b, true);
+    update(b, true);
+    /*Utils::setBit(buttons_, b, true);*/
 }
 
 void Joypad::release(const Button b) {
-    Utils::setBit(buttons_, b, false);
+    update(b, false);
+}
+
+void Joypad::update(const Button b, bool isPressed) {
+    switch (b) {
+        case Button::A:
+            Utils::setBit(buttons_, 0, isPressed);
+            break;
+        case Button::B:
+            Utils::setBit(buttons_, 1, isPressed);
+            break;
+        case Button::Select:
+            Utils::setBit(buttons_, 2, isPressed);
+            break;
+        case Button::Start:
+            Utils::setBit(buttons_, 3, isPressed);
+            break;
+        case Button::Right:
+            Utils::setBit(directions_, 0, isPressed);
+            break;
+        case Button::Left:
+            Utils::setBit(directions_, 1, isPressed);
+            break;
+        case Button::Up:
+            Utils::setBit(directions_, 2, isPressed);
+            break;
+        case Button::Down:
+            Utils::setBit(directions_, 3, isPressed);
+            break;
+    }
 }
 
 void Joypad::reset() {
-    inputDevice_ = InputDevice::Nothing;
+    selectButtons_ = false;
+    selectPad_ = false;
     buttons_ = 0;
 }
 
 void Joypad::write(u8 byte) {
-    bool buttons = Utils::getBit(byte, 5);
-    bool pad = Utils::getBit(byte, 4);
-    // buttons are selected if 5-th bit is 0
-    if(not buttons && pad) {
-        inputDevice_ = InputDevice::Buttons;
-    }
-    else if(buttons && not pad) {
-        // selected pad
-        inputDevice_ = InputDevice::Pad;
-    }
-    else if(buttons && pad) {
-        inputDevice_ = InputDevice::Nothing;
-    }
-    else {
-        Utils::error("Both input devices selected!");
-    }
+    selectButtons_ = Utils::getBit(byte, 4);
+    selectPad_ = Utils::getBit(byte, 5);
 }
 
 u8 Joypad::read() {
-    u8 hi = 0;
-    u8 lo = 0;
-    u8 res = 0;
-    switch (inputDevice_) {
-        case InputDevice::Buttons:
-            hi = 0b11010000;
-            lo = buttons_ & 0x0F;
-            res = hi | lo;
-            break;
-        case InputDevice::Pad:
-            hi = 0b11100000;
-            lo = (buttons_ & 0xF0) >> 4;
-            res = hi | lo;
-            break;
-        case InputDevice::Nothing:
-            res = 0xFF;
-            break;
-    }
-    return res;
+    u8 res = 0xC0;
+
+    Utils::setBit(res, 5, selectButtons_);
+    Utils::setBit(res, 4, selectPad_);
+
+    if(selectButtons_)
+        res |= buttons_;
+    if(selectPad_)
+        res |= directions_;
+
+    return ~res;
 }

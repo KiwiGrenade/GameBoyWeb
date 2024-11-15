@@ -25,14 +25,12 @@ public:
     void write(u8 byte);
 
 protected:
-    enum class InputDevice {
-        Buttons,
-        Pad,
-        Nothing
-    };
+    void update(const Button b, const bool isPressed);
 
-    InputDevice inputDevice_;
     Processor& cpu_;
+    u8 selectButtons_;
+    u8 selectPad_;
     u8 buttons_;
+    u8 directions_;
 };
 
