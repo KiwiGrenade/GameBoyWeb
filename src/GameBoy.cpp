@@ -52,6 +52,10 @@ void GameBoy::resume() {
     /*pause_cv_.notify_one();*/
 }
 
+void GameBoy::stop() {
+    isStopped_ = true;
+}
+
 void GameBoy::run() {
     if(not isRomLoaded_) {
         Utils::error("Rom is not loaded!");

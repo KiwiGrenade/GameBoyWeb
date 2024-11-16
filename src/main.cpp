@@ -1,7 +1,7 @@
 #include <QApplication>
 #include <memory>
 
-#include "MainWindow.hpp"
+#include "MainWindow.h"
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);

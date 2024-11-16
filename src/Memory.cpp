@@ -12,8 +12,8 @@ constexpr u16 Cartridge::romSize_;
 
 Memory::Memory(Timer& timer, Joypad& joypad, SerialDataTransfer& serial, Ppu& ppu, Processor& cpu)
     : cartridge_(std::make_shared<Cartridge>())
-    , joypad_(joypad)
     , timer_(timer)
+    , joypad_(joypad)
     , serial_(serial)
     , ppu_(ppu)
     , cpu_(cpu)

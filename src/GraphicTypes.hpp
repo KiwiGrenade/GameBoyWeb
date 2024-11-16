@@ -22,8 +22,8 @@ public:
     inline u16 width() const { return width_; };
 
 private:
-    u16 height_;
     u16 width_;
+    u16 height_;
     std::vector<Color> data_;
     std::vector<u8> pixelIds_;
 };

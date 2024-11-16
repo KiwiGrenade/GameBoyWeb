@@ -9,6 +9,25 @@ Cartridge::Cartridge(const std::string& filePath)
     , title_(extractTitle()) {
 }
 
+Cartridge::Cartridge(const QByteArray& fileContent)
+    : rom_(extractROM(fileContent))
+    , title_(extractTitle()) {
+}
+
+std::array<u8, Cartridge::romSize_> Cartridge::extractROM(const QByteArray& fileContent) {
+    if(fileContent.isEmpty())
+        Utils::error("Cartridge file is empty!");
+    if(fileContent.size() < romSize_)
+        Utils::error("Cartridge is smaller than rom minimal rom size!");
+
+    std::array<u8, Cartridge::romSize_> rom;
+    for(uint32_t i = 0; i < romSize_; ++i) {
+        rom[i] = fileContent[i];
+    }
+
+    return rom;
+}
+
 std::array<u8, Cartridge::romSize_> Cartridge::extractROM(const std::string& filePathStr) {
     const std::filesystem::path filePath { filePathStr };
     if(filePath.empty())
@@ -33,3 +52,4 @@ std::string Cartridge::extractTitle() {
     auto titleStart = rom_.begin() + 0x0134;
     return std::string(titleStart, titleStart + 15);
 }
+

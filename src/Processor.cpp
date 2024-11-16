@@ -37,7 +37,7 @@ Processor::Processor(std::function<uint8_t(uint16_t)> rd,
     reset();
 }
 
-void Processor::reset(bool force_dmg)
+void Processor::reset()
 {
     af_ = 0x01b0;
     bc_ = 0x0013;
@@ -803,5 +803,5 @@ void Processor::step()
 
 CPUDump Processor::getDebugDump() const noexcept
 {
-    return {{read(pc_), read(pc_+1), read(pc_+2), read(pc_+3)}, A, F, B, C, D, E, H, L, SP, PC };
+    return {{read(pc_), read(pc_+1), read(pc_+2), read(pc_+3)}, A, F, B, C, D, E, H, L, SP, PC};
 }

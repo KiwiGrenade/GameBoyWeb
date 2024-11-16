@@ -6,48 +6,49 @@
 QT = core gui widgets
 
 HEADERS = \
-   $$PWD/src/Cartridge.hpp \
-   $$PWD/src/DebugTypes.hpp \
-   $$PWD/src/GameBoy.hpp \
-   $$PWD/src/GraphicTypes.hpp \
-   $$PWD/src/Instruction.hpp \
-   $$PWD/src/instruction_info.hpp \
-   $$PWD/src/InterruptController.hpp \
-   $$PWD/src/Joypad.hpp \
-   $$PWD/src/MainWindow.hpp \
-   $$PWD/src/Memory.hpp \
-   $$PWD/src/PPU.hpp \
-   $$PWD/src/Processor.hpp \
-   $$PWD/src/QtRenderer.hpp \
-   $$PWD/src/Ram.hpp \
-   $$PWD/src/RegisterPair.hpp \
-   $$PWD/src/Renderer.hpp \
-   $$PWD/src/Rom.hpp \
-   $$PWD/src/SerialDataTransfer.hpp \
-   $$PWD/src/Timer.hpp \
-   $$PWD/src/utils.hpp
+   src/Cartridge.hpp \
+   src/DebugTypes.hpp \
+   src/GameBoy.hpp \
+   src/GraphicTypes.hpp \
+   src/instruction_info.hpp \
+   src/InterruptController.hpp \
+   src/Joypad.hpp \
+   src/Memory.hpp \
+   src/PPU.hpp \
+   src/Processor.hpp \
+   src/QtRenderer.hpp \
+   src/Ram.hpp \
+   src/RegisterPair.hpp \
+   src/Renderer.hpp \
+   src/Rom.hpp \
+   src/SerialDataTransfer.hpp \
+   src/Timer.hpp \
+   src/utils.hpp \
+    src/MainWindow.h
 
 SOURCES = \
-   $$PWD/src/Cartridge.cpp \
-   $$PWD/src/GameBoy.cpp \
-   $$PWD/src/GraphicTypes.cpp \
-   $$PWD/src/Instruction.cpp \
-   $$PWD/src/instructions.cpp \
-   $$PWD/src/InterruptController.cpp \
-   $$PWD/src/Joypad.cpp \
-   $$PWD/src/main.cpp \
-   $$PWD/src/MainWindow.cpp \
-   $$PWD/src/Memory.cpp \
-   $$PWD/src/PPU.cpp \
-   $$PWD/src/Processor.cpp \
-   $$PWD/src/QtRenderer.cpp \
-   $$PWD/src/Ram.cpp \
-   $$PWD/src/Rom.cpp \
-   $$PWD/src/SerialDataTransfer.cpp \
-   $$PWD/src/Timer.cpp \
-   $$PWD/src/utils.cpp
+   src/Cartridge.cpp \
+   src/GameBoy.cpp \
+   src/GraphicTypes.cpp \
+   src/instructions.cpp \
+   src/InterruptController.cpp \
+   src/Joypad.cpp \
+   src/main.cpp \
+   src/Memory.cpp \
+   src/PPU.cpp \
+   src/Processor.cpp \
+   src/QtRenderer.cpp \
+   src/Ram.cpp \
+   src/Rom.cpp \
+   src/SerialDataTransfer.cpp \
+   src/Timer.cpp \
+   src/utils.cpp \
+    src/MainWindow.cpp
 
 INCLUDEPATH =
 
 #DEFINES = 
+
+FORMS += \
+    src/MainWindow.ui
 

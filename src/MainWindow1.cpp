@@ -1,23 +1,20 @@
-#include "MainWindow.h"
+#include "MainWindow.hpp"
 #include "ui_MainWindow.h"
-
-#include <QFileDialog>
 
 #include <chrono>
 #include <memory>
 #include <sstream>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
+    : QMainWindow {parent}
     , ui(new Ui::MainWindow)
-    , gameBoy_ {std::make_shared<GameBoy>()}
-    , display_ {new QLabel(this)}
-    , renderer_ {new QtRenderer(160, 144, this)}
+    , gameBoy_ {std::make_shared<GameBoy>()},
+      display_ {new QLabel(this)},
+      renderer_ {new QtRenderer(160, 144, this)}
 {
-    display_->setScaledContents(true);
-    display_->setMinimumSize(160, 144);
-
     ui->setupUi(this);
+
+    gameBoy_->setRenderer(renderer_);
 
     connect(renderer_, SIGNAL(showScreen()), this, SLOT(updateDisplay()));
 }
@@ -42,15 +39,23 @@ void MainWindow::on_actionLoad_triggered() {
     QFileDialog::getOpenFileContent(" ROMs (*.ch8)", fileContentReady);
 }
 
-void MainWindow::on_actionStart_triggered() {
+void MainWindow::on_actionReload_triggered() {
+
+}
+
+void MainWindow::on_actionStartEmulator_triggered() {
     gameBoy_->start();
 }
 
-void MainWindow::on_actionStop_triggered() {
+void MainWindow::on_actionStopEmulator_triggered() {
     gameBoy_->stop();
 }
 
-void MainWindow::on_actionPause_triggered() {
+void MainWindow::on_actionStepEmulator_triggered() {
+
+}
+
+void MainWindow::on_actionPauseEmulator_triggered() {
 
 }
 

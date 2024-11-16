@@ -9,7 +9,6 @@ struct CPUDump {
     std::array<u8, 4> nextOpcodes_;
     u8 A_, F_, B_, C_, D_, E_, H_, L_;
     u16 SP_, PC_;
-    bool IME_;
 
     std::string toStr() {
         std::stringstream ss;

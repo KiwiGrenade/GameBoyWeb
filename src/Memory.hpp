@@ -49,13 +49,13 @@ public:
 protected:
 
     void oamDmaTransfer(u8 byte);
-    
+
+    std::shared_ptr<Cartridge> cartridge_;
     Timer& timer_;
     Joypad& joypad_;
     SerialDataTransfer& serial_;
     Ppu& ppu_;
     Processor& cpu_;
-    std::shared_ptr<Cartridge> cartridge_;
 
     // memory
     VRam vram_ {1};
