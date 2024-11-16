@@ -1,7 +1,7 @@
 add_executable(CPUIntegrationTest CPUIntegrationTest.cpp)
 add_executable(CPULogMaker CPULogMaker.cpp)
 
-qt_add_library(IntegrationTestsUtils STATIC IntegrationTestsUtils.hpp)
+qt_add_library(IntegrationTestsUtils STATIC IntegrationTestUtils.hpp)
 
 target_include_directories(CPUIntegrationTest PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
 target_include_directories(CPULogMaker PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)

@@ -33,11 +33,19 @@ MainWindow::MainWindow(QWidget *parent,
 
 void MainWindow::loadRom(const QString &fileName)
 {
-    gameBoy_->reset();
-    std::shared_ptr<Cartridge> car = std::make_shared<Cartridge>(fileName.toStdString());
-    std::cout << fileName.toStdString() << std::endl;
-    gameBoy_->loadCartridge(car);
-    gameBoy_->runConcurrently();
+    auto fileContentReady = [this](const QString& fileName, const QByteArray& fileContent) {
+        if(fileName.isEmpty())
+        {
+            std::cout << "No file was selected! Exiting!" << std::endl;
+            exit(1);
+        }
+        gameBoy_->reset();
+        std::shared_ptr<Cartridge> car = std::make_shared<Cartridge>(fileContent);
+        gameBoy_->loadCartridge(car);
+        gameBoy_->runConcurrently();
+    };
+
+    QFileDialog::getOpenFileContent(" ROMs (*.ch8)", fileContentReady);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
@@ -105,9 +113,19 @@ void MainWindow::updateFps()
 
 void MainWindow::openRom()
 {
-    QString fileName = QFileDialog::getOpenFileName(this);
-    if (!fileName.isEmpty())
-        loadRom(fileName);
+    auto fileContentReady = [this](const QString& fileName, const QByteArray& fileContent) {
+        if(fileName.isEmpty())
+        {
+            std::cout << "No file was selected! Exiting!" << std::endl;
+            exit(1);
+        }
+        gameBoy_->reset();
+        std::shared_ptr<Cartridge> car = std::make_shared<Cartridge>(fileContent);
+        gameBoy_->loadCartridge(car);
+        gameBoy_->runConcurrently();
+    };
+
+    QFileDialog::getOpenFileContent(" ROMs (*.gb)", fileContentReady);
 }
 
 void MainWindow::showDebugger()
