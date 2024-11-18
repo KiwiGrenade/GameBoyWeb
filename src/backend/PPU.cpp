@@ -1,7 +1,6 @@
 #include "PPU.hpp"
 #include "InterruptController.hpp"
 #include "Memory.hpp"
-#include "CPU.hpp"
 #include "Renderer.hpp"
 
 #include <iostream>
@@ -26,11 +25,11 @@
 
 Ppu::Ppu(InterruptController &ic,
          Memory &m,
-         CPU &p,
+         Clock &cpuClock,
          Renderer *r)
     : ic_(ic),
     memory_ {m},
-      cpu_ {p},
+      cpuClock_ {cpuClock},
       renderer_ {r}
 {}
 
@@ -310,7 +309,7 @@ void Ppu::render_scanline()
 {
     Texture tex {160, 1};
     // STOP mode: if LCD is on, set to all white, if off, all black
-    if (false && cpu_.stopped())
+    if (false && cpuClock_.isStopped_)
     {
         Color c = (lcdc_ & 0x80) ? 0xffff : 0;
         tex.fill(c);

@@ -55,13 +55,11 @@ protected:
     // flags
     bool isPaused_ = false;
     InterruptController ic_ {};
+    Clock cpuClock_ {};
     Timer timer_ {ic_};
     Joypad joypad_ {ic_};
     SerialDataTransfer serial_ {ic_};
-    Ppu ppu_ {ic_, memory_, cpu_};
-    Memory memory_ {ic_, timer_, joypad_, serial_, ppu_, cpu_};
-    /*Processor cpu_ {[this](uint16_t adr){ return memory_.read(adr); }, // memory read callback*/
-    /*    [this](uint8_t b, uint16_t adr){ memory_.write(b, adr); } // memory write callback */
-    /*};*/
-    CPU cpu_ { ic_, memory_ };
+    Ppu ppu_ {ic_, memory_, cpuClock_};
+    Memory memory_ {ic_, timer_, joypad_, serial_, ppu_, cpuClock_};
+    CPU cpu_ { ic_, cpuClock_, memory_ };
 };

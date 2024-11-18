@@ -11,14 +11,14 @@
 
 constexpr u16 Cartridge::romSize_;
 
-Memory::Memory(InterruptController &ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, Ppu& ppu, CPU& cpu)
+Memory::Memory(InterruptController &ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, Ppu& ppu, Clock& cpuClock)
     : cartridge_(std::make_shared<Cartridge>())
     , ic_(ic)
     , joypad_(joypad)
     , timer_(timer)
     , serial_(serial)
     , ppu_(ppu)
-    , cpu_(cpu)
+    , cpuClock_(cpuClock)
     , wroteToSram_(false) {
     initIo();
 }
@@ -259,7 +259,7 @@ void Memory::oamDmaTransfer(u8 byte) {
     for (uint8_t i {0}; i < 0x9f; ++i)
         oam_[i] = read(static_cast<uint16_t>(byte << 8 | i));
     // OAM DMA transfer should take 160 machine cycles (160*4 clock cycles)
-    cpu_.addCycles(160*4);
+    cpuClock_.cycles_ += 160 * 4;
 }
 
 void Memory::reset() {

@@ -6,10 +6,10 @@
 #include <vector>
 
 #include "GraphicTypes.hpp"
+#include "Clock.hpp"
 #include "InterruptController.hpp"
 
 class Renderer;
-class CPU;
 class Memory;
 
 class Ppu
@@ -33,7 +33,7 @@ class Ppu
     enum class Color_correction { None, Fast, Proper };
 
     Ppu(InterruptController &ic, Memory &m,
-        CPU &p,
+        Clock&cpuClock,
         Renderer *r = nullptr);
     void reset();
     void enable_cgb(bool is_cgb);
@@ -85,7 +85,7 @@ class Ppu
     private:
     InterruptController &ic_;
     Memory &memory_;
-    CPU &cpu_;
+    Clock &cpuClock_;
     Renderer *renderer_;
     int clock_ {0};
     uint8_t window_line_ {0}; // keep track of how many window lines were drawn

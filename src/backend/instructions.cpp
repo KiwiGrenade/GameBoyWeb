@@ -32,13 +32,13 @@ void CPU::di()
 void CPU::halt()
 {
     if (ime_)
-        hltd_ = true;
+        clock_.isHalted_ = true;
     else
     {
         if ((read(0xffff) & read(0xff0f) & 0x1f) != 0) // HALT bug
             halt_bug_ = true;
         else
-            hltd_ = true;
+            clock_.isHalted_ = true;
     }
 }
 

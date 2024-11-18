@@ -7,6 +7,7 @@
 #include "Memory.hpp"
 #include "RegisterPair.hpp"
 #include "DebugTypes.hpp"
+#include "Clock.hpp"
 
 class CPU
 {
@@ -21,7 +22,7 @@ class CPU
         JOYPAD,
     };
 
-    CPU(InterruptController& ic, Memory& memory_);
+    CPU(InterruptController& ic, Clock& clock, Memory& memory_);
     void step();
     void reset();
     CPUDump getDebugDump() const noexcept;
@@ -34,12 +35,12 @@ class CPU
     uint16_t hl() const noexcept { return hl_; }
     uint16_t sp() const noexcept { return sp_; }
     uint16_t pc() const noexcept { return pc_; }
-    uint32_t getCycles() const noexcept { return cycles_; }
+    uint32_t getCycles() const noexcept { return clock_.cycles_; }
     // Manually add cycles to cycle count. This is useful for OAM DMA transfers: they need to take
     // 160 machine cycles (640 clock cycles).
     void addCycles(uint32_t c);
-    bool stopped() const noexcept { return stpd_; }
-    bool halted() const noexcept { return hltd_; }
+    bool stopped() const noexcept { return clock_.isStopped_; }
+    bool halted() const noexcept { return clock_.isHalted_; }
     bool double_speed() const noexcept { return double_speed_; }
 
     std::vector<uint8_t> next_ops(uint16_t n) const;
@@ -47,6 +48,7 @@ class CPU
     private:
 
     InterruptController& ic_;
+    Clock& clock_;
     Memory& memory_;
 
     enum Flags : uint8_t
@@ -58,9 +60,7 @@ class CPU
     };
 
     Register_pair af_, bc_, de_, hl_, sp_, pc_;
-    uint32_t cycles_ {0};
-    bool stpd_ {false};
-    bool hltd_ {false};
+    /*uint32_t cycles_ {0};*/
     bool use_branch_cycles_ {false};
     bool ime_ {false};
     bool ei_set_ {false}, di_set_ {false}; // for tracking when EI and DI are
@@ -83,7 +83,7 @@ class CPU
     // instructions
     // misc/control
     void nop() const {}
-    void stop() { stpd_ = true; }
+    void stop() { clock_.isStopped_ = true; }
     void halt();
     void di();
     void ei();

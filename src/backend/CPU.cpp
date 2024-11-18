@@ -29,8 +29,9 @@
 #define SET_BIT(b, n) b |= (1UL << n)
 #define CLEAR_BIT(b, n) b &= ~(1UL << n)
 
-CPU::CPU(InterruptController& ic, Memory& memory)
+CPU::CPU(InterruptController& ic, Clock& clock, Memory& memory)
     : ic_(ic)
+    , clock_(clock)
     , memory_(memory)
 {
     reset();
@@ -44,9 +45,7 @@ void CPU::reset()
     hl_ = 0x014d;
     sp_ = 0xfffe;
     pc_ = 0x0100;
-    cycles_ = 0;
-    stpd_ = false;
-    hltd_ = false;
+    clock_.reset();
     use_branch_cycles_ = false;
     ime_ = false;
     ei_set_ = false;
@@ -57,7 +56,7 @@ void CPU::reset()
 
 void CPU::addCycles(uint32_t c)
 {
-    cycles_ += c;
+    clock_.cycles_ += c;
 }
 
 std::vector<uint8_t> CPU::next_ops(uint16_t n) const
@@ -104,8 +103,8 @@ uint16_t CPU::fetch16()
 
 bool CPU::execute_interrupt(Interrupt i)
 {
-    hltd_ = false;
-    stpd_ = false;
+    clock_.isHalted_ = false;
+    clock_.isStopped_ = false;
     if (!ime_)
         return false; // don't service the interrupt if IME is disabled
     /*
@@ -174,9 +173,9 @@ void CPU::step()
         di_set_ = false;
         ime_ = false;
     }
-    if (hltd_)
+    if (clock_.isHalted_)
     {
-        cycles_ += 4; // assume NOP when CPU is halted
+        clock_.cycles_ += 4; // assume NOP when CPU is halted
         return;
     }
     uint8_t op {fetch8()};
@@ -795,7 +794,7 @@ void CPU::step()
             : instructions[op].cycles;
     }
     // CGB double speed mode, CPU clock ticks twice as fast
-    cycles_ += (double_speed_) ? cycles_passed/2 : cycles_passed;
+    clock_.cycles_ += (double_speed_) ? cycles_passed/2 : cycles_passed;
     use_branch_cycles_ = false;
     return;
 }
