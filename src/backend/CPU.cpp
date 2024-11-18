@@ -1,19 +1,23 @@
-#include "CPU.hpp"
-#include "utils.hpp"
+#include <iomanip>
+#include <chrono>
 #include <ctime>
 
-#define B bc_.hi_
-#define C bc_.lo_
-#define D de_.hi_
-#define E de_.lo_
-#define H hl_.hi_
-#define L hl_.lo_
-#define A af_.hi_
-#define F af_.lo_
-#define SPH sp_.hi_
-#define SPL sp_.lo_
-#define PCH pc_.hi_
-#define PCL pc_.lo_
+#include "CPU.hpp"
+#include "InterruptController.hpp"
+#include "InstructionInfo.hpp"
+
+#define B bc_.hi
+#define C bc_.lo
+#define D de_.hi
+#define E de_.lo
+#define H hl_.hi
+#define L hl_.lo
+#define A af_.hi
+#define F af_.lo
+#define SPH sp_.hi
+#define SPL sp_.lo
+#define PCH pc_.hi
+#define PCL pc_.lo
 
 #define BC bc_
 #define DE de_
@@ -21,6 +25,9 @@
 #define AF af_
 #define SP sp_
 #define PC pc_
+
+#define SET_BIT(b, n) b |= (1UL << n)
+#define CLEAR_BIT(b, n) b &= ~(1UL << n)
 
 CPU::CPU(InterruptController& ic, Memory& memory)
     : ic_(ic)
@@ -38,13 +45,14 @@ void CPU::reset()
     sp_ = 0xfffe;
     pc_ = 0x0100;
     cycles_ = 0;
-    isStopped_= false;
-    isHalted_ = false;
-    isBranchCycle_ = false;
-    IME_ = false;
-    isEiSet_ = false;
-    isDiSet_ = false;
-    isHaltBug_= false;
+    stpd_ = false;
+    hltd_ = false;
+    use_branch_cycles_ = false;
+    ime_ = false;
+    ei_set_ = false;
+    di_set_ = false;
+    halt_bug_ = false;
+    double_speed_ = false;
 }
 
 void CPU::addCycles(uint32_t c)
@@ -52,12 +60,20 @@ void CPU::addCycles(uint32_t c)
     cycles_ += c;
 }
 
-bool CPU::getFlag(Flags f) const
+std::vector<uint8_t> CPU::next_ops(uint16_t n) const
+{
+    std::vector<uint8_t> out {};
+    for (uint16_t i {0}; i < n; ++i)
+        out.push_back(read(pc_+i));
+    return out;
+}
+
+bool CPU::get_flag(Flags f) const
 {
     return (F & f);
 }
 
-void CPU::setFlag(Flags f, bool cond)
+void CPU::set_flag(Flags f, bool cond)
 {
     uint8_t mask;
     if (cond)
@@ -69,10 +85,10 @@ void CPU::setFlag(Flags f, bool cond)
 
 uint8_t CPU::fetch8()
 {
-    uint8_t op = memory_.read(PC);
+    uint8_t op = read(PC);
     // HALT bug: the processor fails to increment the PC
-    if (isHaltBug_)
-        isHaltBug_ = false;
+    if (halt_bug_)
+        halt_bug_ = false;
     else
         ++PC;
     return op;
@@ -86,60 +102,79 @@ uint16_t CPU::fetch16()
     return static_cast<uint16_t>(hi << 8 | lo);
 }
 
-bool CPU::executeInterrupt(u8 i) {
-    isHalted_ = false;
-    isStopped_ = false;
+bool CPU::execute_interrupt(Interrupt i)
+{
+    hltd_ = false;
+    stpd_ = false;
+    if (!ime_)
+        return false; // don't service the interrupt if IME is disabled
+    /*
+    if (i == VBLANK)
+    {
+        static auto last = std::chrono::high_resolution_clock::now();
+        auto now = std::chrono::high_resolution_clock::now();
+        uint64_t frame_time = std::chrono::duration_cast<std::chrono::milliseconds>(now-last).count();
+        std::cout << "Frame time: " << frame_time << "ms\n";
+        last = now;
+    }
+    */
 
-    if(not IME_)
-        return false;
-
-    memory_.write(PC.hi_, --SP);
-    memory_.write(PC.lo_, --SP);
-    PC.hi_ = 0;
-    PC.lo_ = 0x40 + i * 8;
-
-    ic_.disableInterrupt(i);
-    IME_ = false;
-
-    cycles_ += 5;
+    write(pc_.hi, --sp_);
+    write(pc_.lo, --sp_);
+    pc_.hi = 0;
+    pc_.lo = 0x40 + i*8;
+    ime_ = false;
+    write(0, 0xff0f); // clear IF
     return true;
+
 }
 
-bool CPU::handleInterrupts() {
-    u8 enable = ic_.getIE();
-    u8 flag = ic_.getIF();
-    u8 req = enable & flag;
-    bool serviced = false;
-    if(Utils::getBit(req, 0)) {
-        serviced = executeInterrupt(0);
-    }
-    if(Utils::getBit(req, 1)) {
-        serviced = executeInterrupt(2);
-    }
-    if(Utils::getBit(req, 3)) {
-        serviced = executeInterrupt(3);
-    }
-    if(Utils::getBit(req, 4)) {
-        serviced = executeInterrupt(4);
-    }
+bool CPU::check_interrupt()
+{
+    uint8_t int_enable {read(0xffff)};
+    uint8_t int_flag {read(0xff0f)};
+    uint8_t request = int_enable & int_flag;
+    bool serviced {false};
+    if (request & 1)
+        serviced = execute_interrupt(VBLANK);
+    else if (request & 1 << 1)
+        serviced = execute_interrupt(LCD_STAT);
+    else if (request & 1 << 2)
+        serviced = execute_interrupt(TIMER);
+    else if (request & 1 << 3)
+        serviced = execute_interrupt(SERIAL);
+    else if (request & 1 << 4)
+        serviced = execute_interrupt(JOYPAD);
     return serviced;
+}
+
+void CPU::request_interrupt(Interrupt i)
+{
+    uint8_t int_flag {read(0xff0f)};
+    SET_BIT(int_flag, i);
+    write(int_flag, 0xff0f);
+}
+
+void CPU::toggle_double_speed()
+{
+    double_speed_ = !double_speed_;
 }
 
 void CPU::step()
 {
-    if (handleInterrupts())
+    if (check_interrupt())
         return;
-    if (isEiSet_) // EI was called last cycle
+    if (ei_set_) // EI was called last cycle
     {
-        isEiSet_ = false;
-        IME_ = true;
+        ei_set_ = false;
+        ime_ = true;
     }
-    else if (isDiSet_) // DI was called last cycle
+    else if (di_set_) // DI was called last cycle
     {
-        isDiSet_ = false;
-        IME_ = false;
+        di_set_ = false;
+        ime_ = false;
     }
-    if (isHalted_)
+    if (hltd_)
     {
         cycles_ += 4; // assume NOP when CPU is halted
         return;
@@ -156,28 +191,28 @@ void CPU::step()
 
         // jump and calls
         case 0x18: jr(true, static_cast<int8_t>(fetch8())); break;
-        case 0x20: jr(!getFlag(ZERO), static_cast<int8_t>(fetch8())); break;
-        case 0x28: jr(getFlag(ZERO), static_cast<int8_t>(fetch8())); break;
-        case 0x30: jr(!getFlag(CARRY), static_cast<int8_t>(fetch8())); break;
-        case 0x38: jr(getFlag(CARRY), static_cast<int8_t>(fetch8())); break;
+        case 0x20: jr(!get_flag(ZERO), static_cast<int8_t>(fetch8())); break;
+        case 0x28: jr(get_flag(ZERO), static_cast<int8_t>(fetch8())); break;
+        case 0x30: jr(!get_flag(CARRY), static_cast<int8_t>(fetch8())); break;
+        case 0x38: jr(get_flag(CARRY), static_cast<int8_t>(fetch8())); break;
 
-        case 0xc0: ret(!getFlag(ZERO)); break;
-        case 0xc8: ret(getFlag(ZERO)); break;
+        case 0xc0: ret(!get_flag(ZERO)); break;
+        case 0xc8: ret(get_flag(ZERO)); break;
         case 0xc9: ret(true); break;
-        case 0xd0: ret(!getFlag(CARRY)); break;
-        case 0xd8: ret(getFlag(CARRY)); break;
+        case 0xd0: ret(!get_flag(CARRY)); break;
+        case 0xd8: ret(get_flag(CARRY)); break;
 
-        case 0xc2: jp(!getFlag(ZERO), fetch16()); break;
+        case 0xc2: jp(!get_flag(ZERO), fetch16()); break;
         case 0xc3: jp(true, fetch16()); break;
-        case 0xca: jp(getFlag(ZERO), fetch16()); break;
-        case 0xd2: jp(!getFlag(CARRY), fetch16()); break;
-        case 0xda: jp(getFlag(CARRY), fetch16()); break;
+        case 0xca: jp(get_flag(ZERO), fetch16()); break;
+        case 0xd2: jp(!get_flag(CARRY), fetch16()); break;
+        case 0xda: jp(get_flag(CARRY), fetch16()); break;
 
-        case 0xc4: call(!getFlag(ZERO), fetch16()); break;
-        case 0xcc: call(getFlag(ZERO), fetch16()); break;
+        case 0xc4: call(!get_flag(ZERO), fetch16()); break;
+        case 0xcc: call(get_flag(ZERO), fetch16()); break;
         case 0xcd: call(true, fetch16()); break;
-        case 0xd4: call(!getFlag(CARRY), fetch16()); break;
-        case 0xdc: call(getFlag(CARRY), fetch16()); break;
+        case 0xd4: call(!get_flag(CARRY), fetch16()); break;
+        case 0xdc: call(get_flag(CARRY), fetch16()); break;
 
         case 0xe9: jp(true, HL); break;
 
@@ -207,10 +242,10 @@ void CPU::step()
         case 0x36: ldr(HL, fetch8()); break;
         case 0x3e: ld(A, fetch8()); break;
 
-        case 0x0a: ld(A, memory_.read(BC)); break;
-        case 0x1a: ld(A, memory_.read(DE)); break;
-        case 0x2a: ld(A, memory_.read(HL++)); break;
-        case 0x3a: ld(A, memory_.read(HL--)); break;
+        case 0x0a: ld(A, read(BC)); break;
+        case 0x1a: ld(A, read(DE)); break;
+        case 0x2a: ld(A, read(HL++)); break;
+        case 0x3a: ld(A, read(HL--)); break;
 
         case 0x40: break;
         case 0x41: ld(B, C); break;
@@ -218,7 +253,7 @@ void CPU::step()
         case 0x43: ld(B, E); break;
         case 0x44: ld(B, H); break;
         case 0x45: ld(B, L); break;
-        case 0x46: ld(B, memory_.read(HL)); break;
+        case 0x46: ld(B, read(HL)); break;
         case 0x47: ld(B, A); break;
 
         case 0x48: ld(C, B); break;
@@ -227,7 +262,7 @@ void CPU::step()
         case 0x4b: ld(C, E); break;
         case 0x4c: ld(C, H); break;
         case 0x4d: ld(C, L); break;
-        case 0x4e: ld(C, memory_.read(HL)); break;
+        case 0x4e: ld(C, read(HL)); break;
         case 0x4f: ld(C, A); break;
 
         case 0x50: ld(D, B); break;
@@ -236,7 +271,7 @@ void CPU::step()
         case 0x53: ld(D, E); break;
         case 0x54: ld(D, H); break;
         case 0x55: ld(D, L); break;
-        case 0x56: ld(D, memory_.read(HL)); break;
+        case 0x56: ld(D, read(HL)); break;
         case 0x57: ld(D, A); break;
 
         case 0x58: ld(E, B); break;
@@ -245,7 +280,7 @@ void CPU::step()
         case 0x5b: break;
         case 0x5c: ld(E, H); break;
         case 0x5d: ld(E, L); break;
-        case 0x5e: ld(E, memory_.read(HL)); break;
+        case 0x5e: ld(E, read(HL)); break;
         case 0x5f: ld(E, A); break;
 
         case 0x60: ld(H, B); break;
@@ -254,7 +289,7 @@ void CPU::step()
         case 0x63: ld(H, E); break;
         case 0x64: break;
         case 0x65: ld(H, L); break;
-        case 0x66: ld(H, memory_.read(HL)); break;
+        case 0x66: ld(H, read(HL)); break;
         case 0x67: ld(H, A); break;
 
         case 0x68: ld(L, B); break;
@@ -263,7 +298,7 @@ void CPU::step()
         case 0x6b: ld(L, E); break;
         case 0x6c: ld(L, H); break;
         case 0x6d: break;
-        case 0x6e: ld(L, memory_.read(HL)); break;
+        case 0x6e: ld(L, read(HL)); break;
         case 0x6f: ld(L, A); break;
 
         case 0x70: ldr(HL, B); break;
@@ -280,15 +315,15 @@ void CPU::step()
         case 0x7b: ld(A, E); break;
         case 0x7c: ld(A, H); break;
         case 0x7d: ld(A, L); break;
-        case 0x7e: ld(A, memory_.read(HL)); break;
+        case 0x7e: ld(A, read(HL)); break;
         case 0x7f: break;
 
         case 0xe0: ldd(IO_MEMORY + fetch8(), A); break; // ldh (a8),A
         case 0xea: ldd(fetch16(), A); break; // ld (a16),A
-        case 0xf0: ld(A, memory_.read(IO_MEMORY + fetch8())); break; // ldh A,(a8)
-        case 0xfa: ld(A, memory_.read(fetch16())); break; // ldh A,(a16)
+        case 0xf0: ld(A, read(IO_MEMORY + fetch8())); break; // ldh A,(a8)
+        case 0xfa: ld(A, read(fetch16())); break; // ldh A,(a16)
         case 0xe2: ldd(IO_MEMORY + C, A); break; // ld (C),A
-        case 0xf2: ld(A, memory_.read(IO_MEMORY + C)); break; // ld A,(C)
+        case 0xf2: ld(A, read(IO_MEMORY + C)); break; // ld A,(C)
 
         // 16-bit load
         case 0x01: ld(BC, fetch16()); break;
@@ -340,17 +375,17 @@ void CPU::step()
         case 0x83: adc(E, false); break;
         case 0x84: adc(H, false); break;
         case 0x85: adc(L, false); break;
-        case 0x86: adc(memory_.read(HL), false); break;
+        case 0x86: adc(read(HL), false); break;
         case 0x87: adc(A, false); break;
 
-        case 0x88: adc(B, getFlag(CARRY)); break;
-        case 0x89: adc(C, getFlag(CARRY)); break;
-        case 0x8a: adc(D, getFlag(CARRY)); break;
-        case 0x8b: adc(E, getFlag(CARRY)); break;
-        case 0x8c: adc(H, getFlag(CARRY)); break;
-        case 0x8d: adc(L, getFlag(CARRY)); break;
-        case 0x8e: adc(memory_.read(HL), getFlag(CARRY)); break;
-        case 0x8f: adc(A, getFlag(CARRY)); break;
+        case 0x88: adc(B, get_flag(CARRY)); break;
+        case 0x89: adc(C, get_flag(CARRY)); break;
+        case 0x8a: adc(D, get_flag(CARRY)); break;
+        case 0x8b: adc(E, get_flag(CARRY)); break;
+        case 0x8c: adc(H, get_flag(CARRY)); break;
+        case 0x8d: adc(L, get_flag(CARRY)); break;
+        case 0x8e: adc(read(HL), get_flag(CARRY)); break;
+        case 0x8f: adc(A, get_flag(CARRY)); break;
 
         case 0x90: sbc(B, false); break;
         case 0x91: sbc(C, false); break;
@@ -358,17 +393,17 @@ void CPU::step()
         case 0x93: sbc(E, false); break;
         case 0x94: sbc(H, false); break;
         case 0x95: sbc(L, false); break;
-        case 0x96: sbc(memory_.read(HL), false); break;
+        case 0x96: sbc(read(HL), false); break;
         case 0x97: sbc(A, false); break;
 
-        case 0x98: sbc(B, getFlag(CARRY)); break;
-        case 0x99: sbc(C, getFlag(CARRY)); break;
-        case 0x9a: sbc(D, getFlag(CARRY)); break;
-        case 0x9b: sbc(E, getFlag(CARRY)); break;
-        case 0x9c: sbc(H, getFlag(CARRY)); break;
-        case 0x9d: sbc(L, getFlag(CARRY)); break;
-        case 0x9e: sbc(memory_.read(HL), getFlag(CARRY)); break;
-        case 0x9f: sbc(A, getFlag(CARRY)); break;
+        case 0x98: sbc(B, get_flag(CARRY)); break;
+        case 0x99: sbc(C, get_flag(CARRY)); break;
+        case 0x9a: sbc(D, get_flag(CARRY)); break;
+        case 0x9b: sbc(E, get_flag(CARRY)); break;
+        case 0x9c: sbc(H, get_flag(CARRY)); break;
+        case 0x9d: sbc(L, get_flag(CARRY)); break;
+        case 0x9e: sbc(read(HL), get_flag(CARRY)); break;
+        case 0x9f: sbc(A, get_flag(CARRY)); break;
 
         case 0xa0: andr(B); break;
         case 0xa1: andr(C); break;
@@ -376,7 +411,7 @@ void CPU::step()
         case 0xa3: andr(E); break;
         case 0xa4: andr(H); break;
         case 0xa5: andr(L); break;
-        case 0xa6: andr(memory_.read(HL)); break;
+        case 0xa6: andr(read(HL)); break;
         case 0xa7: andr(A); break;
 
         case 0xa8: xorr(B); break;
@@ -385,7 +420,7 @@ void CPU::step()
         case 0xab: xorr(E); break;
         case 0xac: xorr(H); break;
         case 0xad: xorr(L); break;
-        case 0xae: xorr(memory_.read(HL)); break;
+        case 0xae: xorr(read(HL)); break;
         case 0xaf: xorr(A); break;
 
         case 0xb0: orr(B); break;
@@ -394,7 +429,7 @@ void CPU::step()
         case 0xb3: orr(E); break;
         case 0xb4: orr(H); break;
         case 0xb5: orr(L); break;
-        case 0xb6: orr(memory_.read(HL)); break;
+        case 0xb6: orr(read(HL)); break;
         case 0xb7: orr(A); break;
 
         case 0xb8: cp(B); break;
@@ -403,13 +438,13 @@ void CPU::step()
         case 0xbb: cp(E); break;
         case 0xbc: cp(H); break;
         case 0xbd: cp(L); break;
-        case 0xbe: cp(memory_.read(HL)); break;
+        case 0xbe: cp(read(HL)); break;
         case 0xbf: cp(A); break;
 
         case 0xc6: adc(fetch8(), false); break;
-        case 0xce: adc(fetch8(), getFlag(CARRY)); break;
+        case 0xce: adc(fetch8(), get_flag(CARRY)); break;
         case 0xd6: sbc(fetch8(), false); break;
-        case 0xde: sbc(fetch8(), getFlag(CARRY)); break;
+        case 0xde: sbc(fetch8(), get_flag(CARRY)); break;
         case 0xe6: andr(fetch8()); break;
         case 0xee: xorr(fetch8()); break;
         case 0xf6: orr(fetch8()); break;
@@ -526,7 +561,7 @@ void CPU::step()
                 case 0x43: bit(0, E); break;
                 case 0x44: bit(0, H); break;
                 case 0x45: bit(0, L); break;
-                case 0x46: bit(0, memory_.read(HL)); break;
+                case 0x46: bit(0, read(HL)); break;
                 case 0x47: bit(0, A); break;
 
                 case 0x48: bit(1, B); break;
@@ -535,7 +570,7 @@ void CPU::step()
                 case 0x4b: bit(1, E); break;
                 case 0x4c: bit(1, H); break;
                 case 0x4d: bit(1, L); break;
-                case 0x4e: bit(1, memory_.read(HL)); break;
+                case 0x4e: bit(1, read(HL)); break;
                 case 0x4f: bit(1, A); break;
 
                 case 0x50: bit(2, B); break;
@@ -544,7 +579,7 @@ void CPU::step()
                 case 0x53: bit(2, E); break;
                 case 0x54: bit(2, H); break;
                 case 0x55: bit(2, L); break;
-                case 0x56: bit(2, memory_.read(HL)); break;
+                case 0x56: bit(2, read(HL)); break;
                 case 0x57: bit(2, A); break;
 
                 case 0x58: bit(3, B); break;
@@ -553,7 +588,7 @@ void CPU::step()
                 case 0x5b: bit(3, E); break;
                 case 0x5c: bit(3, H); break;
                 case 0x5d: bit(3, L); break;
-                case 0x5e: bit(3, memory_.read(HL)); break;
+                case 0x5e: bit(3, read(HL)); break;
                 case 0x5f: bit(3, A); break;
 
                 case 0x60: bit(4, B); break;
@@ -562,7 +597,7 @@ void CPU::step()
                 case 0x63: bit(4, E); break;
                 case 0x64: bit(4, H); break;
                 case 0x65: bit(4, L); break;
-                case 0x66: bit(4, memory_.read(HL)); break;
+                case 0x66: bit(4, read(HL)); break;
                 case 0x67: bit(4, A); break;
 
                 case 0x68: bit(5, B); break;
@@ -571,7 +606,7 @@ void CPU::step()
                 case 0x6b: bit(5, E); break;
                 case 0x6c: bit(5, H); break;
                 case 0x6d: bit(5, L); break;
-                case 0x6e: bit(5, memory_.read(HL)); break;
+                case 0x6e: bit(5, read(HL)); break;
                 case 0x6f: bit(5, A); break;
 
                 case 0x70: bit(6, B); break;
@@ -580,7 +615,7 @@ void CPU::step()
                 case 0x73: bit(6, E); break;
                 case 0x74: bit(6, H); break;
                 case 0x75: bit(6, L); break;
-                case 0x76: bit(6, memory_.read(HL)); break;
+                case 0x76: bit(6, read(HL)); break;
                 case 0x77: bit(6, A); break;
 
                 case 0x78: bit(7, B); break;
@@ -589,7 +624,7 @@ void CPU::step()
                 case 0x7b: bit(7, E); break;
                 case 0x7c: bit(7, H); break;
                 case 0x7d: bit(7, L); break;
-                case 0x7e: bit(7, memory_.read(HL)); break;
+                case 0x7e: bit(7, read(HL)); break;
                 case 0x7f: bit(7, A); break;
 
                 case 0x80: res(0, B); break;
@@ -738,7 +773,9 @@ void CPU::step()
             }
         } break;
         default:
-            Utils::error("Unimplemented opcode!");
+            std::ostringstream error {};
+            error << "Unimplemented opcode: " << std::hex << static_cast<int>(op);
+            throw std::runtime_error {error.str()};
     }
     // increment cycles
     size_t cycles_passed;
@@ -746,24 +783,24 @@ void CPU::step()
     if (op == 0xcb)
     {
         // get op after prefix
-        uint8_t op2 = memory_.read(PC-1);
+        uint8_t op2 = read(PC-1);
         cycles_passed = cb_instructions[op2].cycles;
 
     }
     // handle all other instructions
     else
     {
-        cycles_passed = isBranchCycle_ 
+        cycles_passed = use_branch_cycles_
             ? instructions[op].branch_cycles
             : instructions[op].cycles;
     }
     // CGB double speed mode, CPU clock ticks twice as fast
-    cycles_ += cycles_passed;
-    isBranchCycle_ = false;
+    cycles_ += (double_speed_) ? cycles_passed/2 : cycles_passed;
+    use_branch_cycles_ = false;
     return;
 }
 
 CPUDump CPU::getDebugDump() const noexcept
 {
-    return {{memory_.read(pc_), memory_.read(pc_+1), memory_.read(pc_+2), memory_.read(pc_+3)}, A, F, B, C, D, E, H, L, SP, PC };
+    return {{read(pc_), read(pc_+1), read(pc_+2), read(pc_+3)}, A, F, B, C, D, E, H, L, SP, PC };
 }

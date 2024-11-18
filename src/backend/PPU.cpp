@@ -310,7 +310,7 @@ void Ppu::render_scanline()
 {
     Texture tex {160, 1};
     // STOP mode: if LCD is on, set to all white, if off, all black
-    if (false && cpu_.isStopped())
+    if (false && cpu_.stopped())
     {
         Color c = (lcdc_ & 0x80) ? 0xffff : 0;
         tex.fill(c);

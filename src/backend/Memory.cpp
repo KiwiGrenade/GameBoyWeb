@@ -101,7 +101,7 @@ void Memory::write(const u8 byte, const u16 addr) {
     // only accessible if PPU enabled and mode is 0 or 1
     else if(addr < 0xFEA0) {
         if(not ppu_.enabled() || ppu_.mode() < 2)
-            oam_[addr - 0xFE00] = addr;
+            oam_[addr - 0xFE00] = byte;
     }
     // Undefined
     else if(addr < 0xFF00) {
@@ -128,9 +128,9 @@ void Memory::write(const u8 byte, const u16 addr) {
             timer_.write(byte, addr);
         }
         // Interrupts
-        /*else if (0xFF0F == addr) {*/
-        /*    ic_.setIF(byte);*/
-        /*}*/
+        else if (0xFF0F == addr) {
+            ic_.setIF(byte);
+        }
         // LCD - Control, Status, Position, Scrolling, Palettes
         else if (addr != 0xFF46 && 0xFF40 <= addr && addr <= 0xFF4B) {
             ppu_.write_reg(byte, addr);
@@ -147,7 +147,7 @@ void Memory::write(const u8 byte, const u16 addr) {
     }
     // IE - InterruptController
     else if (addr == 0xFFFF) {
-        ie_ = byte;
+        ic_.setIE(byte);
     }
 }
 
@@ -213,9 +213,9 @@ u8 Memory::read(const u16 addr) {
             res = timer_.read(addr);
         }
         // InterruptController
-        /*else if (addr == 0xFF0F) {*/
-        /*    res = ic_.getIF();*/
-        /*}*/
+        else if (addr == 0xFF0F) {
+            res = ic_.getIF();
+        }
         // PPU
         else if(addr != 0xFF46 && 0xFF40 <= addr && addr <= 0xFF4B) {
             res = ppu_.read_reg(addr);
@@ -229,7 +229,7 @@ u8 Memory::read(const u16 addr) {
     }
     // EI - InterruptController
     else if(addr == 0xFFFF) {
-        res = ie_;
+        res = ic_.getIE();
     }
     return res;
 }
