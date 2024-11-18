@@ -13,7 +13,7 @@ class CPU
 {
     public:
 
-    enum Interrupt : uint8_t
+    enum Interrupt : u8
     {
         VBLANK = 0,
         LCD_STAT,
@@ -29,12 +29,12 @@ class CPU
     void request_interrupt(Interrupt i);
     void toggle_double_speed();
 
-    uint16_t af() const noexcept { return af_; }
-    uint16_t bc() const noexcept { return bc_; }
-    uint16_t de() const noexcept { return de_; }
-    uint16_t hl() const noexcept { return hl_; }
-    uint16_t sp() const noexcept { return sp_; }
-    uint16_t pc() const noexcept { return pc_; }
+    u16 af() const noexcept { return af_; }
+    u16 bc() const noexcept { return bc_; }
+    u16 de() const noexcept { return de_; }
+    u16 hl() const noexcept { return hl_; }
+    u16 sp() const noexcept { return sp_; }
+    u16 pc() const noexcept { return pc_; }
     uint32_t getCycles() const noexcept { return clock_.cycles_; }
     // Manually add cycles to cycle count. This is useful for OAM DMA transfers: they need to take
     // 160 machine cycles (640 clock cycles).
@@ -43,7 +43,7 @@ class CPU
     bool halted() const noexcept { return clock_.isHalted_; }
     bool double_speed() const noexcept { return double_speed_; }
 
-    std::vector<uint8_t> next_ops(uint16_t n) const;
+    std::vector<u8> next_ops(u16 n) const;
 
     private:
 
@@ -51,7 +51,7 @@ class CPU
     Clock& clock_;
     Memory& memory_;
 
-    enum Flags : uint8_t
+    enum Flags : u8
     {
         CARRY = 1 << 4,
         HALF = 1 << 5,
@@ -59,7 +59,7 @@ class CPU
         ZERO = 1 << 7,
     };
 
-    Register_pair af_, bc_, de_, hl_, sp_, pc_;
+    RegisterPair af_, bc_, de_, hl_, sp_, pc_;
     /*uint32_t cycles_ {0};*/
     bool use_branch_cycles_ {false};
     bool ime_ {false};
@@ -68,10 +68,10 @@ class CPU
     bool halt_bug_ {false};
     bool double_speed_ {false}; // CGB only
 
-    std::function<uint8_t(uint16_t)> read {[this](uint16_t adr) {return memory_.read(adr);}};
-    std::function<void(uint8_t, uint16_t)> write {[this](uint8_t b, uint16_t a) { memory_.write(b, a);}};
-    uint8_t fetch8();
-    uint16_t fetch16();
+    std::function<u8(u16)> read {[this](u16 adr) {return memory_.read(adr);}};
+    std::function<void(u8, u16)> write {[this](u8 b, u16 a) { memory_.write(b, a);}};
+    u8 fetch8();
+    u16 fetch16();
 
     // flags
     bool get_flag(Flags f) const;
@@ -90,69 +90,69 @@ class CPU
     // jump and calls
     void jr(bool, const int8_t);
     void ret(bool);
-    void jp(bool, const uint16_t);
-    void call(bool, const uint16_t);
-    void rst(const uint8_t);
+    void jp(bool, const u16);
+    void call(bool, const u16);
+    void rst(const u8);
     void reti(); // ?
     // 8-bit load
-    void ld(uint8_t &a, uint8_t b) { a = b; }
-    void ldd(uint16_t adr, uint8_t b) { write(b, adr); }
-    void ldd_sp(uint16_t adr);
-    void ldr(const Register_pair &rp, uint8_t b) { write(b, rp); }
+    void ld(u8 &a, u8 b) { a = b; }
+    void ldd(u16 adr, u8 b) { write(b, adr); }
+    void ldd_sp(u16 adr);
+    void ldr(const RegisterPair &rp, u8 b) { write(b, rp); }
 
     // 16-bit load
-    void ld(Register_pair &a, const uint16_t b) { a = b; }
+    void ld(RegisterPair &a, const u16 b) { a = b; }
     void ldhl_sp(const int8_t);
-    void push(const uint16_t);
-    void pop(Register_pair &);
+    void push(const u16);
+    void pop(RegisterPair &);
     void pop_af(); // special logic for AF needed
     // 8-bit arithmetic and logic
-    void inc(uint8_t &);
-    void inc_i(uint16_t adr); // we could refactor this indirect addressing
+    void inc(u8 &);
+    void inc_i(u16 adr); // we could refactor this indirect addressing
                               // using decorators with templates (todo...)
-    void dec(uint8_t &);
-    void dec_i(uint16_t adr);
+    void dec(u8 &);
+    void dec_i(u16 adr);
     void daa();
     void scf();
     void cpl();
     void ccf();
-    void adc(const uint8_t, bool);
-    void sbc(const uint8_t, bool);
-    void andr(const uint8_t);
-    void xorr(const uint8_t);
-    void orr(const uint8_t);
-    void cp(const uint8_t);
+    void adc(const u8, bool);
+    void sbc(const u8, bool);
+    void andr(const u8);
+    void xorr(const u8);
+    void orr(const u8);
+    void cp(const u8);
     // 16-bit arithmetic and logic
-    void inc(Register_pair &rp) { ++rp; }
-    void dec(Register_pair &rp) { --rp; }
-    void add(const uint16_t);
+    void inc(RegisterPair &rp) { ++rp; }
+    void dec(RegisterPair &rp) { --rp; }
+    void add(const u16);
     void add_sp(int8_t);
     // 8-bit rotations and shifts
-    void rlc(uint8_t &);
+    void rlc(u8 &);
     void rlca();
-    void rlc_i(uint16_t adr);
-    void rrc(uint8_t &);
+    void rlc_i(u16 adr);
+    void rrc(u8 &);
     void rrca();
-    void rrc_i(uint16_t adr);
-    void rl(uint8_t &);
+    void rrc_i(u16 adr);
+    void rl(u8 &);
     void rla();
-    void rl_i(uint16_t adr);
-    void rr(uint8_t &);
+    void rl_i(u16 adr);
+    void rr(u8 &);
     void rra();
-    void rr_i(uint16_t adr);
-    void sla(uint8_t &);
-    void sla_i(uint16_t adr);
-    void sra(uint8_t &);
-    void sra_i(uint16_t adr);
-    void swap(uint8_t &);
-    void swap_i(uint16_t adr);
-    void srl(uint8_t &);
-    void srl_i(uint16_t adr);
-    void bit(const uint8_t, const uint8_t);
-    void res(const uint8_t, uint8_t &);
-    void res_i(uint8_t, uint16_t adr);
-    void set(const uint8_t, uint8_t &);
-    void set_i(uint8_t, uint16_t adr);
+    void rr_i(u16 adr);
+    void sla(u8 &);
+    void sla_i(u16 adr);
+    void sra(u8 &);
+    void sra_i(u16 adr);
+    void swap(u8 &);
+    void swap_i(u16 adr);
+    void srl(u8 &);
+    void srl_i(u16 adr);
+    void bit(const u8, const u8);
+    void res(const u8, u8 &);
+    void res_i(u8, u16 adr);
+    void set(const u8, u8 &);
+    void set_i(u8, u16 adr);
 
-    static constexpr uint16_t IO_MEMORY {0xff00};
+    static constexpr u16 IO_MEMORY {0xff00};
 };

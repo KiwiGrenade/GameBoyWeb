@@ -1,79 +1,80 @@
 #pragma once
 
 #include <cstdint>
+#include "utils.hpp"
 
-struct Register_pair
+struct RegisterPair
 {
 	public:
-	explicit Register_pair(uint16_t rp = 0);
+	explicit RegisterPair(u16 rp = 0);
 	
-    Register_pair &operator+=(const uint16_t);
-    Register_pair &operator-=(const uint16_t);
-	Register_pair &operator++();
-	Register_pair operator++(int);
-	Register_pair &operator--();
-	Register_pair operator--(int);
-	Register_pair &operator=(const uint16_t);
-	operator uint16_t() const;
-	uint8_t hi, lo;
+    RegisterPair &operator+=(const u16);
+    RegisterPair &operator-=(const u16);
+	RegisterPair &operator++();
+	RegisterPair operator++(int);
+	RegisterPair &operator--();
+	RegisterPair operator--(int);
+	RegisterPair &operator=(const u16);
+	operator u16() const;
+	u8 hi, lo;
 	
 };
 
-inline Register_pair::Register_pair(uint16_t rp)
-	: hi {static_cast<uint8_t>(rp >> 8 & 0xff)}, 
-	  lo {static_cast<uint8_t>(rp & 0xff)}
+inline RegisterPair::RegisterPair(u16 rp)
+	: hi {static_cast<u8>(rp >> 8 & 0xff)}, 
+	  lo {static_cast<u8>(rp & 0xff)}
 {}
 
-inline Register_pair &Register_pair::operator+=(const uint16_t d)
+inline RegisterPair &RegisterPair::operator+=(const u16 d)
 {
-	uint16_t x {*this};
+	u16 x {*this};
 	*this = x + d;
 	return *this;
 }
 
-inline Register_pair &Register_pair::operator-=(const uint16_t d)
+inline RegisterPair &RegisterPair::operator-=(const u16 d)
 {
-	uint16_t x {*this};
+	u16 x {*this};
 	*this = x - d;
 	return *this;
 }
 
-inline Register_pair &Register_pair::operator++()
+inline RegisterPair &RegisterPair::operator++()
 {
-	uint16_t x {*this};
+	u16 x {*this};
 	*this = ++x;
 	return *this;
 }
 	
-inline Register_pair Register_pair::operator++(int)
+inline RegisterPair RegisterPair::operator++(int)
 {
-	Register_pair tmp {*this};
+	RegisterPair tmp {*this};
 	++*this;
 	return tmp;
 }
 
-inline Register_pair &Register_pair::operator--()
+inline RegisterPair &RegisterPair::operator--()
 {
-	uint16_t x {*this};
+	u16 x {*this};
 	*this = --x;
 	return *this;
 }
 
-inline Register_pair Register_pair::operator--(int)
+inline RegisterPair RegisterPair::operator--(int)
 {
-	Register_pair tmp {*this};
+	RegisterPair tmp {*this};
 	--*this;
 	return tmp;
 }
 
-inline Register_pair &Register_pair::operator=(const uint16_t x)
+inline RegisterPair &RegisterPair::operator=(const u16 x)
 {
 	hi = x >> 8 & 0xff;
 	lo = x & 0xff;
 	return *this;
 }
 	
-inline Register_pair::operator uint16_t() const
+inline RegisterPair::operator u16() const
 {
 	return (hi << 8) | lo;
 }

@@ -59,9 +59,9 @@ void CPU::addCycles(uint32_t c)
     clock_.cycles_ += c;
 }
 
-std::vector<uint8_t> CPU::next_ops(uint16_t n) const
+std::vector<u8> CPU::next_ops(uint16_t n) const
 {
-    std::vector<uint8_t> out {};
+    std::vector<u8> out {};
     for (uint16_t i {0}; i < n; ++i)
         out.push_back(read(pc_+i));
     return out;
@@ -74,7 +74,7 @@ bool CPU::get_flag(Flags f) const
 
 void CPU::set_flag(Flags f, bool cond)
 {
-    uint8_t mask;
+    u8 mask;
     if (cond)
         mask = 0xff;
     else
@@ -82,9 +82,9 @@ void CPU::set_flag(Flags f, bool cond)
     F = (F & ~f) | (mask & f);
 }
 
-uint8_t CPU::fetch8()
+u8 CPU::fetch8()
 {
-    uint8_t op = read(PC);
+    u8 op = read(PC);
     // HALT bug: the processor fails to increment the PC
     if (halt_bug_)
         halt_bug_ = false;
@@ -96,8 +96,8 @@ uint8_t CPU::fetch8()
 
 uint16_t CPU::fetch16()
 {
-    uint8_t lo = fetch8();
-    uint8_t hi = fetch8();
+    u8 lo = fetch8();
+    u8 hi = fetch8();
     return static_cast<uint16_t>(hi << 8 | lo);
 }
 
@@ -130,9 +130,9 @@ bool CPU::execute_interrupt(Interrupt i)
 
 bool CPU::check_interrupt()
 {
-    uint8_t int_enable {read(0xffff)};
-    uint8_t int_flag {read(0xff0f)};
-    uint8_t request = int_enable & int_flag;
+    u8 int_enable {read(0xffff)};
+    u8 int_flag {read(0xff0f)};
+    u8 request = int_enable & int_flag;
     bool serviced {false};
     if (request & 1)
         serviced = execute_interrupt(VBLANK);
@@ -149,7 +149,7 @@ bool CPU::check_interrupt()
 
 void CPU::request_interrupt(Interrupt i)
 {
-    uint8_t int_flag {read(0xff0f)};
+    u8 int_flag {read(0xff0f)};
     SET_BIT(int_flag, i);
     write(int_flag, 0xff0f);
 }
@@ -178,7 +178,7 @@ void CPU::step()
         clock_.cycles_ += 4; // assume NOP when CPU is halted
         return;
     }
-    uint8_t op {fetch8()};
+    u8 op {fetch8()};
     switch (op)
     {
         // misc and control
@@ -782,7 +782,7 @@ void CPU::step()
     if (op == 0xcb)
     {
         // get op after prefix
-        uint8_t op2 = read(PC-1);
+        u8 op2 = read(PC-1);
         cycles_passed = cb_instructions[op2].cycles;
 
     }

@@ -12,7 +12,6 @@
 #include <string>
 
 typedef uint8_t u8;
-typedef uint8_t Register;
 typedef uint16_t u16;
 
 #define U16_MAX UINT16_MAX 

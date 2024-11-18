@@ -23,7 +23,7 @@
 #define GBC_CC_BR -0.05
 #define GBC_CC_BG 0.225
 
-Ppu::Ppu(InterruptController &ic,
+PPU::PPU(InterruptController &ic,
          Clock &cpuClock,
          Renderer *r)
     : ic_(ic),
@@ -31,7 +31,7 @@ Ppu::Ppu(InterruptController &ic,
       renderer_ {r}
 {}
 
-void Ppu::reset()
+void PPU::reset()
 {
     clock_ = 0;
     window_line_ = 0;
@@ -57,21 +57,21 @@ void Ppu::reset()
     obpi_ = 0;
 }
 
-u8 Ppu::oamRead(u16 adr) const
+u8 PPU::oamRead(u16 adr) const
 {
     if (adr >= oam_.size())
         Utils::warning("Trying to READ from wrong OAM index!");
     return oam_[adr];
 }
 
-void Ppu::oamWrite(u8 b, u16 adr)
+void PPU::oamWrite(u8 b, u16 adr)
 {
     if (adr >= oam_.size())
         Utils::warning("Trying to WRITE to wrong OAM index!");
     oam_[adr] = b;
 }
 
-u8 Ppu::vramRead(u8 bank, u16 adr) const
+u8 PPU::vramRead(u8 bank, u16 adr) const
 {
     adr -= 0x8000;
     if (adr >= vram_.getSize())
@@ -79,19 +79,19 @@ u8 Ppu::vramRead(u8 bank, u16 adr) const
     return vram_.read(bank, adr);
 }
 
-void Ppu::vramWrite(u8 b, u8 bank, u16 adr) {
+void PPU::vramWrite(u8 b, u8 bank, u16 adr) {
     adr -= 0x8000;
     if (adr >= vram_.getSize())
         Utils::warning("Trying to WRITE to wrong VRAM index!");
     vram_.write(b, bank, adr);
 }
 
-void Ppu::enable_cgb(bool is_cgb)
+void PPU::enable_cgb(bool is_cgb)
 {
     cgb_mode_ = is_cgb;
 }
 
-void Ppu::step(size_t cycles)
+void PPU::step(size_t cycles)
 {
     // PPU operates on 4.194 MHz clock, 1 clock = 1/4 cycle
     clock_ += cycles;
@@ -125,22 +125,22 @@ void Ppu::step(size_t cycles)
     }
 }
 
-int Ppu::mode() const
+int PPU::mode() const
 {
     return stat_ & 3;
 }
 
-int Ppu::clock() const
+int PPU::clock() const
 {
     return clock_;
 }
 
-bool Ppu::enabled() const
+bool PPU::enabled() const
 {
     return lcdc_ & 0x80;
 }
 
-uint8_t Ppu::read_reg(uint16_t adr)
+uint8_t PPU::read_reg(u16 adr)
 {
     uint8_t b = 0xff;
     switch (adr)
@@ -171,7 +171,7 @@ uint8_t Ppu::read_reg(uint16_t adr)
     return b;
 }
 
-void Ppu::write_reg(uint8_t b, uint16_t adr)
+void PPU::write_reg(uint8_t b, u16 adr)
 {
     switch (adr)
     {
@@ -223,12 +223,12 @@ void Ppu::write_reg(uint8_t b, uint16_t adr)
 }
 
 
-void Ppu::set_renderer(Renderer *r)
+void PPU::set_renderer(Renderer *r)
 {
     renderer_ = r;
 }
 
-Texture Ppu::get_framebuffer(bool with_bg, bool with_win,
+Texture PPU::get_framebuffer(bool with_bg, bool with_win,
                              bool with_sprites) const
 {
     Texture frame = with_bg ? get_layer(Layer::Background) : Texture(256, 256);
@@ -236,12 +236,12 @@ Texture Ppu::get_framebuffer(bool with_bg, bool with_win,
     {
         Texture window(get_layer(Layer::Window));
         // copy window layer onto frame buffer layer in the correct position
-        for (uint16_t y = 0; y < 256; ++y)
+        for (u16 y = 0; y < 256; ++y)
         {
-            for (uint16_t x = 0; x < 256; ++x)
+            for (u16 x = 0; x < 256; ++x)
             {
-                uint16_t wx = wx_-7 - scx_ + x;
-                uint16_t wy = wy_ - scy_ + y;
+                u16 wx = wx_-7 - scx_ + x;
+                u16 wy = wy_ - scy_ + y;
                 if (wx > 0xff || wy > 0xff
                     || wx >= scx_+160 || wy >= scy_+144)
                     continue;
@@ -253,13 +253,13 @@ Texture Ppu::get_framebuffer(bool with_bg, bool with_win,
     return frame;
 }
 
-Texture Ppu::get_tile(uint8_t bank, uint16_t i) const
+Texture PPU::get_tile(uint8_t bank, u16 i) const
 {
     // DMG only has 1 VRAM bank, only allow reading multiple banks if CGB
     if (bank > 0 && !cgb_mode_)
         return {};
     Texture tex(8,8);
-    uint16_t tile_base = 0x8000;
+    u16 tile_base = 0x8000;
     for (uint8_t byte = 0; byte < 16; byte += 2)
     {
         uint8_t lo_byte = vramRead(bank, byte+tile_base+i*16);
@@ -278,7 +278,7 @@ Texture Ppu::get_tile(uint8_t bank, uint16_t i) const
     return tex;
 }
 
-Texture Ppu::get_layer(Layer l) const
+Texture PPU::get_layer(Layer l) const
 {
     Texture tex(256, 256);
     for (unsigned y = 0; y < 256; ++y)
@@ -291,16 +291,16 @@ Texture Ppu::get_layer(Layer l) const
     return tex;
 }
 
-std::array<uint8_t, 32*32> Ppu::get_raw_background()
+std::array<uint8_t, 32*32> PPU::get_raw_background()
 {
-    uint16_t bg_map = ((lcdc_ & (1 << 3)) ? 0x9c00 : 0x9800);
+    u16 bg_map = ((lcdc_ & (1 << 3)) ? 0x9c00 : 0x9800);
     std::array<uint8_t, 32*32> raw {};
     for (int i = 0; i < 32*32; ++i)
         raw[i] = vramRead(0, bg_map+i);
     return raw;
 }
 
-Ppu::Dump Ppu::dump_values() const
+PPU::Dump PPU::dump_values() const
 {
     return Dump
     {
@@ -313,7 +313,7 @@ Ppu::Dump Ppu::dump_values() const
     };
 }
 
-void Ppu::render_scanline()
+void PPU::render_scanline()
 {
     Texture tex {160, 1};
     // STOP mode: if LCD is on, set to all white, if off, all black
@@ -326,9 +326,9 @@ void Ppu::render_scanline()
     {
         if (lcdc_ & 1 || cgb_mode_) // bg/window enable
         {
-            render_layer_line(tex, Ppu::Layer::Background);
+            render_layer_line(tex, PPU::Layer::Background);
             if (lcdc_ & 1 << 5) // window display enable
-                render_layer_line(tex, Ppu::Layer::Window);
+                render_layer_line(tex, PPU::Layer::Window);
         }
         // background and window appear white if lcdc bit 0 is cleared
         else
@@ -342,23 +342,23 @@ void Ppu::render_scanline()
     renderer_->drawTexture(tex, 0, ly_);
 }
 
-void Ppu::render_layer_line(Texture &tex, Ppu::Layer layer)
+void PPU::render_layer_line(Texture &tex, PPU::Layer layer)
 {
     // don't draw windo if the current line isn't a window line
-    if (layer == Ppu::Layer::Window && ly_ < wy_)
+    if (layer == PPU::Layer::Window && ly_ < wy_)
         return;
     // current y-coordinate of the 256x256 layer
     uint8_t y = 0;
-    if (layer == Ppu::Layer::Background)
+    if (layer == PPU::Layer::Background)
         y = ly_ + scy_;
-    else if (layer == Ppu::Layer::Window)
+    else if (layer == PPU::Layer::Window)
         y = window_line_;
     // draw each pixel in the scanline
     uint8_t window_pxs_drawn = 0;
     for (uint8_t x_px = 0; x_px < 160; ++x_px)
     {
         // don't draw window if it doesn't appear yet
-        if (layer == Ppu::Layer::Window)
+        if (layer == PPU::Layer::Window)
         {
             // x: window could appear later in the line
             if (x_px < wx_-7)
@@ -368,39 +368,39 @@ void Ppu::render_layer_line(Texture &tex, Ppu::Layer layer)
                 return;
         }
         // current x-coordinate of the 256x256 layer
-        uint8_t x = (layer == Ppu::Layer::Background)
+        uint8_t x = (layer == PPU::Layer::Background)
                 ? x_px + scx_
                 : x_px - (wx_-7);
         render_layer_pixel(tex, layer, x, y, x_px, 0);
         ++window_pxs_drawn;
     }
-    if (layer == Ppu::Layer::Window && window_pxs_drawn != 0)
+    if (layer == PPU::Layer::Window && window_pxs_drawn != 0)
         ++window_line_;
 }
 
 // render the layer pixel at (tex_x,tex_y) with the color at (x, y) in VRAM
-void Ppu::render_layer_pixel(Texture &tex, Ppu::Layer layer,
+void PPU::render_layer_pixel(Texture &tex, PPU::Layer layer,
                              uint8_t x, uint8_t y,
                              uint8_t tex_x, uint8_t tex_y) const
 {
-    uint16_t tile_map = 0x9800;
-    if (layer == Ppu::Layer::Background)
+    u16 tile_map = 0x9800;
+    if (layer == PPU::Layer::Background)
     {
         tile_map = ((lcdc_ & (1 << 3)) ? 0x9c00 : 0x9800);
 
     }
-    else if (layer == Ppu::Layer::Window)
+    else if (layer == PPU::Layer::Window)
     {
         tile_map = ((lcdc_ & (1 << 6)) ? 0x9c00 : 0x9800);
     }
     // tile data offset in VRAM
-    uint16_t tile_base = (lcdc_ & 1 << 4) ? 0x8000 : 0x9000;
+    u16 tile_base = (lcdc_ & 1 << 4) ? 0x8000 : 0x9000;
     // x-index into the tile BG map (tile_map) of the tile to draw
     uint8_t tile_x = x >> 3; // tiles are 8 px wide
     // y tile index into the tile map
     uint8_t tile_y = y >> 3; // tiles are 8 px tall
     // index into tile BG map of the tile to draw
-    uint16_t tile_i = (tile_y*32) + tile_x + tile_map;
+    u16 tile_i = (tile_y*32) + tile_x + tile_map;
     // CGB only: corresponding tile attributeibutes held in parallel location
     // in VRAM bank 1
     uint8_t tile_attribute = cgb_mode_ ? vramRead(1, tile_i) : 0;
@@ -409,7 +409,7 @@ void Ppu::render_layer_pixel(Texture &tex, Ppu::Layer layer,
     // bank containing the tile data
     uint8_t bank = (tile_attribute & 1 << 3) ? 1 : 0;
     // location to read tile data from
-    uint16_t adr = 0;
+    u16 adr = 0;
     // 0x9000 base uses signed addressing
     if (tile_base == 0x9000)
     {
@@ -460,9 +460,9 @@ void Ppu::render_layer_pixel(Texture &tex, Ppu::Layer layer,
     tex.set_pixel_priority(tex_i, priority);
 }
 
-void Ppu::render_sprite_line(Texture &tex)
+void PPU::render_sprite_line(Texture &tex)
 {
-    const uint16_t tile_data = 0x8000;
+    const u16 tile_data = 0x8000;
     // 0=8x8, 1=8x16
     const uint8_t sprite_h = lcdc_ & 1 << 2 ? 16 : 8;
     uint8_t sprites_drawn = 0;
@@ -513,7 +513,7 @@ void Ppu::render_sprite_line(Texture &tex)
                 tile_i = s.tile;
             }
         }
-        uint16_t adr = tile_data+tile_i*16;
+        u16 adr = tile_data+tile_i*16;
         if (y_flip)
             adr += (7 - (ln % 8)) * 2;
         else
@@ -549,7 +549,7 @@ void Ppu::render_sprite_line(Texture &tex)
     }
 }
 
-std::array<Texture, 40> Ppu::get_sprites() const
+std::array<Texture, 40> PPU::get_sprites() const
 {
     std::array<Texture, 40> out {};
     int i = 0;
@@ -561,7 +561,7 @@ std::array<Texture, 40> Ppu::get_sprites() const
     return out;
 }
 
-void Ppu::order_sprites(std::array<Sprite, 10> &s) const
+void PPU::order_sprites(std::array<Sprite, 10> &s) const
 {
     // CGB mode: lower OAM # = higher priority
     if (cgb_mode_)
@@ -578,7 +578,7 @@ void Ppu::order_sprites(std::array<Sprite, 10> &s) const
     }
 }
 
-Palette Ppu::get_bg_palette(uint8_t idx) const
+Palette PPU::get_bg_palette(uint8_t idx) const
 {
     Palette pal {};
     // CGB stores palettes in background palette memoery (bgpm)
@@ -589,7 +589,7 @@ Palette Ppu::get_bg_palette(uint8_t idx) const
         for (uint8_t i = 0; i < 4; ++i)
         {
             // RGB = 2 bytes (lo byte first)
-            uint16_t rgb = static_cast<uint16_t>(
+            u16 rgb = static_cast<u16>(
                         bgpd_[pal_idx+i*2] | bgpd_[pal_idx+i*2+1] << 8);
             // xbbb bbgg gggr rrrr
             pal[i] = color_correct(rgb);
@@ -604,7 +604,7 @@ Palette Ppu::get_bg_palette(uint8_t idx) const
     return pal;
 }
 
-Palette Ppu::get_sprite_palette(uint8_t idx) const
+Palette PPU::get_sprite_palette(uint8_t idx) const
 {
     Palette pal {};
     if (cgb_mode_)
@@ -614,7 +614,7 @@ Palette Ppu::get_sprite_palette(uint8_t idx) const
         for (uint8_t i = 0; i < 4; ++i)
         {
             // RGB = 2 bytes (lo byte first)
-            uint16_t rgb = static_cast<uint16_t>(
+            u16 rgb = static_cast<u16>(
                         obpd_[pal_idx+i*2] | obpd_[pal_idx+i*2+1] << 8);
             // xbbb bbgg gggr rrrr
             pal[i] = color_correct(rgb);
@@ -630,7 +630,7 @@ Palette Ppu::get_sprite_palette(uint8_t idx) const
     return pal;
 }
 
-Color Ppu::color_correct(const Color &c) const
+Color PPU::color_correct(const Color &c) const
 {
     const unsigned r = c & 0x1f,
             g = c >> 5 & 0x1f,
@@ -701,10 +701,10 @@ Color Ppu::color_correct(const Color &c) const
     return rFinal << 10 | gFinal << 5 | bFinal;
 }
 
-void Ppu::load_sprites()
+void PPU::load_sprites()
 {
     uint8_t i = 0;
-    for (uint16_t adr = 0; adr < 0xa0; adr += 4) // sprites are 4 bytes
+    for (u16 adr = 0; adr < 0xa0; adr += 4) // sprites are 4 bytes
     {
         sprites_[i].y = oam_[adr];
         sprites_[i].x = oam_[adr+1];
@@ -716,7 +716,7 @@ void Ppu::load_sprites()
 }
 
 // OAM_SCAN mode 2
-void Ppu::oam_scan()
+void PPU::oam_scan()
 {
     if (clock_ >= 80)
     {
@@ -728,7 +728,7 @@ void Ppu::oam_scan()
 }
 
 // VRAM_READ mode 3
-void Ppu::vram_read()
+void PPU::vram_read()
 {
     if (clock_ >= 172)
     {
@@ -744,7 +744,7 @@ void Ppu::vram_read()
 }
 
 // HBLANK mode 0
-void Ppu::hblank()
+void PPU::hblank()
 {
     if (clock_ >= 204)
     {
@@ -770,7 +770,7 @@ void Ppu::hblank()
 }
 
 // VBLANK mode 1
-void Ppu::vblank()
+void PPU::vblank()
 {
     if (clock_ >= 456)
     {
@@ -786,7 +786,7 @@ void Ppu::vblank()
     }
 }
 
-void Ppu::check_stat()
+void PPU::check_stat()
 {
     int mod = mode();
     bool lyc_comp = (ly_ == lyc_ && stat_ & (1 << 6));
@@ -812,7 +812,7 @@ void Ppu::check_stat()
     }
 }
 
-Palette Ppu::dmg_palette =
+Palette PPU::dmg_palette =
 {{
     0xffff, 0x56b5, 0x294a, 0
 }};

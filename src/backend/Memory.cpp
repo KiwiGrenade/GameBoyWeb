@@ -10,7 +10,7 @@
 
 constexpr u16 Cartridge::romSize_;
 
-Memory::Memory(InterruptController &ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, Ppu& ppu, Clock& cpuClock)
+Memory::Memory(InterruptController &ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, PPU& ppu, Clock& cpuClock)
     : cartridge_(std::make_shared<Cartridge>())
     , ic_(ic)
     , joypad_(joypad)
@@ -240,7 +240,7 @@ void Memory::oamDmaTransfer(u8 byte) {
     // doesn't access out of bounds.
     // copy from XX00-XX9f to oam (fe00-fe9f), where XXh = b
     for (uint8_t i {0}; i <= 0x9f; ++i) {
-        u8 res = read(static_cast<uint16_t>(byte << 8 | i));
+        u8 res = read(static_cast<u16>(byte << 8 | i));
         ppu_.oamWrite(res, i);
     }
 

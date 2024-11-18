@@ -13,7 +13,7 @@
 class Renderer;
 class Memory;
 
-class Ppu
+class PPU
 {
     public:
 
@@ -33,7 +33,7 @@ class Ppu
     enum class Layer { Background, Window, Sprite};
     enum class Color_correction { None, Fast, Proper };
 
-    Ppu(InterruptController &ic,
+    PPU(InterruptController &ic,
         Clock&cpuClock,
         Renderer *r = nullptr);
     void reset();
@@ -42,8 +42,8 @@ class Ppu
     int mode() const;
     int clock() const;
     bool enabled() const;
-    uint8_t read_reg(uint16_t adr);
-    void write_reg(uint8_t b, uint16_t adr);
+    uint8_t read_reg(u16 adr);
+    void write_reg(uint8_t b, u16 adr);
     void set_renderer(Renderer *r);
     u8 oamRead(u16 addr) const;
     void oamWrite(u8 byte, u16 addr);
@@ -56,7 +56,7 @@ class Ppu
     Color color_correct(const Color &c) const;
     Texture get_framebuffer(bool bg = true, bool window = true,
                             bool sprites = true) const;
-    Texture get_tile(uint8_t bank, uint16_t i) const;
+    Texture get_tile(uint8_t bank, u16 i) const;
     std::array<Texture, 40> get_sprites() const;
     Texture get_layer(Layer) const;
     Texture get_sprite_layer() const;

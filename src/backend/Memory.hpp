@@ -9,6 +9,10 @@
 
 #include "Cartridge.hpp"
 #include "Clock.hpp"
+#include "Timer.hpp"
+#include "Joypad.hpp"
+#include "SerialDataTransfer.hpp"
+#include "PPU.hpp"
 #include "Ram.hpp"
 
 /* ######## Memory Map #########
@@ -27,14 +31,9 @@
  * FFFF Interrupt Enable Register 
  */
 
-class Timer;
-class Joypad;
-class SerialDataTransfer;
-class Ppu;
-
 class Memory {
 public:
-    Memory(InterruptController &ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, Ppu& ppu, Clock& cpuClock);
+    Memory(InterruptController &ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, PPU& ppu, Clock& cpuClock);
     
     u8 read(const u16 addr);
     void write(const u8 byte, const u16 addr);
@@ -56,7 +55,7 @@ protected:
     Timer& timer_;
     Joypad& joypad_;
     SerialDataTransfer& serial_;
-    Ppu& ppu_;
+    PPU& ppu_;
     Clock& cpuClock_;
 
     // memory
