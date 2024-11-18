@@ -1,7 +1,7 @@
 #pragma once
 
 #include "utils.hpp"
-class Processor;
+#include "InterruptController.hpp"
 
 class Joypad {
 public:
@@ -16,7 +16,7 @@ public:
         Down
     };
 
-    Joypad(Processor& ic);
+    Joypad(InterruptController& ic);
 
     void press(const Button);
     void release(const Button);
@@ -27,7 +27,7 @@ public:
 protected:
     void update(const Button b, const bool isPressed);
 
-    Processor& cpu_;
+    InterruptController& ic_;
     u8 selectButtons_;
     u8 selectPad_;
     u8 buttons_;

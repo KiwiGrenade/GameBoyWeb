@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include "InterruptController.hpp"
 #include "utils.hpp"
 
 #include <QByteArray>
@@ -29,11 +30,11 @@ class Timer;
 class Joypad;
 class SerialDataTransfer;
 class Ppu;
-class Processor;
+class CPU;
 
 class Memory {
 public:
-    Memory(Timer& timer, Joypad& joypad, SerialDataTransfer& serial, Ppu& ppu, Processor& cpu);
+    Memory(InterruptController &ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, Ppu& ppu, CPU& cpu);
     
     u8 read(const u16 addr);
     void write(const u8 byte, const u16 addr);
@@ -50,12 +51,13 @@ protected:
 
     void oamDmaTransfer(u8 byte);
     
+    std::shared_ptr<Cartridge> cartridge_;
+    InterruptController &ic_;
     Timer& timer_;
     Joypad& joypad_;
     SerialDataTransfer& serial_;
     Ppu& ppu_;
-    Processor& cpu_;
-    std::shared_ptr<Cartridge> cartridge_;
+    CPU& cpu_;
 
     // memory
     VRam vram_ {1};

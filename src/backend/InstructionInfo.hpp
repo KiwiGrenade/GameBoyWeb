@@ -1,16 +1,17 @@
-#ifndef INSTRUCTION_INFO_HPP
-#define INSTRUCTION_INFO_HPP
+#pragma once
 
 #include <array>
 #include <string>
 #include <optional>
 
+#include "utils.hpp"
+
 struct Instruction
 {
     std::string name;
-	uint8_t length;
-	uint8_t cycles;
-    uint8_t branch_cycles;
+	u8 length;
+	u8 cycles;
+    u8 branch_cycles;
     std::string operand1;
     std::string operand2;
 };
@@ -535,4 +536,3 @@ const std::array<Instruction, 256> cb_instructions
 	{"SET", 2, 8, 8, "7", "A"}
 }};
 
-#endif

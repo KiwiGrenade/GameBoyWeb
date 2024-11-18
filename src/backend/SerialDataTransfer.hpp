@@ -1,13 +1,12 @@
 #pragma once
 
 #include "utils.hpp"
+#include "InterruptController.hpp"
 #include <vector>
-
-class Processor;
 
 class SerialDataTransfer {
 public:
-    SerialDataTransfer(Processor& cpu);
+    SerialDataTransfer(InterruptController& ic);
 
     void writeToTestOutput();
     void reset();
@@ -20,7 +19,7 @@ public:
 
 
 protected:
-    Processor& cpu_;
+    InterruptController& ic_;
     /*InterruptController& ic_;*/
     std::vector<char> testOutput_;
     u8 SB_; // serial transfer data

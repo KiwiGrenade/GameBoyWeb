@@ -1,17 +1,19 @@
 #include "Memory.hpp"
+#include "InterruptController.hpp"
 #include "Timer.hpp"
 #include "Joypad.hpp"
 #include "SerialDataTransfer.hpp"
 #include "PPU.hpp"
-#include "Processor.hpp"
+#include "CPU.hpp"
 #include "utils.hpp"
 #include <memory>
 #include <unistd.h>
 
 constexpr u16 Cartridge::romSize_;
 
-Memory::Memory(Timer& timer, Joypad& joypad, SerialDataTransfer& serial, Ppu& ppu, Processor& cpu)
+Memory::Memory(InterruptController &ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, Ppu& ppu, CPU& cpu)
     : cartridge_(std::make_shared<Cartridge>())
+    , ic_(ic)
     , joypad_(joypad)
     , timer_(timer)
     , serial_(serial)

@@ -1,6 +1,7 @@
 #include "PPU.hpp"
+#include "InterruptController.hpp"
 #include "Memory.hpp"
-#include "Processor.hpp"
+#include "CPU.hpp"
 #include "Renderer.hpp"
 
 #include <iostream>
@@ -23,10 +24,12 @@
 #define GBC_CC_BR -0.05
 #define GBC_CC_BG 0.225
 
-Ppu::Ppu(Memory &m,
-         Processor &p,
+Ppu::Ppu(InterruptController &ic,
+         Memory &m,
+         CPU &p,
          Renderer *r)
-    : memory_ {m},
+    : ic_(ic),
+    memory_ {m},
       cpu_ {p},
       renderer_ {r}
 {}
@@ -307,7 +310,7 @@ void Ppu::render_scanline()
 {
     Texture tex {160, 1};
     // STOP mode: if LCD is on, set to all white, if off, all black
-    if (false && cpu_.stopped())
+    if (false && cpu_.isStopped())
     {
         Color c = (lcdc_ & 0x80) ? 0xffff : 0;
         tex.fill(c);
@@ -746,7 +749,7 @@ void Ppu::hblank()
             window_line_ = 0;
             CLEAR_BIT(stat_, 1); // mode 1
             SET_BIT(stat_, 0);
-            cpu_.request_interrupt(Processor::Interrupt::VBLANK);
+            ic_.requestInterrupt(InterruptController::VBlank);
             if (renderer_)
                 renderer_->showScreen();
         }
@@ -792,7 +795,8 @@ void Ppu::check_stat()
     {
         // STAT interrupt is only request when signal goes from 0->1
         if (!stat_signal_)
-            cpu_.request_interrupt(Processor::Interrupt::LCD_STAT);
+            ic_.requestInterrupt(InterruptController::LCD);
+            /*cpu_.request_interrupt(Processor::Interrupt::LCD_STAT);*/
         stat_signal_ = true;
     }
     else

@@ -9,12 +9,13 @@
 #include <thread>
 
 #include "Cartridge.hpp"
+#include "InterruptController.hpp"
 #include "Joypad.hpp"
 #include "SerialDataTransfer.hpp"
 #include "Timer.hpp"
 #include "PPU.hpp"
 #include "Memory.hpp"
-#include "Processor.hpp"
+#include "CPU.hpp"
 
 class GameBoy {
 public:
@@ -53,12 +54,14 @@ protected:
     mutable std::mutex mutex_;
     // flags
     bool isPaused_ = false;
-    Timer timer_ {cpu_};
-    Joypad joypad_ {cpu_};
-    SerialDataTransfer serial_ {cpu_};
-    Ppu ppu_ {memory_, cpu_};
-    Memory memory_ {timer_, joypad_, serial_, ppu_, cpu_};
-    Processor cpu_ {[this](uint16_t adr){ return memory_.read(adr); }, // memory read callback
-        [this](uint8_t b, uint16_t adr){ memory_.write(b, adr); } // memory write callback 
-    };
+    InterruptController ic_ {};
+    Timer timer_ {ic_};
+    Joypad joypad_ {ic_};
+    SerialDataTransfer serial_ {ic_};
+    Ppu ppu_ {ic_, memory_, cpu_};
+    Memory memory_ {ic_, timer_, joypad_, serial_, ppu_, cpu_};
+    /*Processor cpu_ {[this](uint16_t adr){ return memory_.read(adr); }, // memory read callback*/
+    /*    [this](uint8_t b, uint16_t adr){ memory_.write(b, adr); } // memory write callback */
+    /*};*/
+    CPU cpu_ { ic_, memory_ };
 };

@@ -6,9 +6,10 @@
 #include <vector>
 
 #include "GraphicTypes.hpp"
+#include "InterruptController.hpp"
 
 class Renderer;
-class Processor;
+class CPU;
 class Memory;
 
 class Ppu
@@ -31,8 +32,8 @@ class Ppu
     enum class Layer { Background, Window, Sprite};
     enum class Color_correction { None, Fast, Proper };
 
-    Ppu(Memory &m,
-        Processor &p,
+    Ppu(InterruptController &ic, Memory &m,
+        CPU &p,
         Renderer *r = nullptr);
     void reset();
     void enable_cgb(bool is_cgb);
@@ -82,8 +83,9 @@ class Ppu
     float brightness;
 
     private:
+    InterruptController &ic_;
     Memory &memory_;
-    Processor &cpu_;
+    CPU &cpu_;
     Renderer *renderer_;
     int clock_ {0};
     uint8_t window_line_ {0}; // keep track of how many window lines were drawn
@@ -102,9 +104,6 @@ class Ppu
     std::array<uint8_t, 0x40> obpd_ {}; // object palette data
     uint8_t bgpi_ {0}; // ff68
     uint8_t obpi_ {0}; // ff6a
-
-
-
 };
 
 

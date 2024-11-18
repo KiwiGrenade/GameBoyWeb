@@ -1,9 +1,8 @@
 #include "Joypad.hpp"
-#include "Processor.hpp"
 #include "utils.hpp"
 
-Joypad::Joypad(Processor& cpu)
-    : cpu_(cpu)
+Joypad::Joypad(InterruptController& ic)
+    : ic_(ic)
     , selectButtons_(false)
     , selectPad_(false)
     , buttons_(0) {

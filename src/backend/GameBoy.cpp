@@ -68,7 +68,7 @@ void GameBoy::run() {
     
     while(not isStopped_) {
         std::unique_lock<std::mutex> lock(mutex_);
-        pause_cv_.wait(lock, [this] { return !isPaused_; });
+        /*pause_cv_.wait(lock, [this] { return !isPaused_; });*/
         executeNCycles(70224);
     }
     isPaused_ = true;

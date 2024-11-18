@@ -1,12 +1,11 @@
 #pragma once
 
+#include "InterruptController.hpp"
 #include "utils.hpp"
-
-class Processor;
 
 class Timer {
 public:
-    Timer(Processor& cpu);
+    Timer(InterruptController& ic);
 
     void update(uint64_t cycles);
     void reset();
@@ -16,7 +15,7 @@ public:
 protected:
     void timaOverflow();
 
-    Processor& cpu_;
+    InterruptController& ic_;
 
     int div_ticks_;
     int tima_ticks_;

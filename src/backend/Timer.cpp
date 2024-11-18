@@ -1,9 +1,8 @@
 #include "Timer.hpp"
+#include "InterruptController.hpp"
 
-#include "Processor.hpp"
-
-Timer::Timer(Processor& cpu)
-    : cpu_(cpu) {
+Timer::Timer(InterruptController& ic)
+    : ic_(ic) {
     reset();
 }
 
@@ -31,7 +30,7 @@ void Timer::update(uint64_t cycles) {
 
 void Timer::timaOverflow() {
     TIMA_ = TMA_;
-    cpu_.request_interrupt(Processor::Interrupt::TIMER);
+    ic_.requestInterrupt(InterruptController::Timer);
 }
 
 u8 Timer::read(u16 addr) const {
