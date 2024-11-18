@@ -1,19 +1,19 @@
 #include <cstdint>
 #include "CPU.hpp"
 
-// change the nth bit of B_ to x
-#define CHANGE_BIT(B_, n, x) B_ ^= (-x ^ B_) & (1UL << n)
-#define CLEAR_BIT(B_, n) B_ &= ~(1UL << n)
-#define SET_BIT(B_, n) B_ |= (1UL << n)
+// change the nth bit of b to x
+#define CHANGE_BIT(b, n, x) b ^= (-x ^ b) & (1UL << n)
+#define CLEAR_BIT(b, n) b &= ~(1UL << n)
+#define SET_BIT(b, n) b |= (1UL << n)
 
-inline bool half_check(const u8 A_, const u8 B_, const u8 res)
+inline bool half_check(const u8 a, const u8 b, const u8 res)
 {
-    return ((A_ ^ B_ ^ res) & 0x10);
+    return ((a ^ b ^ res) & 0x10);
 }
 
-inline bool half_check_16(const u16 A_, const u16 B_, const u16 res)
+inline bool half_check_16(const u16 a, const u16 b, const u16 res)
 {
-    return ((A_ ^ B_ ^ res) & 0x1000);
+    return ((a ^ b ^ res) & 0x1000);
 }
 
 void CPU::ei()
@@ -42,11 +42,11 @@ void CPU::halt()
     }
 }
 
-void CPU::jr(bool cond, const int8_t D_)
+void CPU::jr(bool cond, const int8_t d)
 {
     if (cond)
     {
-        PC_ += D_;
+        pc_ += d;
         // jr is still incremented by the instruction length
         // afterwards
     }
@@ -58,8 +58,8 @@ void CPU::ret(bool cond)
 {
     if (cond)
     {
-        PC_.lo_ = read(SP_++);
-        PC_.hi_ = read(SP_++);
+        pc_.lo = read(sp_++);
+        pc_.hi = read(sp_++);
     }
     else
         use_branch_cycles_ = true; // no path taken is shorter in cycle length
@@ -69,7 +69,7 @@ void CPU::jp(bool cond, const u16 adr)
 {
     if (cond)
     {
-        PC_ = adr;
+        pc_ = adr;
     }
     else
         use_branch_cycles_ = true;
@@ -79,9 +79,9 @@ void CPU::call(bool cond, const u16 adr)
 {
     if (cond)
     {
-        write(PC_.hi_, --SP_);
-        write(PC_.lo_, --SP_);
-        PC_ = adr;
+        write(pc_.hi, --sp_);
+        write(pc_.lo, --sp_);
+        pc_ = adr;
     }
     else
         use_branch_cycles_ = true;
@@ -89,61 +89,61 @@ void CPU::call(bool cond, const u16 adr)
 
 void CPU::rst(const u8 n)
 {
-    write(PC_.hi_, --SP_);
-    write(PC_.lo_, --SP_);
-    PC_.hi_ = 0;
-    PC_.lo_ = n;
+    write(pc_.hi, --sp_);
+    write(pc_.lo, --sp_);
+    pc_.hi = 0;
+    pc_.lo = n;
 }
 
 void CPU::reti()
 {
-    PC_.lo_ = read(SP_++);
-    PC_.hi_ = read(SP_++);
+    pc_.lo = read(sp_++);
+    pc_.hi = read(sp_++);
     ime_ = true;
 }
 
 // 16-bit load
 void CPU::push(const u16 rp)
 {
-    write((rp & 0xff00) >> 8, --SP_);
-    write(rp & 0xff, --SP_);
+    write((rp & 0xff00) >> 8, --sp_);
+    write(rp & 0xff, --sp_);
 }
 
 void CPU::pop(RegisterPair &rp)
 {
-    rp.lo_ = read(SP_++);
-    rp.hi_ = read(SP_++);
+    rp.lo = read(sp_++);
+    rp.hi = read(sp_++);
 }
 
 void CPU::pop_af()
 {
-    AF_.lo_ = read(SP_++);
-    AF_.hi_ = read(SP_++);
-    AF_.lo_ &= 0xf0; // the lower 4 bits of the F_ register are unused
+    af_.lo = read(sp_++);
+    af_.hi = read(sp_++);
+    af_.lo &= 0xf0; // the lower 4 bits of the f register are unused
 }
 
-void CPU::ldhl_sp(const int8_t D_)
+void CPU::ldhl_sp(const int8_t d)
 {
     set_flag(ZERO, false);
     set_flag(NEGATIVE, false);
-    u16 res = SP_ + static_cast<u16>(D_);
-    if (D_ >= 0)
+    u16 res = sp_ + static_cast<u16>(d);
+    if (d >= 0)
     {
-        set_flag(CARRY, (SP_ & 0xff) + D_ > 0xff);
-        set_flag(HALF, half_check(SP_.lo_, static_cast<u8>(D_), res & 0xff));
+        set_flag(CARRY, (sp_ & 0xff) + d > 0xff);
+        set_flag(HALF, half_check(sp_.lo, static_cast<u8>(d), res & 0xff));
     }
     else
     {
-        set_flag(CARRY, (res & 0xff) <= (SP_ & 0xff));
-        set_flag(HALF, (res & 0xf) <= (SP_ & 0xf));
+        set_flag(CARRY, (res & 0xff) <= (sp_ & 0xff));
+        set_flag(HALF, (res & 0xf) <= (sp_ & 0xf));
     }
-    HL_ = res;
+    hl_ = res;
 }
 
 void CPU::ldd_sp(const u16 adr)
 {
-    write(SP_.lo_, adr);
-    write(SP_.hi_, adr+1);
+    write(sp_.lo, adr);
+    write(sp_.hi, adr+1);
 }
 
 void CPU::inc(u8 &r)
@@ -156,9 +156,9 @@ void CPU::inc(u8 &r)
 
 void CPU::inc_i(u16 adr)
 {
-    u8 B_ {read(adr)};
-    inc(B_);
-    write(B_, adr);
+    u8 b {read(adr)};
+    inc(b);
+    write(b, adr);
 }
 
 void CPU::dec(u8 &r)
@@ -171,46 +171,46 @@ void CPU::dec(u8 &r)
 
 void CPU::dec_i(u16 adr)
 {
-    u8 B_ {read(adr)};
-    dec(B_);
-    write(B_, adr);
+    u8 b {read(adr)};
+    dec(b);
+    write(b, adr);
 }
 
-void CPU::add_sp(int8_t D_)
+void CPU::add_sp(int8_t d)
 {
-    u16 res = SP_ + D_;
+    u16 res = sp_ + d;
     set_flag(ZERO, false);
     set_flag(NEGATIVE, false);
-    set_flag(HALF, (res & 0xf) < (SP_ & 0xf));
-    set_flag(CARRY, (res & 0xff) < (SP_ & 0xff));
-    SP_ = res;
+    set_flag(HALF, (res & 0xf) < (sp_ & 0xf));
+    set_flag(CARRY, (res & 0xff) < (sp_ & 0xff));
+    sp_ = res;
 }
 
 void CPU::daa()
 {
-    u8 A_ = AF_.hi_;
+    u8 a = af_.hi;
     if (!get_flag(NEGATIVE))
     {
-        if (get_flag(CARRY) || A_ > 0x99)
+        if (get_flag(CARRY) || a > 0x99)
         {
-            A_ += 0x60;
+            a += 0x60;
             set_flag(CARRY, true);
         }
-        if (get_flag(HALF) || (A_ & 0x0f) > 0x09)
+        if (get_flag(HALF) || (a & 0x0f) > 0x09)
         {
-            A_ += 0x6;
+            a += 0x6;
         }
     }
     else
     {
         if (get_flag(CARRY))
-            A_ -= 0x60;
+            a -= 0x60;
         if (get_flag(HALF))
-            A_ -= 0x6;
+            a -= 0x6;
     }
-    set_flag(ZERO, A_ == 0);
+    set_flag(ZERO, a == 0);
     set_flag(HALF, false);
-    AF_.hi_ = A_;
+    af_.hi = a;
 }
 
 void CPU::scf()
@@ -222,7 +222,7 @@ void CPU::scf()
 
 void CPU::cpl()
 {
-    AF_.hi_ = ~AF_.hi_;
+    af_.hi = ~af_.hi;
     set_flag(NEGATIVE, true);
     set_flag(HALF, true);
 }
@@ -236,71 +236,71 @@ void CPU::ccf()
 
 void CPU::adc(const u8 r, bool cy)
 {
-    u16 res = AF_.hi_ + r + cy;
-    u8 res8 = AF_.hi_ + r + cy;
+    u16 res = af_.hi + r + cy;
+    u8 res8 = af_.hi + r + cy;
     set_flag(ZERO, res8 == 0);
     set_flag(NEGATIVE, false);
-    set_flag(HALF, half_check(AF_.hi_, r, res8));
+    set_flag(HALF, half_check(af_.hi, r, res8));
     set_flag(CARRY, res > 0x00ff);
-    AF_.hi_ = AF_.hi_ + r + cy;
+    af_.hi = af_.hi + r + cy;
 }
 
 void CPU::sbc(const u8 r, bool cy)
 {
-    u16 res = AF_.hi_ - r - cy;
-    u8 res8 = AF_.hi_ - r - cy;
+    u16 res = af_.hi - r - cy;
+    u8 res8 = af_.hi - r - cy;
     set_flag(ZERO, res8 == 0);
     set_flag(NEGATIVE, true);
-    set_flag(HALF, half_check(AF_.hi_, r, res8));
+    set_flag(HALF, half_check(af_.hi, r, res8));
     set_flag(CARRY, res > 0xff);
-    AF_.hi_ = AF_.hi_ - r - cy;
+    af_.hi = af_.hi - r - cy;
 }
 
 void CPU::andr(const u8 r)
 {
-    u8 res = AF_.hi_ & r;
+    u8 res = af_.hi & r;
     set_flag(ZERO, res == 0);
     set_flag(NEGATIVE, false);
     set_flag(HALF, true);
     set_flag(CARRY, false);
-    AF_.hi_ = res;
+    af_.hi = res;
 }
 
 void CPU::xorr(const u8 r)
 {
-    u8 res = AF_.hi_ ^ r;
+    u8 res = af_.hi ^ r;
     set_flag(ZERO, res == 0);
     set_flag(NEGATIVE, false);
     set_flag(HALF, false);
     set_flag(CARRY, false);
-    AF_.hi_ = res;
+    af_.hi = res;
 }
 
 void CPU::orr(const u8 r)
 {
-    u8 res = AF_.hi_ | r;
+    u8 res = af_.hi | r;
     set_flag(ZERO, res == 0);
     set_flag(NEGATIVE, false);
     set_flag(HALF, false);
     set_flag(CARRY, false);
-    AF_.hi_ = res;
+    af_.hi = res;
 }
 
 void CPU::cp(const u8 r)
 {
-    int16_t res = AF_.hi_ - r;
+    int16_t res = af_.hi - r;
     set_flag(ZERO, res == 0);
     set_flag(NEGATIVE, true);
-    set_flag(HALF, half_check(AF_.hi_, r, res & 0xff));
+    set_flag(HALF, half_check(af_.hi, r, res & 0xff));
     set_flag(CARRY, res < 0);
 }
 
 void CPU::add(const u16 rp)
 {
     set_flag(NEGATIVE, false);
-    set_flag(HALF, half_check_16(HL_, rp, HL_ + rp));
-    set_flag(CARRY, (HL_ + rp) > 0xffff);
-    HL_ += rp;
+    set_flag(HALF, half_check_16(hl_, rp, hl_ + rp));
+    set_flag(CARRY, (hl_ + rp) > 0xffff);
+    hl_ += rp;
 }
 
 void CPU::rlc(u8 &r)
@@ -316,15 +316,15 @@ void CPU::rlc(u8 &r)
 
 void CPU::rlca()
 {
-    rlc(AF_.hi_);
+    rlc(af_.hi);
     set_flag(ZERO, false);
 }
 
 void CPU::rlc_i(u16 adr)
 {
-    u8 B_ {read(adr)};
-    rlc(B_);
-    write(B_, adr);
+    u8 b {read(adr)};
+    rlc(b);
+    write(b, adr);
 }
 
 void CPU::rrc(u8 &r)
@@ -341,15 +341,15 @@ void CPU::rrc(u8 &r)
 // 0x0f (rrca) modifies flags differently than cb 0f
 void CPU::rrca()
 {
-    rrc(AF_.hi_);
+    rrc(af_.hi);
     set_flag(ZERO, false);
 }
 
 void CPU::rrc_i(u16 adr)
 {
-    u8 B_ {read(adr)};
-    rrc(B_);
-    write(B_, adr);
+    u8 b {read(adr)};
+    rrc(b);
+    write(b, adr);
 }
 
 void CPU::rl(u8 &r)
@@ -365,21 +365,21 @@ void CPU::rl(u8 &r)
 
 void CPU::rla()
 {
-    rl(AF_.hi_);
+    rl(af_.hi);
     set_flag(ZERO, false);
 }
 
 void CPU::rl_i(u16 adr)
 {
-    u8 B_ {read(adr)};
-    rl(B_);
-    write(B_, adr);
+    u8 b {read(adr)};
+    rl(b);
+    write(b, adr);
 }
 
 // 0x1f modifies flags differently to cb 1f
 void CPU::rra()
 {
-    rr(AF_.hi_);
+    rr(af_.hi);
     set_flag(ZERO, false);
 }
 
@@ -396,9 +396,9 @@ void CPU::rr(u8 &r)
 
 void CPU::rr_i(u16 adr)
 {
-    u8 B_ {read(adr)};
-    rr(B_);
-    write(B_, adr);
+    u8 b {read(adr)};
+    rr(b);
+    write(b, adr);
 }
 
 void CPU::sla(u8 &r)
@@ -412,9 +412,9 @@ void CPU::sla(u8 &r)
 
 void CPU::sla_i(u16 adr)
 {
-    u8 B_ {read(adr)};
-    sla(B_);
-    write(B_, adr);
+    u8 b {read(adr)};
+    sla(b);
+    write(b, adr);
 }
 
 void CPU::sra(u8 &r)
@@ -429,9 +429,9 @@ void CPU::sra(u8 &r)
 
 void CPU::sra_i(u16 adr)
 {
-    u8 B_ {read(adr)};
-    sra(B_);
-    write(B_, adr);
+    u8 b {read(adr)};
+    sra(b);
+    write(b, adr);
 }
 
 void CPU::swap(u8 &r)
@@ -447,9 +447,9 @@ void CPU::swap(u8 &r)
 
 void CPU::swap_i(u16 adr)
 {
-    u8 B_ {read(adr)};
-    swap(B_);
-    write(B_, adr);
+    u8 b {read(adr)};
+    swap(b);
+    write(b, adr);
 }
 
 void CPU::srl(u8 &r)
@@ -463,9 +463,9 @@ void CPU::srl(u8 &r)
 
 void CPU::srl_i(u16 adr)
 {
-    u8 B_ {read(adr)};
-    srl(B_);
-    write(B_, adr);
+    u8 b {read(adr)};
+    srl(b);
+    write(b, adr);
 }
 
 void CPU::bit(const u8 n, const u8 r)
@@ -482,9 +482,9 @@ void CPU::res(const u8 n, u8 &r)
 
 void CPU::res_i(u8 n, u16 adr)
 {
-    u8 B_ {read(adr)};
-    res(n, B_);
-    write(B_, adr);
+    u8 b {read(adr)};
+    res(n, b);
+    write(b, adr);
 }
 
 void CPU::set(const u8 n, u8 &r)
@@ -494,8 +494,8 @@ void CPU::set(const u8 n, u8 &r)
 
 void CPU::set_i(u8 n, u16 adr)
 {
-    u8 B_ {read(adr)};
-    set(n, B_);
-    write(B_, adr);
+    u8 b {read(adr)};
+    set(n, b);
+    write(b, adr);
 }
 

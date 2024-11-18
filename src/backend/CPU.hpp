@@ -9,6 +9,9 @@
 #include "DebugTypes.hpp"
 #include "CPUClock.hpp"
 
+typedef RegisterPair r16;
+typedef u8&         r8;
+
 class CPU
 {
     public:
@@ -26,15 +29,7 @@ class CPU
     void step();
     void reset();
     CPUDump getDebugDump() const noexcept;
-    void request_interrupt(Interrupt i);
-    void toggle_double_speed();
 
-    u16 af() const noexcept { return af_; }
-    u16 bc() const noexcept { return bc_; }
-    u16 de() const noexcept { return de_; }
-    u16 hl() const noexcept { return hl_; }
-    u16 sp() const noexcept { return sp_; }
-    u16 pc() const noexcept { return pc_; }
     uint32_t getCycles() const noexcept { return clock_.cycles_; }
     // Manually add cycles to cycle count. This is useful for OAM DMA transfers: they need to take
     // 160 machine cycles (640 clock cycles).
@@ -59,7 +54,9 @@ class CPU
         ZERO = 1 << 7,
     };
 
-    RegisterPair af_, bc_, de_, hl_, sp_, pc_;
+    r16 AF_, BC_, DE_, HL_, SP_, PC_;
+
+    r8& A_, F_, B_, C_, D_, E_, H_, L_;
     /*uint32_t cycles_ {0};*/
     bool use_branch_cycles_ {false};
     bool ime_ {false};
