@@ -24,11 +24,9 @@
 #define GBC_CC_BG 0.225
 
 Ppu::Ppu(InterruptController &ic,
-         Memory &m,
          Clock &cpuClock,
          Renderer *r)
     : ic_(ic),
-    memory_ {m},
       cpuClock_ {cpuClock},
       renderer_ {r}
 {}
@@ -59,19 +57,34 @@ void Ppu::reset()
     obpi_ = 0;
 }
 
-/*u8 Ppu::oamRead(u16 adr) const*/
-/*{*/
-/*    if (adr >= oam_.size())*/
-/*        Utils::warning("Trying to READ from wrong OAM index!");*/
-/*    return oam_[adr];*/
-/*}*/
-/**/
-/*void Ppu::oamWrite(u8 b, u16 adr)*/
-/*{*/
-/*    if (adr >= oam_.size())*/
-/*        Utils::warning("Trying to WRITE to wrong OAM index!");*/
-/*    oam_[adr] = b;*/
-/*}*/
+u8 Ppu::oamRead(u16 adr) const
+{
+    if (adr >= oam_.size())
+        Utils::warning("Trying to READ from wrong OAM index!");
+    return oam_[adr];
+}
+
+void Ppu::oamWrite(u8 b, u16 adr)
+{
+    if (adr >= oam_.size())
+        Utils::warning("Trying to WRITE to wrong OAM index!");
+    oam_[adr] = b;
+}
+
+u8 Ppu::vramRead(u8 bank, u16 adr) const
+{
+    adr -= 0x8000;
+    if (adr >= vram_.getSize())
+        Utils::warning("Trying to READ from wrong VRAM index!");
+    return vram_.read(bank, adr);
+}
+
+void Ppu::vramWrite(u8 b, u8 bank, u16 adr) {
+    adr -= 0x8000;
+    if (adr >= vram_.getSize())
+        Utils::warning("Trying to WRITE to wrong VRAM index!");
+    vram_.write(b, bank, adr);
+}
 
 void Ppu::enable_cgb(bool is_cgb)
 {
@@ -249,8 +262,8 @@ Texture Ppu::get_tile(uint8_t bank, uint16_t i) const
     uint16_t tile_base = 0x8000;
     for (uint8_t byte = 0; byte < 16; byte += 2)
     {
-        uint8_t lo_byte = read_vram(bank, byte+tile_base+i*16);
-        uint8_t hi_byte = read_vram(bank, byte+tile_base+i*16+1);
+        uint8_t lo_byte = vramRead(bank, byte+tile_base+i*16);
+        uint8_t hi_byte = vramRead(bank, byte+tile_base+i*16+1);
         for (uint8_t px = 0; px < 8; ++px)
         {
             bool hi_bit = hi_byte & 1 << (7-px);
@@ -283,7 +296,7 @@ std::array<uint8_t, 32*32> Ppu::get_raw_background()
     uint16_t bg_map = ((lcdc_ & (1 << 3)) ? 0x9c00 : 0x9800);
     std::array<uint8_t, 32*32> raw {};
     for (int i = 0; i < 32*32; ++i)
-        raw[i] = read(bg_map+i);
+        raw[i] = vramRead(0, bg_map+i);
     return raw;
 }
 
@@ -298,26 +311,6 @@ Ppu::Dump Ppu::dump_values() const
         wy_, wx_,
         bgpi_, bgpd_, obpi_, obpd_
     };
-}
-
-uint8_t Ppu::read(uint16_t adr) const
-{
-    return memory_.read(adr);
-}
-
-void Ppu::write(uint8_t b, uint16_t adr)
-{
-    memory_.write(b, adr);
-}
-
-uint8_t Ppu::read_vram(uint8_t bank, uint16_t adr) const
-{
-    return memory_.vram_read(bank, adr);
-}
-
-void Ppu::write_vram(uint8_t b, uint8_t bank, uint16_t adr)
-{
-    memory_.vram_write(b, bank, adr);
 }
 
 void Ppu::render_scanline()
@@ -410,9 +403,9 @@ void Ppu::render_layer_pixel(Texture &tex, Ppu::Layer layer,
     uint16_t tile_i = (tile_y*32) + tile_x + tile_map;
     // CGB only: corresponding tile attributeibutes held in parallel location
     // in VRAM bank 1
-    uint8_t tile_attribute = cgb_mode_ ? read_vram(1, tile_i) : 0;
+    uint8_t tile_attribute = cgb_mode_ ? vramRead(1, tile_i) : 0;
     // index of the tile in tile data of the tile to draw
-    uint8_t tile_data_i = read_vram(0, tile_i);
+    uint8_t tile_data_i = vramRead(0, tile_i);
     // bank containing the tile data
     uint8_t bank = (tile_attribute & 1 << 3) ? 1 : 0;
     // location to read tile data from
@@ -436,8 +429,8 @@ void Ppu::render_layer_pixel(Texture &tex, Ppu::Layer layer,
     else
         adr += (y % 8) * 2;
     // get two bytes (one row of pixels) from the tile data
-    uint8_t lo_byte = read_vram(bank, adr);
-    uint8_t hi_byte = read_vram(bank, adr+1);
+    uint8_t lo_byte = vramRead(bank, adr);
+    uint8_t hi_byte = vramRead(bank, adr+1);
     // get the pixel offset of the tile (0-7) (tiles are 8x8)
     // take into account horizontal flip
     uint8_t px_offset = (x % 8);
@@ -527,8 +520,8 @@ void Ppu::render_sprite_line(Texture &tex)
             adr += (ln % 8) * 2;
         // CGB Only: attributeibute bit 3 specifies VRAM bank, otherwise 0
         uint8_t bank = (cgb_mode_ && s.attribute & 1 << 3) ? 1 : 0;
-        uint8_t low_byte = read_vram(bank, adr);
-        uint8_t high_byte = read_vram(bank, adr+1);
+        uint8_t low_byte = vramRead(bank, adr);
+        uint8_t high_byte = vramRead(bank, adr+1);
         // if CGB: palette is in attributeibute bits 0-2, otherwise bit 4
         uint8_t pal_idx = (cgb_mode_) ? (s.attribute & 7) : (s.attribute & 1 << 4);
         Palette pal = get_sprite_palette(pal_idx);
@@ -711,12 +704,12 @@ Color Ppu::color_correct(const Color &c) const
 void Ppu::load_sprites()
 {
     uint8_t i = 0;
-    for (uint16_t adr = 0xFE00; adr < 0xFEa0; adr += 4) // sprites are 4 bytes
+    for (uint16_t adr = 0; adr < 0xa0; adr += 4) // sprites are 4 bytes
     {
-        sprites_[i].y = read(adr);
-        sprites_[i].x = read(adr+1);
-        sprites_[i].tile = read(adr+2);
-        sprites_[i].attribute = read(adr+3);
+        sprites_[i].y = oam_[adr];
+        sprites_[i].x = oam_[adr+1];
+        sprites_[i].tile = oam_[adr+2];
+        sprites_[i].attribute = oam_[adr+3];
         sprites_[i].id = i;
         ++i;
     }

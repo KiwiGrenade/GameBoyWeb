@@ -59,7 +59,7 @@ protected:
     Timer timer_ {ic_};
     Joypad joypad_ {ic_};
     SerialDataTransfer serial_ {ic_};
-    Ppu ppu_ {ic_, memory_, cpuClock_};
+    Ppu ppu_ {ic_, cpuClock_};
     Memory memory_ {ic_, timer_, joypad_, serial_, ppu_, cpuClock_};
     CPU cpu_ { ic_, cpuClock_, memory_ };
 };

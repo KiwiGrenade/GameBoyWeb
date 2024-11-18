@@ -60,7 +60,6 @@ protected:
     Clock& cpuClock_;
 
     // memory
-    VRam vram_ {1};
     WorkRam wram_ {2};
     std::array<u8, 0x80> io_ {};
     std::array<u8, 0x7F> hram_ {};

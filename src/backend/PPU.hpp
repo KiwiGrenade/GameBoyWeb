@@ -8,6 +8,7 @@
 #include "GraphicTypes.hpp"
 #include "Clock.hpp"
 #include "InterruptController.hpp"
+#include "Ram.hpp"
 
 class Renderer;
 class Memory;
@@ -32,10 +33,9 @@ class Ppu
     enum class Layer { Background, Window, Sprite};
     enum class Color_correction { None, Fast, Proper };
 
-    Ppu(InterruptController &ic, Memory &m,
+    Ppu(InterruptController &ic,
         Clock&cpuClock,
         Renderer *r = nullptr);
-    std::array<u8, 0xA0> oam_ {};
     void reset();
     void enable_cgb(bool is_cgb);
     void step(size_t cycles);
@@ -45,8 +45,10 @@ class Ppu
     uint8_t read_reg(uint16_t adr);
     void write_reg(uint8_t b, uint16_t adr);
     void set_renderer(Renderer *r);
-    /*u8 oamRead(u16 addr) const;*/
-    /*void oamWrite(u8 byte, u16 addr);*/
+    u8 oamRead(u16 addr) const;
+    void oamWrite(u8 byte, u16 addr);
+    u8 vramRead(u8 bank, u16 adr) const;
+    void vramWrite(u8 b, u8 bank, u16 adr);
 
     // debug
     Palette get_bg_palette(uint8_t idx) const;
@@ -62,10 +64,6 @@ class Ppu
     Dump dump_values() const;
 
     private:
-    uint8_t read(uint16_t adr) const;
-    void write(uint8_t b, uint16_t adr);
-    uint8_t read_vram(uint8_t bank, uint16_t adr) const;
-    void write_vram(uint8_t b, uint8_t bank, uint16_t adr);
     void render_scanline();
     void render_layer_line(Texture &tex, Layer l);
     // (x,y): coordinate in VRAM tilemap to get pixel from
@@ -87,11 +85,12 @@ class Ppu
 
     private:
     InterruptController &ic_;
-    Memory &memory_;
     Clock &cpuClock_;
     Renderer *renderer_;
 
     // memory
+    std::array<u8, 0xA0> oam_ {};
+    VRam vram_{1};
 
     int clock_ {0};
     uint8_t window_line_ {0}; // keep track of how many window lines were drawn

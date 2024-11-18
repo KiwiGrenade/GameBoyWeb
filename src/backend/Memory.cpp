@@ -4,7 +4,6 @@
 #include "Joypad.hpp"
 #include "SerialDataTransfer.hpp"
 #include "PPU.hpp"
-#include "CPU.hpp"
 #include "utils.hpp"
 #include <memory>
 #include <unistd.h>
@@ -76,7 +75,7 @@ void Memory::write(const u8 byte, const u16 addr) {
     // VRAM
     else if(addr < 0xA000) {
         if(not ppu_.enabled() || ppu_.mode() != 3)
-            vram_.write(byte, 0, addr - 0x8000);
+            ppu_.vramWrite(byte, 0, addr);
     }
     // ERAM
     else if(addr < 0xC000) {
@@ -101,8 +100,7 @@ void Memory::write(const u8 byte, const u16 addr) {
     // only accessible if PPU enabled and mode is 0 or 1
     else if(addr < 0xFEA0) {
         if(not ppu_.enabled() || ppu_.mode() < 2)
-            /*ppu_.oamWrite(byte, addr - 0xFE00);*/
-            ppu_.oam_[addr - 0xFE00] = byte;
+            ppu_.oamWrite(byte, addr - 0xFE00);
     }
     // Undefined
     else if(addr < 0xFF00) {
@@ -166,7 +164,7 @@ u8 Memory::read(const u16 addr) {
     else if(addr < 0xA000) {
         // VRAM is accessible if PPU is disabled or mode isn't 3
         if(not ppu_.enabled() || ppu_.mode() != 3)
-            vram_.read(0, addr-0x8000);
+            ppu_.vramRead(0, addr);
     }
     // ERAM
     else if(addr < 0xC000) {
@@ -188,8 +186,7 @@ u8 Memory::read(const u16 addr) {
     // OAM
     else if(addr < 0xFEA0) {
         /*if(not ppu_.enabled() || ppu_.mode() < 2)*/
-        res = ppu_.oam_[addr - 0xFE00];
-        /*res = oam_[addr - 0xFE00];*/
+        res = ppu_.oamRead(addr - 0xFE00);
     }
     // undefined
     else if(addr < 0xFF00) {
@@ -236,20 +233,6 @@ u8 Memory::read(const u16 addr) {
     return res;
 }
 
-uint8_t Memory::vram_read(uint8_t bank, uint16_t a) const
-{
-    if (a < 0x8000 || a > 0x9fff)
-        return 0xff; // not in range of VRAM
-    return vram_.read(bank, a-0x8000);
-}
-
-void Memory::vram_write(uint8_t b, uint8_t bank, uint16_t a)
-{
-    if (a < 0x8000 || a > 0x9fff)
-        return; // not in range of VRAM
-    vram_.write(b, bank, a-0x8000);
-}
-
 void Memory::oamDmaTransfer(u8 byte) {
     if (byte > 0xf1) // only defined for range between 00-f1
         throw std::runtime_error {"Attempted to write value outside 00-f1 for OAM DMA transfer"};
@@ -258,7 +241,7 @@ void Memory::oamDmaTransfer(u8 byte) {
     // copy from XX00-XX9f to oam (fe00-fe9f), where XXh = b
     for (uint8_t i {0}; i <= 0x9f; ++i) {
         u8 res = read(static_cast<uint16_t>(byte << 8 | i));
-        ppu_.oam_[i] = res;
+        ppu_.oamWrite(res, i);
     }
 
     // OAM DMA transfer should take 160 machine cycles (160*4 clock cycles)
