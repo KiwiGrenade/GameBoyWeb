@@ -50,6 +50,7 @@ void Ppu::reset()
     wx_ = 0;
     sprites_ = {};
     stat_signal_ = false;
+    oam_ = {};
     // CGB registers
     cgb_mode_ = false;
     bgpd_ = {};
@@ -57,6 +58,20 @@ void Ppu::reset()
     bgpi_ = 0;
     obpi_ = 0;
 }
+
+/*u8 Ppu::oamRead(u16 adr) const*/
+/*{*/
+/*    if (adr >= oam_.size())*/
+/*        Utils::warning("Trying to READ from wrong OAM index!");*/
+/*    return oam_[adr];*/
+/*}*/
+/**/
+/*void Ppu::oamWrite(u8 b, u16 adr)*/
+/*{*/
+/*    if (adr >= oam_.size())*/
+/*        Utils::warning("Trying to WRITE to wrong OAM index!");*/
+/*    oam_[adr] = b;*/
+/*}*/
 
 void Ppu::enable_cgb(bool is_cgb)
 {
@@ -696,7 +711,7 @@ Color Ppu::color_correct(const Color &c) const
 void Ppu::load_sprites()
 {
     uint8_t i = 0;
-    for (uint16_t adr = 0xfe00; adr < 0xfea0; adr += 4) // sprites are 4 bytes
+    for (uint16_t adr = 0xFE00; adr < 0xFEa0; adr += 4) // sprites are 4 bytes
     {
         sprites_[i].y = read(adr);
         sprites_[i].x = read(adr+1);

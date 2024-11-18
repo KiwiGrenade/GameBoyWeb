@@ -35,6 +35,7 @@ class Ppu
     Ppu(InterruptController &ic, Memory &m,
         Clock&cpuClock,
         Renderer *r = nullptr);
+    std::array<u8, 0xA0> oam_ {};
     void reset();
     void enable_cgb(bool is_cgb);
     void step(size_t cycles);
@@ -44,6 +45,8 @@ class Ppu
     uint8_t read_reg(uint16_t adr);
     void write_reg(uint8_t b, uint16_t adr);
     void set_renderer(Renderer *r);
+    /*u8 oamRead(u16 addr) const;*/
+    /*void oamWrite(u8 byte, u16 addr);*/
 
     // debug
     Palette get_bg_palette(uint8_t idx) const;
@@ -87,6 +90,9 @@ class Ppu
     Memory &memory_;
     Clock &cpuClock_;
     Renderer *renderer_;
+
+    // memory
+
     int clock_ {0};
     uint8_t window_line_ {0}; // keep track of how many window lines were drawn
     uint8_t lcdc_ {0x90}, stat_ {0x00}; // ff40, ff41
@@ -97,6 +103,7 @@ class Ppu
     std::array<Sprite, 40> sprites_ {};
     bool stat_signal_ {false}; // for activating STAT interrupt
     static Palette dmg_palette;
+
 
     // CGB registers
     bool cgb_mode_ {false};
