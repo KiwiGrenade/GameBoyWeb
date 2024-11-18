@@ -24,7 +24,7 @@
 #define GBC_CC_BG 0.225
 
 PPU::PPU(InterruptController &ic,
-         Clock &cpuClock,
+         CPUClock &cpuClock,
          Renderer *r)
     : ic_(ic),
       cpuClock_ {cpuClock},

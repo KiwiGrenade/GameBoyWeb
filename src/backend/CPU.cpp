@@ -29,7 +29,7 @@
 #define SET_BIT(b, n) b |= (1UL << n)
 #define CLEAR_BIT(b, n) b &= ~(1UL << n)
 
-CPU::CPU(InterruptController& ic, Clock& clock, Memory& memory)
+CPU::CPU(InterruptController& ic, CPUClock& clock, Memory& memory)
     : ic_(ic)
     , clock_(clock)
     , memory_(memory)

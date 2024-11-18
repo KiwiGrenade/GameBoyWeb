@@ -8,7 +8,7 @@
 #include <memory>
 
 #include "Cartridge.hpp"
-#include "Clock.hpp"
+#include "CPUClock.hpp"
 #include "Timer.hpp"
 #include "Joypad.hpp"
 #include "SerialDataTransfer.hpp"
@@ -33,7 +33,7 @@
 
 class Memory {
 public:
-    Memory(InterruptController &ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, PPU& ppu, Clock& cpuClock);
+    Memory(InterruptController &ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, PPU& ppu, CPUClock& cpuClock);
     
     u8 read(const u16 addr);
     void write(const u8 byte, const u16 addr);
@@ -56,7 +56,7 @@ protected:
     Joypad& joypad_;
     SerialDataTransfer& serial_;
     PPU& ppu_;
-    Clock& cpuClock_;
+    CPUClock& cpuClock_;
 
     // memory
     WorkRam wram_ {2};

@@ -1,6 +1,6 @@
 #pragma once
 #include <stdint.h>
-struct Clock {
+struct CPUClock {
     void reset() {
         cycles_ = 0;
         isStopped_ = false;

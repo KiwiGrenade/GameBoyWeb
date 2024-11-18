@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "GraphicTypes.hpp"
-#include "Clock.hpp"
+#include "CPUClock.hpp"
 #include "InterruptController.hpp"
 #include "Ram.hpp"
 
@@ -34,7 +34,7 @@ class PPU
     enum class Color_correction { None, Fast, Proper };
 
     PPU(InterruptController &ic,
-        Clock&cpuClock,
+        CPUClock &cpuClock,
         Renderer *r = nullptr);
     void reset();
     void enable_cgb(bool is_cgb);
@@ -85,7 +85,7 @@ class PPU
 
     private:
     InterruptController &ic_;
-    Clock &cpuClock_;
+    CPUClock &cpuClock_;
     Renderer *renderer_;
 
     // memory

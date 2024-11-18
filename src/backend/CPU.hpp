@@ -7,7 +7,7 @@
 #include "Memory.hpp"
 #include "RegisterPair.hpp"
 #include "DebugTypes.hpp"
-#include "Clock.hpp"
+#include "CPUClock.hpp"
 
 class CPU
 {
@@ -22,7 +22,7 @@ class CPU
         JOYPAD,
     };
 
-    CPU(InterruptController& ic, Clock& clock, Memory& memory_);
+    CPU(InterruptController& ic, CPUClock& clock, Memory& memory_);
     void step();
     void reset();
     CPUDump getDebugDump() const noexcept;
@@ -48,7 +48,7 @@ class CPU
     private:
 
     InterruptController& ic_;
-    Clock& clock_;
+    CPUClock& clock_;
     Memory& memory_;
 
     enum Flags : u8

@@ -55,7 +55,7 @@ protected:
     // flags
     bool isPaused_ = false;
     InterruptController ic_ {};
-    Clock cpuClock_ {};
+    CPUClock cpuClock_ {};
     Timer timer_ {ic_};
     Joypad joypad_ {ic_};
     SerialDataTransfer serial_ {ic_};
