@@ -1,7 +1,12 @@
 #pragma once
 
 #include "utils.hpp"
+#include "Rom.hpp"
+#include "Ram.hpp"
+#include "MemoryBankController.hpp"
+
 #include <QByteArray>
+#include <optional>
 
 class Cartridge {
 public:
@@ -9,17 +14,25 @@ public:
     Cartridge(const std::string &filePath);
     Cartridge(const QByteArray &fileContent);
 
-    inline u8 read(const u16 addr) { return rom_[addr]; };
+    u8 read(const u16 addr) const;
+    void write(const u8 byte, const u16 addr);
     inline std::string getTitle() { return title_; };
     static constexpr u16
     romSize_ = 0x8000;
 
 private:
+    void initMBC();
+    void initRam();
     std::array <u8, romSize_> extractROM(const std::string &filePathStr);
     std::array <u8, romSize_> extractROM(const QByteArray &fileContent);
     std::string extractTitle();
 
-    std::array <u8, romSize_> rom_;
+    Rom rom_;
+    bool hasRam_ {false};
+    std::optional<ERam> ram_ {std::nullopt};
+    std::unique_ptr<MemoryBankController> mbc_ {nullptr};
+
+
 
     std::string title_;
 };

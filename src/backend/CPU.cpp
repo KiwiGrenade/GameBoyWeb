@@ -64,7 +64,6 @@ u8 CPU::fetch8()
     // HALT bug: the processor fails to increment the PC_
     ++PC_;
     return op;
-
 }
 
 uint16_t CPU::fetch16()
@@ -101,13 +100,13 @@ bool CPU::checkInterrupt()
 
     if (request & 1)
         serviced = executeInterrupt(VBLANK);
-    else if (request & 1 << 1)
+    if (request & 1 << 1)
         serviced = executeInterrupt(LCD_STAT);
-    else if (request & 1 << 2)
+    if (request & 1 << 2)
         serviced = executeInterrupt(TIMER);
-    else if (request & 1 << 3)
+    if (request & 1 << 3)
         serviced = executeInterrupt(SERIAL);
-    else if (request & 1 << 4)
+    if (request & 1 << 4)
         serviced = executeInterrupt(JOYPAD);
     return serviced;
 }

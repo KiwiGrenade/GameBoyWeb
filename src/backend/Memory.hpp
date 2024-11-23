@@ -62,5 +62,4 @@ protected:
     WorkRam wram_{2};
     std::array<u8, 0x80> io_{};
     std::array<u8, 0x7F> hram_{};
-    bool wroteToSram_ = false;
 };

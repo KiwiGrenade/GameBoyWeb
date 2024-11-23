@@ -9,7 +9,7 @@ Cartridge::romSize_;
 Memory::Memory(InterruptController &ic, Timer &timer, Joypad &joypad, SerialDataTransfer &serial, PPU &ppu,
                CPUClock &cpuClock)
         : cartridge_(std::make_shared<Cartridge>()), ic_(ic), joypad_(joypad), timer_(timer), serial_(serial),
-          ppu_(ppu), cpuClock_(cpuClock), wroteToSram_(false) {
+          ppu_(ppu), cpuClock_(cpuClock){
     initIo();
 }
 
@@ -59,9 +59,7 @@ void Memory::write(const u8 byte, const u16 addr) {
 
     // ROM
     if (addr < 0x8000) {
-        return;
-        Utils::warning("Write to ROM");
-        /*cartridge_->write(byte, addr);*/
+        cartridge_->write(byte, addr);
     }
         // VRAM
     else if (addr < 0xA000) {
@@ -71,7 +69,7 @@ void Memory::write(const u8 byte, const u16 addr) {
         // ERAM
     else if (addr < 0xC000) {
         /*eram_.write(byte, 0, addr - 0xB0000);*/
-        /*cart->write(byte, addr);*/
+        cartridge_->write(byte, addr);
         /*wroteToSram_ = true;*/
         /*Utils::warning("Write to ERAM");*/
     }
@@ -159,8 +157,7 @@ u8 Memory::read(const u16 addr) {
     }
         // ERAM
     else if (addr < 0xC000) {
-        /*eram_.read(0, addr - 0xB000);*/
-        /*res = cartridge_->read(addr);*/
+        res = cartridge_->read(addr);
     }
         // WRAM0
     else if (addr < 0xD000) {

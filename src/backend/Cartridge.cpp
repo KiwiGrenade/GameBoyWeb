@@ -2,15 +2,75 @@
 #include <array>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <qstringview.h>
+#include "Ram.hpp"
 #include "utils.hpp"
 
 Cartridge::Cartridge(const std::string &filePath)
-        : rom_(extractROM(filePath)), title_(extractTitle()) {
+        : rom_(filePath), title_("") {
 }
 
 Cartridge::Cartridge(const QByteArray &fileContent)
-        : rom_(extractROM(fileContent)), title_(extractTitle()) {
+        : rom_(fileContent), title_("") {
+    initMBC();
+}
+
+u8 Cartridge::read(u16 addr) const {
+    u8 res;
+    if(mbc_) {
+        res = mbc_->read(addr);
+    }
+    else {
+        u8 bankNumber = addr / Rom::bankSize_; 
+        u16 relAddr = addr - bankNumber * Rom::bankSize_;
+        res = rom_.read(bankNumber, relAddr);
+    }
+    return res;
+}
+
+void Cartridge::write(u8 byte, u16 addr) {
+    if(mbc_)
+        mbc_->write(byte, addr);
+}
+
+void Cartridge::initRam() {
+    if(hasRam_)
+        switch (rom_.read(0, 0x149)) {
+            case 0:
+                break;
+            case 2:
+                ram_ = ERam(1);
+                break;
+            case 3:
+                ram_ = ERam(4);
+                break;
+            case 4:
+                ram_ = ERam(16);
+                break;
+            case 5:
+                ram_ = ERam(8);
+                break;
+        }
+}
+
+void Cartridge::initMBC() {
+    switch (rom_.read(0, 0x147)) {
+        // NO MBC
+        case 0x00:
+            break;
+        // MBC1
+        case 0x01:
+            mbc_ = std::make_unique<Mbc1>(&rom_, &ram_);
+            break;
+        // MBC1 + RAM
+        case 0x02:
+            mbc_ = std::make_unique<Mbc1>(&rom_, &ram_);
+            hasRam_ = true;
+            break;
+        default:
+            Utils::error("Unsuported cartridge type!");
+    }
 }
 
 std::array <u8, Cartridge::romSize_> Cartridge::extractROM(const QByteArray &fileContent) {
@@ -26,29 +86,4 @@ std::array <u8, Cartridge::romSize_> Cartridge::extractROM(const QByteArray &fil
     }
 
     return rom;
-}
-
-std::array <u8, Cartridge::romSize_> Cartridge::extractROM(const std::string &filePathStr) {
-    const std::filesystem::path filePath{filePathStr};
-    if (filePath.empty())
-        Utils::error("Filename not provided for cartridge!");
-    if (not std::filesystem::exists(filePath))
-        Utils::error("Filename: \"" + filePathStr + " does not exist!");
-
-    std::array <u8, Cartridge::romSize_> rom;
-
-    std::ifstream file{filePath, std::ios::binary};
-    if (file) {
-        file.read(reinterpret_cast<char *>(rom.data()), static_cast<long>(romSize_));
-        if (file.eof())
-            Utils::warning("Reached end of file!");
-    }
-    file.close();
-
-    return rom;
-}
-
-std::string Cartridge::extractTitle() {
-    auto titleStart = rom_.begin() + 0x0134;
-    return std::string(titleStart, titleStart + 15);
 }

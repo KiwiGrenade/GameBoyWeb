@@ -21,8 +21,7 @@ void CPU::di() {
 }
 
 void CPU::halt() {
-    if (IME_)
-        clock_.isHalted_ = true;
+    clock_.isHalted_ = true;
 }
 
 void CPU::jr(bool cond, const int8_t d) {
