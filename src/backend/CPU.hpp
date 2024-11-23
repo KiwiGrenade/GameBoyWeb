@@ -10,7 +10,7 @@
 #include "CPUClock.hpp"
 
 typedef RegisterPair r16;
-typedef u8 &r8;
+typedef u8& r8;
 
 class CPU {
 public:
@@ -50,7 +50,7 @@ private:
     };
 
     r16 AF_, BC_, DE_, HL_, SP_, PC_;
-    r8 &A_, F_, B_, C_, D_, E_, H_, L_;
+    r8 A_, F_, B_, C_, D_, E_, H_, L_;
 
     // IME_ isn't set immediately
     bool IME_{false};

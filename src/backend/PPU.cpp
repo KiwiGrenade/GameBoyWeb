@@ -71,7 +71,7 @@ void PPU::step(size_t cycles) {
 
     checkStatus();
 
-    switch (STAT_ & 3) // bit 0-1
+    switch (getMode()) // bit 0-1
     {
         // mode 2: scan for OAM sprites
         case 2:
@@ -91,51 +91,6 @@ void PPU::step(size_t cycles) {
             vblankMode();
             break;
     }
-}
-
-u8 PPU::readReg(u16 adr) {
-    u8 b = 0xFF;
-    switch (adr) {
-        case 0xFF40:
-            b = LCDC_;
-            break;
-        case 0xFF41:
-            b = STAT_;
-            break;
-        case 0xFF42:
-            b = SCY_;
-            break;
-        case 0xFF43:
-            b = SCX_;
-            break;
-        case 0xFF44:
-            b = LY_;
-            break;
-        case 0xFF45:
-            b = LYC_;
-            break;
-            // FF46: DMA transfer
-        case 0xFF47:
-            b = BGP_;
-            break;
-        case 0xFF48:
-            b = OBP0_;
-            break;
-        case 0xFF49:
-            b = OBP1_;
-            break;
-        case 0xFF4A:
-            b = WY_;
-            break;
-        case 0xFF4B:
-            b = WX_;
-            break;
-        default:
-            break;
-            /*throw qtboy::Exception("Attempted to read invalid PPU register.",*/
-            /*                         __FILE__, __LINE__);*/
-    }
-    return b;
 }
 
 void PPU::writeReg(u8 b, u16 adr) {
@@ -185,6 +140,51 @@ void PPU::writeReg(u8 b, u16 adr) {
             /*throw qtboy::Exception("Attempted to write invalid PPU register.",*/
             /*                         __FILE__, __LINE__);*/
     }
+}
+
+u8 PPU::readReg(u16 adr) {
+    u8 b = 0xFF;
+    switch (adr) {
+        case 0xFF40:
+            b = LCDC_;
+            break;
+        case 0xFF41:
+            b = STAT_;
+            break;
+        case 0xFF42:
+            b = SCY_;
+            break;
+        case 0xFF43:
+            b = SCX_;
+            break;
+        case 0xFF44:
+            b = LY_;
+            break;
+        case 0xFF45:
+            b = LYC_;
+            break;
+            // FF46: DMA transfer
+        case 0xFF47:
+            b = BGP_;
+            break;
+        case 0xFF48:
+            b = OBP0_;
+            break;
+        case 0xFF49:
+            b = OBP1_;
+            break;
+        case 0xFF4A:
+            b = WY_;
+            break;
+        case 0xFF4B:
+            b = WX_;
+            break;
+        default:
+            break;
+            /*throw qtboy::Exception("Attempted to read invalid PPU register.",*/
+            /*                         __FILE__, __LINE__);*/
+    }
+    return b;
 }
 
 Texture PPU::getFramebuffer(bool with_bg, bool with_win,

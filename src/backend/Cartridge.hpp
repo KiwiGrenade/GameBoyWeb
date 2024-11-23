@@ -20,5 +20,6 @@ private:
     std::string extractTitle();
 
     std::array <u8, romSize_> rom_;
+
     std::string title_;
 };

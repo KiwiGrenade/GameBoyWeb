@@ -39,7 +39,7 @@ void Memory::initIo() {
     io_[0x23] = 0xBF;   // NR44
     io_[0x24] = 0x77;   // NR50
     io_[0x25] = 0xF3;   // NR51
-    io_[0x26] = 0xF1;   // NR52 (0xf1-GB, 0xF0-SGB)
+    io_[0x26] = 0xF1;   // NR52
     io_[0x40] = 0x91;   // LCDC
     io_[0x42] = 0x00;   // SCY
     io_[0x43] = 0x00;   // SCX
@@ -176,8 +176,8 @@ u8 Memory::read(const u16 addr) {
     }
         // OAM
     else if (addr < 0xFEA0) {
-        /*if(not ppu_.enabled() || ppu_.mode() < 2)*/
-        res = ppu_.readOam(addr - 0xFE00);
+        /*if(not ppu_.isEnabled() || ppu_.getMode() < 2)*/
+            res = ppu_.readOam(addr - 0xFE00);
     }
         // undefined
     else if (addr < 0xFF00) {

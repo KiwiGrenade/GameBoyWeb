@@ -2,7 +2,6 @@
 
 #include <array>
 #include <string>
-#include <optional>
 
 #include "utils.hpp"
 

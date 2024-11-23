@@ -2,11 +2,11 @@
 #include "CPU.hpp"
 #include "utils.hpp"
 
-inline bool half_check(const u8 A_, const u8 b, const u8 res) {
+inline bool checkH(const u8 A_, const u8 b, const u8 res) {
     return ((A_ ^ b ^ res) & 0x10);
 }
 
-inline bool half_check_16(const u16 A_, const u16 b, const u16 res) {
+inline bool checkH16(const u16 A_, const u16 b, const u16 res) {
     return ((A_ ^ b ^ res) & 0x1000);
 }
 
@@ -92,7 +92,7 @@ void CPU::ldhlSp(const int8_t d) {
     u16 res = SP_ + static_cast<u16>(d);
     if (d >= 0) {
         setFlag(CARRY, (SP_ & 0xff) + d > 0xff);
-        setFlag(HALF, half_check(SP_.lo_, static_cast<u8>(d), res & 0xff));
+        setFlag(HALF, checkH(SP_.lo_, static_cast<u8>(d), res & 0xff));
     } else {
         setFlag(CARRY, (res & 0xff) <= (SP_ & 0xff));
         setFlag(HALF, (res & 0xf) <= (SP_ & 0xf));
@@ -107,7 +107,7 @@ void CPU::lddSp(const u16 adr) {
 
 void CPU::inc(u8 &r) {
     setFlag(ZERO, r + 1 > 0xff);
-    setFlag(HALF, half_check(r, 1, r + 1));
+    setFlag(HALF, checkH(r, 1, r + 1));
     setFlag(NEGATIVE, false);
     ++r;
 }
@@ -120,7 +120,7 @@ void CPU::incInd(u16 adr) {
 
 void CPU::dec(u8 &r) {
     setFlag(ZERO, r - 1 == 0);
-    setFlag(HALF, half_check(r, 1, r - 1));
+    setFlag(HALF, checkH(r, 1, r - 1));
     setFlag(NEGATIVE, true);
     --r;
 }
@@ -184,7 +184,7 @@ void CPU::adc(const u8 r, bool cy) {
     u8 res8 = AF_.hi_ + r + cy;
     setFlag(ZERO, res8 == 0);
     setFlag(NEGATIVE, false);
-    setFlag(HALF, half_check(AF_.hi_, r, res8));
+    setFlag(HALF, checkH(AF_.hi_, r, res8));
     setFlag(CARRY, res > 0x00ff);
     AF_.hi_ = AF_.hi_ + r + cy;
 }
@@ -194,7 +194,7 @@ void CPU::sbc(const u8 r, bool cy) {
     u8 res8 = AF_.hi_ - r - cy;
     setFlag(ZERO, res8 == 0);
     setFlag(NEGATIVE, true);
-    setFlag(HALF, half_check(AF_.hi_, r, res8));
+    setFlag(HALF, checkH(AF_.hi_, r, res8));
     setFlag(CARRY, res > 0xff);
     AF_.hi_ = AF_.hi_ - r - cy;
 }
@@ -230,13 +230,13 @@ void CPU::cp(const u8 r) {
     int16_t res = AF_.hi_ - r;
     setFlag(ZERO, res == 0);
     setFlag(NEGATIVE, true);
-    setFlag(HALF, half_check(AF_.hi_, r, res & 0xff));
+    setFlag(HALF, checkH(AF_.hi_, r, res & 0xff));
     setFlag(CARRY, res < 0);
 }
 
 void CPU::add(const u16 rp) {
     setFlag(NEGATIVE, false);
-    setFlag(HALF, half_check_16(HL_, rp, HL_ + rp));
+    setFlag(HALF, checkH16(HL_, rp, HL_ + rp));
     setFlag(CARRY, (HL_ + rp) > 0xffff);
     HL_ += rp;
 }

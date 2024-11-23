@@ -1,6 +1,5 @@
 #include "Cartridge.hpp"
 #include <array>
-#include <cinttypes>
 #include <filesystem>
 #include <fstream>
 #include <qstringview.h>
