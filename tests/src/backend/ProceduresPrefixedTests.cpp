@@ -1,17 +1,24 @@
 #include "CPU.hpp"
+#include "CPUClock.hpp"
+#include "Joypad.hpp"
+#include "Timer.hpp"
+#include "SerialDataTransfer.hpp"
+#include "PPU.hpp"
+#include "utils.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <vector>
 
 struct ProceduresPrefixedTests : CPU {
     InterruptController ic;
+    CPUClock cpuClock;
     Joypad joypad { ic };
     Timer timer { ic };
     SerialDataTransfer serial { ic };
-    PPU ppu { ic };
-    Memory memory { ic, timer, joypad, serial, ppu };
+    PPU ppu { ic, cpuClock, nullptr };
+    Memory memory { ic, timer, joypad, serial, ppu, cpuClock };
 
-    ProceduresPrefixedTests() : CPU(ic, memory) {
+    ProceduresPrefixedTests() : CPU(ic, cpuClock, memory) {
         AF_ = 0;
         BC_ = 0;
         DE_ = 0;

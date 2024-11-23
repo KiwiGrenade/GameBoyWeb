@@ -7,13 +7,12 @@
 
 MainWindow::MainWindow(QWidget *parent,
                        const QString &title)
-    : QMainWindow {parent},
-      gameBoy_ {std::make_shared<GameBoy>()},
-      display_ {new QLabel(this)},
-      renderer_ {new QtRenderer(160, 144, this)},
-      fpsTimer_ {new QTimer(this)},
-      title_ {title}
-{
+        : QMainWindow{parent},
+          gameBoy_{std::make_shared<GameBoy>()},
+          display_{new QLabel(this)},
+          renderer_{new QtRenderer(160, 144, this)},
+          fpsTimer_{new QTimer(this)},
+          title_{title} {
     setCentralWidget(display_);
     setWindowTitle(title);
 
@@ -31,16 +30,14 @@ MainWindow::MainWindow(QWidget *parent,
 }
 
 
-void MainWindow::loadRom(const QString &fileName)
-{
-    auto fileContentReady = [this](const QString& fileName, const QByteArray& fileContent) {
-        if(fileName.isEmpty())
-        {
+void MainWindow::loadRom(const QString &fileName) {
+    auto fileContentReady = [this](const QString &fileName, const QByteArray &fileContent) {
+        if (fileName.isEmpty()) {
             std::cout << "No file was selected! Exiting!" << std::endl;
             exit(1);
         }
         gameBoy_->reset();
-        std::shared_ptr<Cartridge> car = std::make_shared<Cartridge>(fileContent);
+        std::shared_ptr <Cartridge> car = std::make_shared<Cartridge>(fileContent);
         gameBoy_->loadCartridge(car);
         gameBoy_->runConcurrently();
     };
@@ -48,8 +45,7 @@ void MainWindow::loadRom(const QString &fileName)
     QFileDialog::getOpenFileContent(" ROMs (*.ch8)", fileContentReady);
 }
 
-void MainWindow::keyPressEvent(QKeyEvent *event)
-{
+void MainWindow::keyPressEvent(QKeyEvent *event) {
     auto key = event->key();
     if (key == controls_.a)
         gameBoy_->press(Joypad::Button::A);
@@ -69,8 +65,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         gameBoy_->press(Joypad::Button::Start);
 }
 
-void MainWindow::keyReleaseEvent(QKeyEvent *event)
-{
+void MainWindow::keyReleaseEvent(QKeyEvent *event) {
     auto key = event->key();
     if (key == controls_.a)
         gameBoy_->release(Joypad::Button::A);
@@ -90,37 +85,33 @@ void MainWindow::keyReleaseEvent(QKeyEvent *event)
         gameBoy_->release(Joypad::Button::Start);
 }
 
-void MainWindow::updateDisplay()
-{
-    QImage img {renderer_->getImage()};
+void MainWindow::updateDisplay() {
+    QImage img{renderer_->getImage()};
     Qt::TransformationMode transformation_mode = prefs_.antialiasing
-            ? Qt::SmoothTransformation
-            : Qt::FastTransformation;
+                                                 ? Qt::SmoothTransformation
+                                                 : Qt::FastTransformation;
     display_->setPixmap(QPixmap::fromImage(img).scaled(
-                           centralWidget()->width(),
-                           centralWidget()->height(),
-                           Qt::IgnoreAspectRatio,
-                           transformation_mode));
+            centralWidget()->width(),
+            centralWidget()->height(),
+            Qt::IgnoreAspectRatio,
+            transformation_mode));
     ++frames_;
 }
 
-void MainWindow::updateFps()
-{
-    QString newTitle {title_ + " - FPS: " + QString::number(frames_)};
+void MainWindow::updateFps() {
+    QString newTitle{title_ + " - FPS: " + QString::number(frames_)};
     setWindowTitle(newTitle);
     frames_ = 0;
 }
 
-void MainWindow::openRom()
-{
-    auto fileContentReady = [this](const QString& fileName, const QByteArray& fileContent) {
-        if(fileName.isEmpty())
-        {
+void MainWindow::openRom() {
+    auto fileContentReady = [this](const QString &fileName, const QByteArray &fileContent) {
+        if (fileName.isEmpty()) {
             std::cout << "No file was selected! Exiting!" << std::endl;
             exit(1);
         }
         gameBoy_->reset();
-        std::shared_ptr<Cartridge> car = std::make_shared<Cartridge>(fileContent);
+        std::shared_ptr <Cartridge> car = std::make_shared<Cartridge>(fileContent);
         gameBoy_->loadCartridge(car);
         gameBoy_->runConcurrently();
     };
@@ -128,8 +119,7 @@ void MainWindow::openRom()
     QFileDialog::getOpenFileContent(" ROMs (*.gb)", fileContentReady);
 }
 
-void MainWindow::showDebugger()
-{
+void MainWindow::showDebugger() {
     /*
     if (!debuggerWindow_)
         debuggerWindow_ = new DebuggerWindow(gameBoy_, this);
@@ -137,8 +127,7 @@ void MainWindow::showDebugger()
     */
 }
 
-void MainWindow::showVramViewer()
-{
+void MainWindow::showVramViewer() {
     /*
      auto *vram_viewer = new Vram_window(gameBoy_);
      vram_viewer->show();
@@ -146,14 +135,12 @@ void MainWindow::showVramViewer()
 }
 
 
-void MainWindow::about()
-{
+void MainWindow::about() {
     QMessageBox::about(this, tr("About QtBoy"),
                        tr("A Gameboy emulator made using Qt."));
 }
 
-void MainWindow::toggleAntiAlias(bool b)
-{
+void MainWindow::toggleAntiAlias(bool b) {
     prefs_.antialiasing = b;
 }
 
@@ -168,27 +155,24 @@ void MainWindow::toggleAntiAlias(bool b)
 /*    gameBoy_->toggle_sound(b);*/
 /*}*/
 
-QMenu *MainWindow::createMenu(const QString &name)
-{
+QMenu *MainWindow::createMenu(const QString &name) {
     return menuBar()->addMenu(name);
 }
 
 QAction *MainWindow::createSingleAction(const QString &name,
                                         QMenu *menu,
-                                        void (MainWindow::*slot)())
-{
+                                        void (MainWindow::*slot)()) {
     if (!menu)
-        throw std::runtime_error {"Cannot add single action to menu pointing to null"};
+        throw std::runtime_error{"Cannot add single action to menu pointing to null"};
     return menu->addAction(name, this, slot);
 }
 
 QAction *MainWindow::createCheckableAction(const QString &name,
                                            QMenu *menu,
                                            void (MainWindow::*slot)(bool),
-                                           bool initiallyChecked)
-{
+                                           bool initiallyChecked) {
     if (!menu)
-        throw std::runtime_error {"Cannot add checkable action to menu pointing to null"};
+        throw std::runtime_error{"Cannot add checkable action to menu pointing to null"};
     QAction *action = new QAction(name, this);
     action->setCheckable(true);
     action->setChecked(initiallyChecked);
@@ -197,8 +181,7 @@ QAction *MainWindow::createCheckableAction(const QString &name,
     return action;
 }
 
-void MainWindow::createActions()
-{
+void MainWindow::createActions() {
     // File menu
     QMenu *fileMenu = createMenu(tr("&File"));
     QAction *openAct = createSingleAction(tr("&Open"), fileMenu, &MainWindow::openRom);

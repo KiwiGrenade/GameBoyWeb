@@ -276,7 +276,7 @@ const std::array<Instruction, 256> instructions
     {"RST", 1, 16, 16, "38H", ""}
 }};
 
-const std::array<Instruction, 256> cb_instructions
+const std::array<Instruction, 256> cbInstructions
 {{
     {"RLC", 2, 8, 8, "B", ""},
     {"RLC", 2, 8, 8, "C", ""},

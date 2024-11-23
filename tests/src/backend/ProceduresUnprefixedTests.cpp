@@ -1,25 +1,32 @@
 #include "CPU.hpp"
 
+#include "CPU.hpp"
+#include "CPUClock.hpp"
+#include "Joypad.hpp"
+#include "Timer.hpp"
+#include "SerialDataTransfer.hpp"
+#include "PPU.hpp"
+#include "utils.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <vector>
 
 struct ProceduresUnprefixedTests : CPU {
     InterruptController ic;
+    CPUClock cpuClock;
     Joypad joypad { ic };
     Timer timer { ic };
     SerialDataTransfer serial { ic };
-    PPU ppu { ic };
-    Memory memory { ic, timer, joypad, serial, ppu };
+    PPU ppu { ic, cpuClock, nullptr };
+    Memory memory { ic, timer, joypad, serial, ppu, cpuClock };
 
-    ProceduresUnprefixedTests() : CPU(ic, memory) {
+    ProceduresUnprefixedTests() : CPU(ic, cpuClock, memory) {
         F_ = 0;
         HL_ = 0xCC00;
         PC_ = 0xC000;
     };
 
-    u8 execute(u8 op) {
+    void execute(u8 op) {
         memory_.write(op, PC_);
-        return step();
     }
 
     void checkOnRegisters(const u8 startOpcode, const u8 jump, std::function<void(r8*, unsigned int)> setUp, std::function<void(r8*, unsigned int)>requirements) {

@@ -1,8 +1,8 @@
 #include "SerialDataTransfer.hpp"
 #include "InterruptController.hpp"
 
-SerialDataTransfer::SerialDataTransfer(InterruptController& ic) 
-    : ic_(ic) {
+SerialDataTransfer::SerialDataTransfer(InterruptController &ic)
+        : ic_(ic) {
     reset();
 }
 
@@ -30,7 +30,7 @@ u8 SerialDataTransfer::getSB() {
 
 void SerialDataTransfer::setSC(u8 byte) {
     SC_ = byte;
-    if(byte == 0x81)
+    if (byte == 0x81)
         writeToTestOutput();
 }
 

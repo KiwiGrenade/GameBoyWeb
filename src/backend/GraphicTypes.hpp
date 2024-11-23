@@ -13,7 +13,7 @@ class Texture {
 public:
     Texture(u16 w = 1, u16 h = 1);
 
-    void fill(const Color& c);
+    void fill(const Color &c);
     inline void set_pixel(uint64_t i, const Color &c) { data_[i] = c; };
     inline Color pixel(uint64_t i) const { return data_[i]; };
     inline void set_pixel_priority(uint64_t i, u8 x) { pixelIds_[i] = x; };
@@ -24,8 +24,8 @@ public:
 private:
     u16 height_;
     u16 width_;
-    std::vector<Color> data_;
-    std::vector<u8> pixelIds_;
+    std::vector <Color> data_;
+    std::vector <u8> pixelIds_;
 };
 
 struct Sprite {

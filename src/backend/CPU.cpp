@@ -31,12 +31,11 @@ void CPU::reset()
     SP_ = 0xfffe;
     PC_ = 0x0100;
     clock_.reset();
-    use_branch_cycles_ = false;
-    ime_ = false;
-    ei_set_ = false;
-    di_set_ = false;
-    halt_bug_ = false;
-    double_speed_ = false;
+    useBranchCycles_ = false;
+    IME_ = false;
+    eiSet_ = false;
+    diSet_ = false;
+    doubleSpeed_ = false;
 }
 
 void CPU::addCycles(uint32_t c)
@@ -44,12 +43,12 @@ void CPU::addCycles(uint32_t c)
     clock_.cycles_ += c;
 }
 
-bool CPU::get_flag(Flags f) const
+bool CPU::getFlag(Flags f) const
 {
     return (F_ & f);
 }
 
-void CPU::set_flag(Flags f, bool cond)
+void CPU::setFlag(Flags f, bool cond)
 {
     u8 mask;
     if (cond)
@@ -63,10 +62,7 @@ u8 CPU::fetch8()
 {
     u8 op = read(PC_);
     // HALT bug: the processor fails to increment the PC_
-    if (halt_bug_)
-        halt_bug_ = false;
-    else
-        ++PC_;
+    ++PC_;
     return op;
 
 }
@@ -78,55 +74,57 @@ uint16_t CPU::fetch16()
     return static_cast<uint16_t>(hi << 8 | lo);
 }
 
-bool CPU::execute_interrupt(Interrupt i)
+bool CPU::executeInterrupt(Interrupt i)
 {
     clock_.isHalted_ = false;
     clock_.isStopped_ = false;
-    if (!ime_)
+    if (!IME_)
         return false; // don't service the interrupt if IME is disable
 
     write(PC_.hi_, --SP_);
     write(PC_.lo_, --SP_);
+
     PC_.hi_ = 0;
     PC_.lo_ = 0x40 + i*8;
-    ime_ = false;
-    write(0, 0xff0f); // clear IF
-    return true;
 
+    IME_ = false;
+    ic_.disableInterrupt(i);
+    return true;
 }
 
-bool CPU::check_interrupt()
+bool CPU::checkInterrupt()
 {
     u8 int_enable {read(0xffff)};
     u8 int_flag {read(0xff0f)};
     u8 request = int_enable & int_flag;
     bool serviced {false};
+
     if (request & 1)
-        serviced = execute_interrupt(VBLANK);
+        serviced = executeInterrupt(VBLANK);
     else if (request & 1 << 1)
-        serviced = execute_interrupt(LCD_STAT);
+        serviced = executeInterrupt(LCD_STAT);
     else if (request & 1 << 2)
-        serviced = execute_interrupt(TIMER);
+        serviced = executeInterrupt(TIMER);
     else if (request & 1 << 3)
-        serviced = execute_interrupt(SERIAL);
+        serviced = executeInterrupt(SERIAL);
     else if (request & 1 << 4)
-        serviced = execute_interrupt(JOYPAD);
+        serviced = executeInterrupt(JOYPAD);
     return serviced;
 }
 
 void CPU::step()
 {
-    if (check_interrupt())
+    if (checkInterrupt())
         return;
-    if (ei_set_) // EI was called last cycle
+    if (eiSet_) // EI was called last cycle
     {
-        ei_set_ = false;
-        ime_ = true;
+        eiSet_ = false;
+        IME_ = true;
     }
-    else if (di_set_) // DI was called last cycle
+    else if (diSet_) // DI was called last cycle
     {
-        di_set_ = false;
-        ime_ = false;
+        diSet_ = false;
+        IME_ = false;
     }
     if (clock_.isHalted_)
     {
@@ -145,28 +143,28 @@ void CPU::step()
 
         // jump and calls
         case 0x18: jr(true, static_cast<int8_t>(fetch8())); break;
-        case 0x20: jr(!get_flag(ZERO), static_cast<int8_t>(fetch8())); break;
-        case 0x28: jr(get_flag(ZERO), static_cast<int8_t>(fetch8())); break;
-        case 0x30: jr(!get_flag(CARRY), static_cast<int8_t>(fetch8())); break;
-        case 0x38: jr(get_flag(CARRY), static_cast<int8_t>(fetch8())); break;
+        case 0x20: jr(!getFlag(ZERO), static_cast<int8_t>(fetch8())); break;
+        case 0x28: jr(getFlag(ZERO), static_cast<int8_t>(fetch8())); break;
+        case 0x30: jr(!getFlag(CARRY), static_cast<int8_t>(fetch8())); break;
+        case 0x38: jr(getFlag(CARRY), static_cast<int8_t>(fetch8())); break;
 
-        case 0xc0: ret(!get_flag(ZERO)); break;
-        case 0xc8: ret(get_flag(ZERO)); break;
+        case 0xc0: ret(!getFlag(ZERO)); break;
+        case 0xc8: ret(getFlag(ZERO)); break;
         case 0xc9: ret(true); break;
-        case 0xd0: ret(!get_flag(CARRY)); break;
-        case 0xd8: ret(get_flag(CARRY)); break;
+        case 0xd0: ret(!getFlag(CARRY)); break;
+        case 0xd8: ret(getFlag(CARRY)); break;
 
-        case 0xc2: jp(!get_flag(ZERO), fetch16()); break;
+        case 0xc2: jp(!getFlag(ZERO), fetch16()); break;
         case 0xc3: jp(true, fetch16()); break;
-        case 0xca: jp(get_flag(ZERO), fetch16()); break;
-        case 0xd2: jp(!get_flag(CARRY), fetch16()); break;
-        case 0xda: jp(get_flag(CARRY), fetch16()); break;
+        case 0xca: jp(getFlag(ZERO), fetch16()); break;
+        case 0xd2: jp(!getFlag(CARRY), fetch16()); break;
+        case 0xda: jp(getFlag(CARRY), fetch16()); break;
 
-        case 0xc4: call(!get_flag(ZERO), fetch16()); break;
-        case 0xcc: call(get_flag(ZERO), fetch16()); break;
+        case 0xc4: call(!getFlag(ZERO), fetch16()); break;
+        case 0xcc: call(getFlag(ZERO), fetch16()); break;
         case 0xcd: call(true, fetch16()); break;
-        case 0xd4: call(!get_flag(CARRY), fetch16()); break;
-        case 0xdc: call(get_flag(CARRY), fetch16()); break;
+        case 0xd4: call(!getFlag(CARRY), fetch16()); break;
+        case 0xdc: call(getFlag(CARRY), fetch16()); break;
 
         case 0xe9: jp(true, HL_); break;
 
@@ -284,19 +282,19 @@ void CPU::step()
         case 0x11: ld(DE_, fetch16()); break;
         case 0x21: ld(HL_, fetch16()); break;
         case 0x31: ld(SP_, fetch16()); break;
-        case 0x08: ldd_sp(fetch16()); break;
+        case 0x08: lddSp(fetch16()); break;
 
         case 0xc1: pop(BC_); break;
         case 0xd1: pop(DE_); break;
         case 0xe1: pop(HL_); break;
-        case 0xf1: pop_af(); break;
+        case 0xf1: popAf(); break;
 
         case 0xc5: push(BC_); break;
         case 0xd5: push(DE_); break;
         case 0xe5: push(HL_); break;
         case 0xf5: push(AF_); break;
 
-        case 0xf8: ldhl_sp(fetch8()); break;
+        case 0xf8: ldhlSp(fetch8()); break;
         case 0xf9: ld(SP_, HL_); break;
 
         // 8-bit arithmetic
@@ -311,7 +309,7 @@ void CPU::step()
         case 0x1c: inc(E_); break;
         case 0x24: inc(H_); break;
         case 0x2c: inc(L_); break;
-        case 0x34: inc_i(HL_); break;
+        case 0x34: incInd(HL_); break;
         case 0x3c: inc(A_); break;
 
         case 0x05: dec(B_); break;
@@ -320,7 +318,7 @@ void CPU::step()
         case 0x1d: dec(E_); break;
         case 0x25: dec(H_); break;
         case 0x2d: dec(L_); break;
-        case 0x35: dec_i(HL_); break;
+        case 0x35: decInd(HL_); break;
         case 0x3d: dec(A_); break;
 
         case 0x80: adc(B_, false); break;
@@ -332,14 +330,14 @@ void CPU::step()
         case 0x86: adc(read(HL_), false); break;
         case 0x87: adc(A_, false); break;
 
-        case 0x88: adc(B_, get_flag(CARRY)); break;
-        case 0x89: adc(C_, get_flag(CARRY)); break;
-        case 0x8a: adc(D_, get_flag(CARRY)); break;
-        case 0x8b: adc(E_, get_flag(CARRY)); break;
-        case 0x8c: adc(H_, get_flag(CARRY)); break;
-        case 0x8d: adc(L_, get_flag(CARRY)); break;
-        case 0x8e: adc(read(HL_), get_flag(CARRY)); break;
-        case 0x8f: adc(A_, get_flag(CARRY)); break;
+        case 0x88: adc(B_, getFlag(CARRY)); break;
+        case 0x89: adc(C_, getFlag(CARRY)); break;
+        case 0x8a: adc(D_, getFlag(CARRY)); break;
+        case 0x8b: adc(E_, getFlag(CARRY)); break;
+        case 0x8c: adc(H_, getFlag(CARRY)); break;
+        case 0x8d: adc(L_, getFlag(CARRY)); break;
+        case 0x8e: adc(read(HL_), getFlag(CARRY)); break;
+        case 0x8f: adc(A_, getFlag(CARRY)); break;
 
         case 0x90: sbc(B_, false); break;
         case 0x91: sbc(C_, false); break;
@@ -350,14 +348,14 @@ void CPU::step()
         case 0x96: sbc(read(HL_), false); break;
         case 0x97: sbc(A_, false); break;
 
-        case 0x98: sbc(B_, get_flag(CARRY)); break;
-        case 0x99: sbc(C_, get_flag(CARRY)); break;
-        case 0x9a: sbc(D_, get_flag(CARRY)); break;
-        case 0x9b: sbc(E_, get_flag(CARRY)); break;
-        case 0x9c: sbc(H_, get_flag(CARRY)); break;
-        case 0x9d: sbc(L_, get_flag(CARRY)); break;
-        case 0x9e: sbc(read(HL_), get_flag(CARRY)); break;
-        case 0x9f: sbc(A_, get_flag(CARRY)); break;
+        case 0x98: sbc(B_, getFlag(CARRY)); break;
+        case 0x99: sbc(C_, getFlag(CARRY)); break;
+        case 0x9a: sbc(D_, getFlag(CARRY)); break;
+        case 0x9b: sbc(E_, getFlag(CARRY)); break;
+        case 0x9c: sbc(H_, getFlag(CARRY)); break;
+        case 0x9d: sbc(L_, getFlag(CARRY)); break;
+        case 0x9e: sbc(read(HL_), getFlag(CARRY)); break;
+        case 0x9f: sbc(A_, getFlag(CARRY)); break;
 
         case 0xa0: andr(B_); break;
         case 0xa1: andr(C_); break;
@@ -396,9 +394,9 @@ void CPU::step()
         case 0xbf: cp(A_); break;
 
         case 0xc6: adc(fetch8(), false); break;
-        case 0xce: adc(fetch8(), get_flag(CARRY)); break;
+        case 0xce: adc(fetch8(), getFlag(CARRY)); break;
         case 0xd6: sbc(fetch8(), false); break;
-        case 0xde: sbc(fetch8(), get_flag(CARRY)); break;
+        case 0xde: sbc(fetch8(), getFlag(CARRY)); break;
         case 0xe6: andr(fetch8()); break;
         case 0xee: xorr(fetch8()); break;
         case 0xf6: orr(fetch8()); break;
@@ -440,7 +438,7 @@ void CPU::step()
                 case 0x03: rlc(E_); break;
                 case 0x04: rlc(H_); break;
                 case 0x05: rlc(L_); break;
-                case 0x06: rlc_i(HL_); break;
+                case 0x06: rlcInd(HL_); break;
                 case 0x07: rlc(A_); break;
 
                 case 0x08: rrc(B_); break;
@@ -449,7 +447,7 @@ void CPU::step()
                 case 0x0b: rrc(E_); break;
                 case 0x0c: rrc(H_); break;
                 case 0x0d: rrc(L_); break;
-                case 0x0e: rrc_i(HL_); break;
+                case 0x0e: rrcInd(HL_); break;
                 case 0x0f: rrc(A_); break;
 
                 case 0x10: rl(B_); break;
@@ -458,7 +456,7 @@ void CPU::step()
                 case 0x13: rl(E_); break;
                 case 0x14: rl(H_); break;
                 case 0x15: rl(L_); break;
-                case 0x16: rl_i(HL_); break;
+                case 0x16: rlInd(HL_); break;
                 case 0x17: rl(A_); break;
 
                 case 0x18: rr(B_); break;
@@ -467,7 +465,7 @@ void CPU::step()
                 case 0x1b: rr(E_); break;
                 case 0x1c: rr(H_); break;
                 case 0x1d: rr(L_); break;
-                case 0x1e: rr_i(HL_); break;
+                case 0x1e: rrInd(HL_); break;
                 case 0x1f: rr(A_); break;
 
                 case 0x20: sla(B_); break;
@@ -476,7 +474,7 @@ void CPU::step()
                 case 0x23: sla(E_); break;
                 case 0x24: sla(H_); break;
                 case 0x25: sla(L_); break;
-                case 0x26: sla_i(HL_); break;
+                case 0x26: slaInd(HL_); break;
                 case 0x27: sla(A_); break;
 
                 case 0x28: sra(B_); break;
@@ -485,7 +483,7 @@ void CPU::step()
                 case 0x2b: sra(E_); break;
                 case 0x2c: sra(H_); break;
                 case 0x2d: sra(L_); break;
-                case 0x2e: sra_i(HL_); break;
+                case 0x2e: sraInd(HL_); break;
                 case 0x2f: sra(A_); break;
 
                 case 0x30: swap(B_); break;
@@ -494,7 +492,7 @@ void CPU::step()
                 case 0x33: swap(E_); break;
                 case 0x34: swap(H_); break;
                 case 0x35: swap(L_); break;
-                case 0x36: swap_i(HL_); break;
+                case 0x36: swapInd(HL_); break;
                 case 0x37: swap(A_); break;
 
                 case 0x38: srl(B_); break;
@@ -503,7 +501,7 @@ void CPU::step()
                 case 0x3b: srl(E_); break;
                 case 0x3c: srl(H_); break;
                 case 0x3d: srl(L_); break;
-                case 0x3e: srl_i(HL_); break;
+                case 0x3e: srlInd(HL_); break;
                 case 0x3f: srl(A_); break;
 
                 // BIT x,r
@@ -587,7 +585,7 @@ void CPU::step()
                 case 0x83: res(0, E_); break;
                 case 0x84: res(0, H_); break;
                 case 0x85: res(0, L_); break;
-                case 0x86: res_i(0, HL_); break;
+                case 0x86: resInd(0, HL_); break;
                 case 0x87: res(0, A_); break;
 
                 case 0x88: res(1, B_); break;
@@ -596,7 +594,7 @@ void CPU::step()
                 case 0x8b: res(1, E_); break;
                 case 0x8c: res(1, H_); break;
                 case 0x8d: res(1, L_); break;
-                case 0x8e: res_i(1, HL_); break;
+                case 0x8e: resInd(1, HL_); break;
                 case 0x8f: res(1, A_); break;
 
                 case 0x90: res(2, B_); break;
@@ -605,7 +603,7 @@ void CPU::step()
                 case 0x93: res(2, E_); break;
                 case 0x94: res(2, H_); break;
                 case 0x95: res(2, L_); break;
-                case 0x96: res_i(2, HL_); break;
+                case 0x96: resInd(2, HL_); break;
                 case 0x97: res(2, A_); break;
 
                 case 0x98: res(3, B_); break;
@@ -614,7 +612,7 @@ void CPU::step()
                 case 0x9b: res(3, E_); break;
                 case 0x9c: res(3, H_); break;
                 case 0x9d: res(3, L_); break;
-                case 0x9e: res_i(3, HL_); break;
+                case 0x9e: resInd(3, HL_); break;
                 case 0x9f: res(3, A_); break;
 
                 case 0xa0: res(4, B_); break;
@@ -623,7 +621,7 @@ void CPU::step()
                 case 0xa3: res(4, E_); break;
                 case 0xa4: res(4, H_); break;
                 case 0xa5: res(4, L_); break;
-                case 0xa6: res_i(4, HL_); break;
+                case 0xa6: resInd(4, HL_); break;
                 case 0xa7: res(4, A_); break;
 
                 case 0xa8: res(5, B_); break;
@@ -632,7 +630,7 @@ void CPU::step()
                 case 0xab: res(5, E_); break;
                 case 0xac: res(5, H_); break;
                 case 0xad: res(5, L_); break;
-                case 0xae: res_i(5, HL_); break;
+                case 0xae: resInd(5, HL_); break;
                 case 0xaf: res(5, A_); break;
 
                 case 0xb0: res(6, B_); break;
@@ -641,7 +639,7 @@ void CPU::step()
                 case 0xb3: res(6, E_); break;
                 case 0xb4: res(6, H_); break;
                 case 0xb5: res(6, L_); break;
-                case 0xb6: res_i(6, HL_); break;
+                case 0xb6: resInd(6, HL_); break;
                 case 0xb7: res(6, A_); break;
 
                 case 0xb8: res(7, B_); break;
@@ -650,7 +648,7 @@ void CPU::step()
                 case 0xbb: res(7, E_); break;
                 case 0xbc: res(7, H_); break;
                 case 0xbd: res(7, L_); break;
-                case 0xbe: res_i(7, HL_); break;
+                case 0xbe: resInd(7, HL_); break;
                 case 0xbf: res(7, A_); break;
 
                 case 0xc0: set(0, B_); break;
@@ -659,7 +657,7 @@ void CPU::step()
                 case 0xc3: set(0, E_); break;
                 case 0xc4: set(0, H_); break;
                 case 0xc5: set(0, L_); break;
-                case 0xc6: set_i(0, HL_); break;
+                case 0xc6: setInd(0, HL_); break;
                 case 0xc7: set(0, A_); break;
 
                 case 0xc8: set(1, B_); break;
@@ -668,7 +666,7 @@ void CPU::step()
                 case 0xcb: set(1, E_); break;
                 case 0xcc: set(1, H_); break;
                 case 0xcd: set(1, L_); break;
-                case 0xce: set_i(1, HL_); break;
+                case 0xce: setInd(1, HL_); break;
                 case 0xcf: set(1, A_); break;
 
                 case 0xd0: set(2, B_); break;
@@ -677,7 +675,7 @@ void CPU::step()
                 case 0xd3: set(2, E_); break;
                 case 0xd4: set(2, H_); break;
                 case 0xd5: set(2, L_); break;
-                case 0xd6: set_i(2, HL_); break;
+                case 0xd6: setInd(2, HL_); break;
                 case 0xd7: set(2, A_); break;
 
                 case 0xd8: set(3, B_); break;
@@ -686,7 +684,7 @@ void CPU::step()
                 case 0xdb: set(3, E_); break;
                 case 0xdc: set(3, H_); break;
                 case 0xdd: set(3, L_); break;
-                case 0xde: set_i(3, HL_); break;
+                case 0xde: setInd(3, HL_); break;
                 case 0xdf: set(3, A_); break;
 
                 case 0xe0: set(4, B_); break;
@@ -695,7 +693,7 @@ void CPU::step()
                 case 0xe3: set(4, E_); break;
                 case 0xe4: set(4, H_); break;
                 case 0xe5: set(4, L_); break;
-                case 0xe6: set_i(4, HL_); break;
+                case 0xe6: setInd(4, HL_); break;
                 case 0xe7: set(4, A_); break;
 
                 case 0xe8: set(5, B_); break;
@@ -704,7 +702,7 @@ void CPU::step()
                 case 0xeb: set(5, E_); break;
                 case 0xec: set(5, H_); break;
                 case 0xed: set(5, L_); break;
-                case 0xee: set_i(5, HL_); break;
+                case 0xee: setInd(5, HL_); break;
                 case 0xef: set(5, A_); break;
 
                 case 0xf0: set(6, B_); break;
@@ -713,7 +711,7 @@ void CPU::step()
                 case 0xf3: set(6, E_); break;
                 case 0xf4: set(6, H_); break;
                 case 0xf5: set(6, L_); break;
-                case 0xf6: set_i(6, HL_); break;
+                case 0xf6: setInd(6, HL_); break;
                 case 0xf7: set(6, A_); break;
 
                 case 0xf8: set(7, B_); break;
@@ -722,7 +720,7 @@ void CPU::step()
                 case 0xfb: set(7, E_); break;
                 case 0xfc: set(7, H_); break;
                 case 0xfd: set(7, L_); break;
-                case 0xfe: set_i(7, HL_); break;
+                case 0xfe: setInd(7, HL_); break;
                 case 0xff: set(7, A_); break;
             }
         } break;
@@ -738,19 +736,19 @@ void CPU::step()
     {
         // get op after prefix
         u8 op2 = read(PC_-1);
-        cycles_passed = cb_instructions[op2].cycles;
+        cycles_passed = cbInstructions[op2].cycles;
 
     }
     // handle all other instructions
     else
     {
-        cycles_passed = use_branch_cycles_
+        cycles_passed = useBranchCycles_
             ? instructions[op].branch_cycles
             : instructions[op].cycles;
     }
     // CGB double speed mode, CPU clock ticks twice as fast
-    clock_.cycles_ += (double_speed_) ? cycles_passed/2 : cycles_passed;
-    use_branch_cycles_ = false;
+    clock_.cycles_ += (doubleSpeed_) ? cycles_passed/2 : cycles_passed;
+    useBranchCycles_ = false;
     return;
 }
 

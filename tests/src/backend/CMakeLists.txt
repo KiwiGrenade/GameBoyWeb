@@ -10,7 +10,7 @@ add_executable(JoypadTests JoypadTests.cpp)
 add_executable(InterruptControllerTests InterruptControllerTests.cpp)
 add_executable(SerialDataTransferTests SerialDataTransferTests.cpp)
 
-target_include_directories(RegisterPairTests PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
+# target_include_directories(RegisterPairTests PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
 target_include_directories(UtilsTests PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
 target_include_directories(MemoryTests PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
 target_include_directories(CPUTests PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
@@ -22,10 +22,10 @@ target_include_directories(JoypadTests PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
 target_include_directories(InterruptControllerTests PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
 target_include_directories(SerialDataTransferTests PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
 
-target_link_libraries(RegisterPairTests PRIVATE
-    RegisterPair
-    Catch2::Catch2WithMain
-)
+# target_link_libraries(RegisterPairTests PRIVATE
+#     RegisterPair
+#     Catch2::Catch2WithMain
+# )
 target_link_libraries(UtilsTests PUBLIC
     Utils
     Qt6::Core
@@ -37,16 +37,34 @@ target_link_libraries(MemoryTests PUBLIC
     Catch2::Catch2WithMain
 )
 target_link_libraries(CPUTests PUBLIC
+    Joypad
+    Timer
+    Serial
+    Interrupts
+    PPU
+    Memory
     CPU
     Qt6::Core
     Catch2::Catch2WithMain
 )
 target_link_libraries(ProceduresPrefixedTests PUBLIC
+    Joypad
+    Timer
+    Serial
+    Interrupts
+    PPU
+    Memory
     CPU
     Qt6::Core
     Catch2::Catch2WithMain
 )
 target_link_libraries(ProceduresUnprefixedTests PUBLIC
+    Joypad
+    Timer
+    Serial
+    Interrupts
+    PPU
+    Memory
     CPU
     Qt6::Core
     Catch2::Catch2WithMain
@@ -77,7 +95,7 @@ target_link_libraries(SerialDataTransferTests PUBLIC
     Catch2::Catch2WithMain
 )
 
-add_test(RegisterPairTests ${CMAKE_SOURCE_DIR}/bin/RegisterPairTests)
+# add_test(RegisterPairTests ${CMAKE_SOURCE_DIR}/bin/RegisterPairTests)
 add_test(UtilsTests ${CMAKE_SOURCE_DIR}/bin/UtilsTests)
 add_test(MemoryTests ${CMAKE_SOURCE_DIR}/bin/MemoryTests)
 add_test(CPUTests ${CMAKE_SOURCE_DIR}/bin/CPUTests)

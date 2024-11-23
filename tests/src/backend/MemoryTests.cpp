@@ -1,4 +1,5 @@
 #include "Memory.hpp"
+#include "Clock.hpp"
 #include "PPU.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators_adapters.hpp>
@@ -7,15 +8,13 @@
 #include <cstdint>
 
 TEST_CASE("memory.write/read") {
-    extern Memory memory;
-    extern CPU cpu;
     InterruptController ic;
+    Clock cpuClock;
     Joypad joypad { ic };
     Timer timer { ic };
     SerialDataTransfer serial { ic };
-    PPU ppu { ic, memory, cpu};
-    Memory memory { ic, timer, joypad, serial, ppu };
-    CPU cpu { ic, memory };
+    PPU ppu { ic, cpuClock, nullptr };
+    Memory memory { ic, timer, joypad, serial, ppu, clock};
     u8 byte = GENERATE(take(1, random(1, 0xFF)));
 
     SECTION("ROM0") {

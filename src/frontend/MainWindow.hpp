@@ -17,38 +17,36 @@ class DebuggerWindow;
 class VramWindow;
 */
 
-struct Preferences
-{
+struct Preferences {
     bool antialiasing;
     bool force_dmg;
 };
 
-struct Controls
-{
-    Qt::Key a {Qt::Key_D},
-            b {Qt::Key_S},
-            up {Qt::Key_Up},
-            down {Qt::Key_Down},
-            left {Qt::Key_Left},
-            right {Qt::Key_Right},
-            select {Qt::Key_Shift},
-            start {Qt::Key_Return},
-            turbo {Qt::Key_Space};
+struct Controls {
+    Qt::Key a{Qt::Key_D},
+            b{Qt::Key_S},
+            up{Qt::Key_Up},
+            down{Qt::Key_Down},
+            left{Qt::Key_Left},
+            right{Qt::Key_Right},
+            select{Qt::Key_Shift},
+            start{Qt::Key_Return},
+            turbo{Qt::Key_Space};
 };
 
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow {
     Q_OBJECT
 
-    public:
+public:
     explicit MainWindow(QWidget *parent = nullptr,
                         const QString &title = "Gameboy");
 
-    protected:
+protected:
     void keyPressEvent(QKeyEvent *);
     void keyReleaseEvent(QKeyEvent *);
 
-    private slots:
+private
+    slots:
     // Update the display to show the most recent frame in the renderer.
     // This is called by the PPU on VBLANK.
     void updateDisplay();
@@ -71,7 +69,7 @@ class MainWindow : public QMainWindow
     // options menu slots
     void toggleAntiAlias(bool);
 
-    private:
+private:
     // load the cartridge at fileName onto the Gameboy.
     void loadRom(const QString &fileName);
 
@@ -92,13 +90,13 @@ class MainWindow : public QMainWindow
     // Create all the actions performed by the buttons in the toolbar.
     void createActions();
 
-    std::shared_ptr<GameBoy> gameBoy_;
+    std::shared_ptr <GameBoy> gameBoy_;
 
     // Display for the Gameboy. Displays the contents output by the renderer.
     QLabel *display_;
 
     // Produces graphical output for the display.
-    QtRenderer *renderer_ {nullptr};
+    QtRenderer *renderer_{nullptr};
 
     // Timer that calls updateFps() every second
     QTimer *fpsTimer_;
@@ -117,14 +115,6 @@ class MainWindow : public QMainWindow
 
     // Control mapping
     Controls controls_;
-
-    /*
-    // Windows that can be opened through toolbar actions. An instance is only created on the first
-    // open request. Subsequent open/close requests only show/hide the window.
-    DebuggerWindow *debuggerWindow_ {nullptr};
-    VramWindow *vramWindow_ {nullptr};
-    */
-
 };
 
 #endif // MAINWINDOW_H

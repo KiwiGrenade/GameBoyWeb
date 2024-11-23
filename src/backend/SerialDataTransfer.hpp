@@ -6,12 +6,11 @@
 
 class SerialDataTransfer {
 public:
-    SerialDataTransfer(InterruptController& ic);
+    SerialDataTransfer(InterruptController &ic);
 
     void writeToTestOutput();
     void reset();
     std::vector<char> getTestOutput();
-
     void setSB(u8);
     u8 getSB();
     void setSC(u8);
@@ -19,7 +18,7 @@ public:
 
 
 protected:
-    InterruptController& ic_;
+    InterruptController &ic_;
     /*InterruptController& ic_;*/
     std::vector<char> testOutput_;
     u8 SB_; // serial transfer data

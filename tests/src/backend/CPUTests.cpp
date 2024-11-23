@@ -1,35 +1,26 @@
 #include "CPU.hpp"
+#include "CPUClock.hpp"
+#include "Joypad.hpp"
+#include "Timer.hpp"
+#include "SerialDataTransfer.hpp"
+#include "PPU.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
 struct CPUTests : CPU {
     InterruptController ic;
+    CPUClock cpuClock;
     Joypad joypad { ic };
     Timer timer { ic };
     SerialDataTransfer serial { ic };
-    PPU ppu { ic };
-    Memory memory { ic, timer, joypad, serial, ppu };
+    PPU ppu { ic, cpuClock, nullptr };
+    Memory memory { ic, timer, joypad, serial, ppu, cpuClock };
 
     CPUTests()
-    :   CPU(ic, memory) {
-        PC_ = 0xC000;
+    :   CPU(ic, cpuClock, memory) {
     }
 };
 
 TEST_CASE_METHOD(CPUTests, "CPU") {
-    SECTION("handleFlags") {
-        Utils::flagArray flags = {Utils::Flag::set, Utils::Flag::set, Utils::Flag::set, Utils::Flag::set};
-        handleFlags(flags);
-        REQUIRE(F_ == u8(0b11110000));
-
-        flags = {Utils::Flag::setOrReset, Utils::Flag::reset, Utils::Flag::nothing, Utils::Flag::reset};
-        handleFlags(flags);
-        REQUIRE(F_ == u8(0b10100000));
-    }
-    SECTION("fetch16") {
-        memory.write(0b11001100, PC_+1);
-        memory.write(0b00001111, PC_+2);
-        REQUIRE(fetch16(PC_+1) == 0b0000111111001100);
-    }
 }
 

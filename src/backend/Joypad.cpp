@@ -1,11 +1,8 @@
 #include "Joypad.hpp"
 #include "utils.hpp"
 
-Joypad::Joypad(InterruptController& ic)
-    : ic_(ic)
-    , selectButtons_(false)
-    , selectPad_(false)
-    , buttons_(0) {
+Joypad::Joypad(InterruptController &ic)
+        : ic_(ic), selectButtons_(false), selectPad_(false), buttons_(0) {
 }
 
 void Joypad::press(const Button b) {
@@ -63,9 +60,9 @@ u8 Joypad::read() {
     Utils::setBit(res, 5, selectButtons_);
     Utils::setBit(res, 4, selectPad_);
 
-    if(selectButtons_)
+    if (selectButtons_)
         res |= buttons_;
-    if(selectPad_)
+    if (selectPad_)
         res |= directions_;
 
     return ~res;

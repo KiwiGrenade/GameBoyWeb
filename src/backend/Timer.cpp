@@ -1,28 +1,28 @@
 #include "Timer.hpp"
 #include "InterruptController.hpp"
 
-Timer::Timer(InterruptController& ic)
-    : ic_(ic) {
+Timer::Timer(InterruptController &ic)
+        : ic_(ic) {
     reset();
 }
 
 void Timer::update(uint64_t cycles) {
     div_ticks_ += cycles;
     // prev value - 0xFF
-    if(div_ticks_ >= 0xFF) {
+    if (div_ticks_ >= 0xFF) {
         div_ticks_ -= 0xFF;
         ++DIV_;
     }
 
     // bit 2 - enable
-    if(TAC_ & 0b100) {
+    if (TAC_ & 0b100) {
         tima_ticks_ += cycles;
         // bit 0 and 1 - timer control (TAC)
         int freq = frequencies[TAC_ & 0b11];
-        while(tima_ticks_ >= freq) {
+        while (tima_ticks_ >= freq) {
             tima_ticks_ -= freq;
             ++TIMA_;
-            if(TIMA_ == 0)
+            if (TIMA_ == 0)
                 timaOverflow();
         }
     }
@@ -36,20 +36,36 @@ void Timer::timaOverflow() {
 u8 Timer::read(u16 addr) const {
     u8 b = 0xFF;
     switch (addr) {
-        case 0xFF04: b = (DIV_ >> 8); break;
-        case 0xFF05: b = TIMA_; break;
-        case 0xFF06: b = TMA_; break;
-        case 0xFF07: b = TAC_; break;
+        case 0xFF04:
+            b = (DIV_ >> 8);
+            break;
+        case 0xFF05:
+            b = TIMA_;
+            break;
+        case 0xFF06:
+            b = TMA_;
+            break;
+        case 0xFF07:
+            b = TAC_;
+            break;
     }
     return b;
 }
 
 void Timer::write(u8 byte, u16 addr) {
     switch (addr) {
-        case 0xFF04: DIV_ = 0; break;
-        case 0xFF05: TIMA_ = byte; break;
-        case 0xFF06: TMA_ = byte; break;
-        case 0xFF07: TAC_ = byte; break;
+        case 0xFF04:
+            DIV_ = 0;
+            break;
+        case 0xFF05:
+            TIMA_ = byte;
+            break;
+        case 0xFF06:
+            TMA_ = byte;
+            break;
+        case 0xFF07:
+            TAC_ = byte;
+            break;
     }
 }
 

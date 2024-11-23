@@ -5,7 +5,7 @@
 
 class Timer {
 public:
-    Timer(InterruptController& ic);
+    Timer(InterruptController &ic);
 
     void update(uint64_t cycles);
     void reset();
@@ -15,7 +15,7 @@ public:
 protected:
     void timaOverflow();
 
-    InterruptController& ic_;
+    InterruptController &ic_;
 
     int div_ticks_;
     int tima_ticks_;
@@ -24,5 +24,5 @@ protected:
     u8 TMA_ = 0;
     u8 TAC_ = 0;
     u16 DIV_ = 0;
-    static constexpr int frequencies[4] { 1024, 16, 64, 256 };
+    static constexpr int frequencies[4]{1024, 16, 64, 256};
 };

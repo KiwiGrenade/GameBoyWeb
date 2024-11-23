@@ -33,14 +33,14 @@
 
 class Memory {
 public:
-    Memory(InterruptController &ic, Timer& timer, Joypad& joypad, SerialDataTransfer& serial, PPU& ppu, CPUClock& cpuClock);
-    
+    Memory(InterruptController &ic, Timer &timer, Joypad &joypad, SerialDataTransfer &serial, PPU &ppu,
+           CPUClock &cpuClock);
+
     u8 read(const u16 addr);
     void write(const u8 byte, const u16 addr);
     void reset();
-    void loadCartridge(std::shared_ptr<Cartridge>);
+    void loadCartridge(std::shared_ptr <Cartridge>);
     void initIo();
-
     u8 vram_read(u8 bank, u16 addr) const;
     void vram_write(u8 byte, u8 bank, u16 addr);
 
@@ -49,18 +49,18 @@ public:
 protected:
 
     void oamDmaTransfer(u8 byte);
-    
-    std::shared_ptr<Cartridge> cartridge_;
+
+    std::shared_ptr <Cartridge> cartridge_;
     InterruptController &ic_;
-    Timer& timer_;
-    Joypad& joypad_;
-    SerialDataTransfer& serial_;
-    PPU& ppu_;
-    CPUClock& cpuClock_;
+    Timer &timer_;
+    Joypad &joypad_;
+    SerialDataTransfer &serial_;
+    PPU &ppu_;
+    CPUClock &cpuClock_;
 
     // memory
-    WorkRam wram_ {2};
-    std::array<u8, 0x80> io_ {};
-    std::array<u8, 0x7F> hram_ {};
+    WorkRam wram_{2};
+    std::array<u8, 0x80> io_{};
+    std::array<u8, 0x7F> hram_{};
     bool wroteToSram_ = false;
 };
