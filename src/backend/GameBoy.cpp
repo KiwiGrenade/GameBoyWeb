@@ -1,5 +1,4 @@
 #include "GameBoy.hpp"
-#include "SerialDataTransfer.hpp"
 #include "utils.hpp"
 #include <cstdint>
 
@@ -31,18 +30,6 @@ std::string GameBoy::getSerialOutput() {
     return std::string{vec.begin(), vec.end()};
 }
 
-uint64_t GameBoy::update(const uint32_t cyclesToExecute) {
-    uint64_t cyclesPassed = 0;
-    while (cyclesPassed < cyclesToExecute) {
-        size_t oldCycles = cpu_.getCycles();
-        cpu_.step();
-        cyclesPassed += (cpu_.getCycles() - oldCycles);
-        ppu_.step(cyclesPassed);
-        timer_.update(cyclesPassed);
-    }
-    return cyclesPassed;
-}
-
 void GameBoy::stop() {
     isStopped_ = true;
     if (thread_.joinable())
@@ -50,27 +37,34 @@ void GameBoy::stop() {
 }
 
 void GameBoy::pause() {
-    isPaused_ = true;
-}
-
-void GameBoy::resume() {
-    if (not isPaused_)
-        return;
-    std::lock_guard <std::mutex> lock(mutex_);
-    isPaused_ = false;
-    pause_cv_.notify_one();
+    const std::lock_guard <std::mutex> lock(mutex_);
+    isPaused_ = !isPaused_;
 }
 
 void GameBoy::run() {
     isPaused_ = false;
     isStopped_ = false;
 
-    while (not isStopped_) {
-        std::unique_lock <std::mutex> lock(mutex_);
-        pause_cv_.wait(lock, [this] { return !isPaused_; });
-        executeNCycles(70224);
+    QElapsedTimer timer;
+    uint64_t deltaTime = 0;
+    uint64_t accuTime = 0;
+
+    constexpr uint32_t dispInterval = 16750418;
+
+    timer.start();
+    while(not isStopped_) {
+        const std::lock_guard <std::mutex> lock(mutex_);
+        deltaTime = timer.nsecsElapsed();
+        timer.restart();
+
+        if(deltaTime > 1000000000)
+            deltaTime = 1000000000;
+
+        accuTime += deltaTime;
+        for(;accuTime >= dispInterval; accuTime -= dispInterval) {
+            executeNCycles(70224);
+        }
     }
-    isPaused_ = true;
 }
 
 void GameBoy::reset() {
@@ -86,6 +80,8 @@ void GameBoy::reset() {
 }
 
 void GameBoy::executeNCycles(uint64_t cycles) {
+    if (isPaused_)
+        return;
     uint64_t cyclesPassed = 0;
     while (cyclesPassed < cycles) {
         cyclesPassed += step();
@@ -94,12 +90,11 @@ void GameBoy::executeNCycles(uint64_t cycles) {
 
 uint32_t GameBoy::step() {
     uint32_t cyclesPassed = 0;
-    size_t oldCycles{cpu_.getCycles()};
+    cpuClock_.cycles_ = 0;
     cpu_.step();
-    cyclesPassed += (cpu_.getCycles() - oldCycles);
-    ppu_.step(cyclesPassed);
-    timer_.update(cyclesPassed);
-    return cyclesPassed;
+    ppu_.update(cpuClock_.cycles_);
+    timer_.update(cpuClock_.cycles_);
+    return cpuClock_.cycles_;
 }
 
 void GameBoy::runConcurrently() {

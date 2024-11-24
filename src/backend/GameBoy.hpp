@@ -30,7 +30,6 @@ public:
     void pause();
     void resume();
     void reset();
-    uint64_t step(uint64_t cycles);
     void press(Joypad::Button button);
     void release(Joypad::Button button);
     bool isRunning() const;
@@ -47,7 +46,6 @@ protected:
 
     std::thread thread_;
 
-    std::condition_variable pause_cv_;
     std::atomic<bool> isStopped_ = false;
     mutable std::mutex mutex_;
     // flags

@@ -19,7 +19,7 @@ public:
         Renderer *r = nullptr);
 
     void reset();
-    void step(size_t cycles);
+    void update(size_t cycles);
 
     // getters
     inline int getCycles() const { return cycles_; };

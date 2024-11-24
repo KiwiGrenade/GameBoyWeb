@@ -7,7 +7,6 @@ Joypad::Joypad(InterruptController &ic)
 
 void Joypad::press(const Button b) {
     update(b, true);
-    /*Utils::setBit(buttons_, b, true);*/
 }
 
 void Joypad::release(const Button b) {

@@ -12,14 +12,8 @@ class QImage;
 class QLabel;
 class QTimer;
 
-/*
-class DebuggerWindow;
-class VramWindow;
-*/
-
 struct Preferences {
     bool antialiasing;
-    bool force_dmg;
 };
 
 struct Controls {
@@ -51,20 +45,10 @@ private
     // This is called by the PPU on VBLANK.
     void updateDisplay();
 
-    // Update the FPS counter in the window title. A QTimer calls this every second.
-    void updateFps();
-
     // Open file dialog to choose a ROM file
     void openRom();
 
-    // Create debugger window
-    void showDebugger();
-
-    // Create VRAM viewer window
-    void showVramViewer();
-
-    // Show `about` window
-    void about();
+    void pause();
 
     // options menu slots
     void toggleAntiAlias(bool);
@@ -98,17 +82,8 @@ private:
     // Produces graphical output for the display.
     QtRenderer *renderer_{nullptr};
 
-    // Timer that calls updateFps() every second
-    QTimer *fpsTimer_;
-
     // Base title of the MainWindow (i.e. not including FPS counter)
     QString title_;
-
-    // Frames drawn since the last call to updateFps()
-    int frames_;
-
-    // Title of the current ROM loaded
-    QString curRom;
 
     // Saved preferences for options
     Preferences prefs_;

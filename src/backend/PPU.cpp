@@ -58,7 +58,7 @@ void PPU::writeVram(u8 b, u16 adr) {
     vram_.write(b, 0, adr);
 }
 
-void PPU::step(size_t cycles) {
+void PPU::update(size_t cycles) {
     // PPU operates on 4.194 MHz clock, 1 clock = 1/4 cycle
     cycles_ += cycles;
     if (not isEnabled()) // bit 7

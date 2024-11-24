@@ -1,9 +1,6 @@
-#include <iomanip>
-#include <chrono>
 #include <ctime>
 
 #include "CPU.hpp"
-#include "InterruptController.hpp"
 #include "InstructionInfo.hpp"
 
 CPU::CPU(InterruptController& ic, CPUClock& clock, Memory& memory)
@@ -73,7 +70,7 @@ uint16_t CPU::fetch16()
     return static_cast<uint16_t>(hi << 8 | lo);
 }
 
-bool CPU::executeInterrupt(Interrupt i)
+bool CPU::executeInterrupt(InterruptController::Type i)
 {
     clock_.isHalted_ = false;
     clock_.isStopped_ = false;
@@ -99,15 +96,15 @@ bool CPU::checkInterrupt()
     bool serviced {false};
 
     if (request & 1)
-        serviced = executeInterrupt(VBLANK);
+        serviced = executeInterrupt(InterruptController::Type::VBlank);
     if (request & 1 << 1)
-        serviced = executeInterrupt(LCD_STAT);
+        serviced = executeInterrupt(InterruptController::Type::LCD);
     if (request & 1 << 2)
-        serviced = executeInterrupt(TIMER);
+        serviced = executeInterrupt(InterruptController::Type::Timer);
     if (request & 1 << 3)
-        serviced = executeInterrupt(SERIAL);
+        serviced = executeInterrupt(InterruptController::Type::Serial);
     if (request & 1 << 4)
-        serviced = executeInterrupt(JOYPAD);
+        serviced = executeInterrupt(InterruptController::Type::Joypad);
     return serviced;
 }
 
@@ -746,7 +743,7 @@ void CPU::step()
             : instructions[op].cycles;
     }
     // CGB double speed mode, CPU clock ticks twice as fast
-    clock_.cycles_ += (doubleSpeed_) ? cycles_passed/2 : cycles_passed;
+    clock_.cycles_ += cycles_passed;
     useBranchCycles_ = false;
     return;
 }

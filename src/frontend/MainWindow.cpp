@@ -1,9 +1,7 @@
 #include <QtWidgets>
 #include "MainWindow.hpp"
 
-#include <chrono>
 #include <memory>
-#include <sstream>
 
 MainWindow::MainWindow(QWidget *parent,
                        const QString &title)
@@ -11,19 +9,14 @@ MainWindow::MainWindow(QWidget *parent,
           gameBoy_{std::make_shared<GameBoy>()},
           display_{new QLabel(this)},
           renderer_{new QtRenderer(160, 144, this)},
-          fpsTimer_{new QTimer(this)},
           title_{title} {
     setCentralWidget(display_);
-    setWindowTitle(title);
+    setWindowTitle(title_);
 
     display_->setScaledContents(true);
     display_->setMinimumSize(160, 144);
 
     gameBoy_->setRenderer(renderer_);
-
-    fpsTimer_->setInterval(1000);
-    fpsTimer_->callOnTimeout(this, &MainWindow::updateFps);
-    fpsTimer_->start();
 
     connect(renderer_, SIGNAL(showScreen()), this, SLOT(updateDisplay()));
     createActions();
@@ -95,13 +88,6 @@ void MainWindow::updateDisplay() {
             centralWidget()->height(),
             Qt::IgnoreAspectRatio,
             transformation_mode));
-    ++frames_;
-}
-
-void MainWindow::updateFps() {
-    QString newTitle{title_ + " - FPS: " + QString::number(frames_)};
-    setWindowTitle(newTitle);
-    frames_ = 0;
 }
 
 void MainWindow::openRom() {
@@ -119,41 +105,13 @@ void MainWindow::openRom() {
     QFileDialog::getOpenFileContent(" ROMs (*.gb)", fileContentReady);
 }
 
-void MainWindow::showDebugger() {
-    /*
-    if (!debuggerWindow_)
-        debuggerWindow_ = new DebuggerWindow(gameBoy_, this);
-    debuggerWindow_->show();
-    */
-}
-
-void MainWindow::showVramViewer() {
-    /*
-     auto *vram_viewer = new Vram_window(gameBoy_);
-     vram_viewer->show();
-     */
-}
-
-
-void MainWindow::about() {
-    QMessageBox::about(this, tr("About QtBoy"),
-                       tr("A Gameboy emulator made using Qt."));
+void MainWindow::pause() {
+    gameBoy_->pause();
 }
 
 void MainWindow::toggleAntiAlias(bool b) {
     prefs_.antialiasing = b;
 }
-
-/*void MainWindow::toggleForceDmg(bool b)*/
-/*{*/
-/*    gameBoy_->set_force_dmg(b);*/
-/*}*/
-/**/
-/**/
-/*void MainWindow::toggleSound(bool b)*/
-/*{*/
-/*    gameBoy_->toggle_sound(b);*/
-/*}*/
 
 QMenu *MainWindow::createMenu(const QString &name) {
     return menuBar()->addMenu(name);
@@ -187,20 +145,12 @@ void MainWindow::createActions() {
     QAction *openAct = createSingleAction(tr("&Open"), fileMenu, &MainWindow::openRom);
     openAct->setShortcuts(QKeySequence::Open);
 
+    QAction *pauseAct = createSingleAction(tr("&Pause"), fileMenu, &MainWindow::pause);
+    pauseAct->setShortcut(QKeySequence::Paste);
+
     // Options menu
     QMenu *optionsMenu = createMenu(tr("&Options"));
     createCheckableAction(tr("Anti-aliasing"),
                           optionsMenu,
                           &MainWindow::toggleAntiAlias);
-
-    /*
-    // Tools menu
-    QMenu *toolsMenu = createMenu(tr("&Tools"));
-    createSingleAction(tr("Debugger"), toolsMenu, &MainWindow::showDebugger);
-    createSingleAction(tr("VRAM Viewer"), toolsMenu, &MainWindow::showVramViewer);
-    */
-
-    // Help menu
-    QMenu *helpMenu = createMenu(tr("&Help"));
-    createSingleAction(tr("&About"), helpMenu, &MainWindow::about);
 }

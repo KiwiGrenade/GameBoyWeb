@@ -24,8 +24,6 @@ Rom::Rom(const QByteArray arr) {
             buf[j] = arr[i*bankSize_ + j];
         data_.push_back(buf);
     }
-
-    Utils::warning("Initialized rom!");
 }
 
 Rom::Rom(const std::string &filePathStr) {

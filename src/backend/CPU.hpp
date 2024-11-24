@@ -15,20 +15,11 @@ typedef u8& r8;
 class CPU {
 public:
 
-    enum Interrupt : u8 {
-        VBLANK = 0,
-        LCD_STAT,
-        TIMER,
-        SERIAL,
-        JOYPAD,
-    };
-
     CPU(InterruptController &ic, CPUClock &clock, Memory &memory_);
 
     void step();
     void reset();
     CPUDump getDebugDump() const noexcept;
-    uint32_t getCycles() const noexcept { return clock_.cycles_; }
     
     // needed for OAM DMA transfer
     void addCycles(uint32_t c);
@@ -71,7 +62,7 @@ private:
     void setFlag(Flags, bool);
 
     // interrupts
-    bool executeInterrupt(Interrupt i);
+    bool executeInterrupt(InterruptController::Type i);
     bool checkInterrupt();
 
     // instructions
