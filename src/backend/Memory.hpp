@@ -40,14 +40,11 @@ public:
     void write(const u8 byte, const u16 addr);
     void reset();
     void loadCartridge(std::shared_ptr <Cartridge>);
-    void initIo();
-    u8 vram_read(u8 bank, u16 addr) const;
-    void vram_write(u8 byte, u8 bank, u16 addr);
 
     static constexpr uint32_t size_ = 0x10000;
 
 protected:
-
+    void initIo();
     void oamDmaTransfer(u8 byte);
 
     std::shared_ptr <Cartridge> cartridge_;

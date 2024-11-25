@@ -68,10 +68,7 @@ void Memory::write(const u8 byte, const u16 addr) {
     }
         // ERAM
     else if (addr < 0xC000) {
-        /*eram_.write(byte, 0, addr - 0xB0000);*/
         cartridge_->write(byte, addr);
-        /*wroteToSram_ = true;*/
-        /*Utils::warning("Write to ERAM");*/
     }
         // WRAM0
     else if (addr < 0xD000) {

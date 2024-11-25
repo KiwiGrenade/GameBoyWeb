@@ -15,7 +15,7 @@ Rom::Rom(std::istream &is) {
 }
 
 Rom::Rom(const QByteArray arr) {
-    if (arr.size() < bankSize_) {
+    if (arr.size() < bankSize_ * 2) {
         Utils::error("ROM: Not enough data!");
     }
     Bank buf{};

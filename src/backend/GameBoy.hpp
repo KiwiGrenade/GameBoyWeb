@@ -1,6 +1,5 @@
 #pragma once
 
-#include <condition_variable>
 #include <cstdint>
 #include <memory>
 
@@ -22,26 +21,29 @@ public:
     GameBoy();
     ~GameBoy();
 
+    // main loop
     void runConcurrently();
-    void setRenderer(Renderer *r);
-    void executeNCycles(uint64_t cycles);
+
+    // state managment
     uint32_t step();
     void stop();
     void pause();
-    void resume();
     void reset();
+
+    // setters
+    void setRenderer(Renderer *r);
+    void loadCartridge(const std::shared_ptr <Cartridge> cartridge);
     void press(Joypad::Button button);
     void release(Joypad::Button button);
-    bool isRunning() const;
-    void loadCartridge(const std::shared_ptr <Cartridge> cartridge);
+
+    // getters
     std::string getCPUDebugDump();
     std::string getSerialOutput();
-    uint64_t update(uint32_t nCycles);
 
 protected:
     void run();
+    void executeNCycles(uint64_t cycles);
 
-    std::string romTitle_{};
     bool isRomLoaded_ = false;
 
     std::thread thread_;

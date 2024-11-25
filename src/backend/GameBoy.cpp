@@ -49,7 +49,8 @@ void GameBoy::run() {
     uint64_t deltaTime = 0;
     uint64_t accuTime = 0;
 
-    constexpr uint32_t dispInterval = 16750418;
+    constexpr uint32_t interval = 16750418;
+    constexpr uint32_t maxInterval = 1000000000;
 
     timer.start();
     while(not isStopped_) {
@@ -57,11 +58,11 @@ void GameBoy::run() {
         deltaTime = timer.nsecsElapsed();
         timer.restart();
 
-        if(deltaTime > 1000000000)
-            deltaTime = 1000000000;
+        if(deltaTime > maxInterval)
+            deltaTime = maxInterval;
 
         accuTime += deltaTime;
-        for(;accuTime >= dispInterval; accuTime -= dispInterval) {
+        for(;accuTime >= interval; accuTime -= interval) {
             executeNCycles(70224);
         }
     }
@@ -75,7 +76,6 @@ void GameBoy::reset() {
     ppu_.reset();
     memory_.reset();
     cpu_.reset();
-    romTitle_ = {};
     isRomLoaded_ = false;
 }
 
@@ -89,6 +89,9 @@ void GameBoy::executeNCycles(uint64_t cycles) {
 }
 
 uint32_t GameBoy::step() {
+    if (not isRomLoaded_) {
+        Utils::error("Rom is not loaded!");
+    }
     uint32_t cyclesPassed = 0;
     cpuClock_.cycles_ = 0;
     cpu_.step();
@@ -98,9 +101,6 @@ uint32_t GameBoy::step() {
 }
 
 void GameBoy::runConcurrently() {
-    if (not isRomLoaded_) {
-        Utils::error("Rom is not loaded!");
-    }
     stop();
     auto runFunction = [this] { this->run(); };
     thread_ = std::thread(runFunction);
@@ -113,10 +113,5 @@ void GameBoy::press(Joypad::Button b) {
 
 void GameBoy::release(Joypad::Button b) {
     joypad_.release(b);
-}
-
-bool GameBoy::isRunning() const {
-    std::lock_guard <std::mutex> lock(mutex_);
-    return not isPaused_;
 }
 

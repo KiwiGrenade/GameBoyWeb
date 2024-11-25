@@ -33,7 +33,7 @@ class MainWindow : public QMainWindow {
 
 public:
     explicit MainWindow(QWidget *parent = nullptr,
-                        const QString &title = "Gameboy");
+                        const QString &title = "GameBoyWeb");
 
 protected:
     void keyPressEvent(QKeyEvent *);

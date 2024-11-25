@@ -14,13 +14,11 @@ struct MemoryBankController
     virtual ~MemoryBankController() = default;
 };
 
-class Mbc1 : public MemoryBankController
+class MBC1 : public MemoryBankController
 {
 	public:
-    Mbc1(Rom *rom, std::optional<ERam> *ram);
-    Mbc1(const Mbc1 &) = delete;
-    Mbc1 &operator=(const Mbc1 &) = delete;
-    ~Mbc1() override = default;
+    MBC1(Rom& rom, std::optional<ERam>& ram);
+    ~MBC1() override = default;
 
 	uint8_t read(uint16_t adr) const override;
 	void write(uint8_t b, uint16_t adr) override;
@@ -30,8 +28,8 @@ class Mbc1 : public MemoryBankController
     private:
     void adjustRomBank();
 
-    Rom *rom_;
-    std::optional<ERam> *ram_;
+    Rom &rom_;
+    std::optional<ERam> &ram_;
 	uint8_t ramBank_ {0};
     uint8_t romBank_ {1};
 	bool ramEnable_ {false};

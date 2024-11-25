@@ -32,7 +32,6 @@ void CPU::reset()
     IME_ = false;
     eiSet_ = false;
     diSet_ = false;
-    doubleSpeed_ = false;
 }
 
 void CPU::addCycles(uint32_t c)

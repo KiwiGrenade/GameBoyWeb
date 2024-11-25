@@ -3,20 +3,20 @@
 #include "Rom.hpp"
 #include "Ram.hpp"
 
-Mbc1::Mbc1(Rom *rom, std::optional<ERam> *ram)
+MBC1::MBC1(Rom &rom, std::optional<ERam> &ram)
     : rom_ {rom}, ram_ {ram}
 {}
 
-uint8_t Mbc1::read(uint16_t addr) const
+uint8_t MBC1::read(uint16_t addr) const
 {
     uint8_t b {0xFF};
     if (addr < 0x4000)
     {
-        b = rom_->read(0, addr);
+        b = rom_.read(0, addr);
     }
     else if (addr < 0x8000)
     {
-        b = rom_->read(romBank_, addr - 0x4000);
+        b = rom_.read(romBank_, addr - 0x4000);
     }
     else if (addr < 0xa000)
     {
@@ -25,14 +25,14 @@ uint8_t Mbc1::read(uint16_t addr) const
     else if (addr < 0xc000)
     {
         if (ram_ && ramEnable_)
-            b = ram_->value().read(ramBank_, addr - 0xa000);
+            b = ram_.value().read(ramBank_, addr - 0xa000);
         else
             b = 0xff;
     }
     return b;
 }
 
-void Mbc1::write(uint8_t b, uint16_t addr)
+void MBC1::write(uint8_t b, uint16_t addr)
 {
     if (addr < 0x2000)
     {
@@ -72,11 +72,11 @@ void Mbc1::write(uint8_t b, uint16_t addr)
     else if (addr >= 0xa000 && addr < 0xc000)
     {
         if (ram_ && ramEnable_)
-            ram_->value().write(b, ramBank_, addr - 0xa000);
+            ram_.value().write(b, ramBank_, addr - 0xa000);
     }
 }
 
-void Mbc1::adjustRomBank()
+void MBC1::adjustRomBank()
 {
     // ROM banks 00, 20h, 40h, and 60h are not accessible. They convert
     // to 01h, 21h, 41h, and 61h instead

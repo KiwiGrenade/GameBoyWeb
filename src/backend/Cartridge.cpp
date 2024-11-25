@@ -1,7 +1,4 @@
 #include "Cartridge.hpp"
-#include <array>
-#include <filesystem>
-#include <fstream>
 #include <memory>
 #include <qstringview.h>
 #include "Ram.hpp"
@@ -13,7 +10,8 @@ Cartridge::Cartridge(const std::string &filePath)
 
 Cartridge::Cartridge(const QByteArray &fileContent)
         : rom_(fileContent), title_("") {
-    initMBC();
+    assignMBC();
+    assignRam();
 }
 
 u8 Cartridge::read(u16 addr) const {
@@ -34,7 +32,7 @@ void Cartridge::write(u8 byte, u16 addr) {
         mbc_->write(byte, addr);
 }
 
-void Cartridge::initRam() {
+void Cartridge::assignRam() {
     if(hasRam_)
         switch (rom_.read(0, 0x149)) {
             case 0:
@@ -54,36 +52,21 @@ void Cartridge::initRam() {
         }
 }
 
-void Cartridge::initMBC() {
+void Cartridge::assignMBC() {
     switch (rom_.read(0, 0x147)) {
         // NO MBC
         case 0x00:
             break;
         // MBC1
         case 0x01:
-            mbc_ = std::make_unique<Mbc1>(&rom_, &ram_);
+            mbc_ = std::make_unique<MBC1>(rom_, ram_);
             break;
         // MBC1 + RAM
         case 0x02:
-            mbc_ = std::make_unique<Mbc1>(&rom_, &ram_);
+            mbc_ = std::make_unique<MBC1>(rom_, ram_);
             hasRam_ = true;
             break;
         default:
             Utils::error("Unsuported cartridge type!");
     }
-}
-
-std::array <u8, Cartridge::romSize_> Cartridge::extractROM(const QByteArray &fileContent) {
-    if (fileContent.isEmpty())
-        Utils::error("File content is empty!");
-    if (fileContent.size() < romSize_)
-        Utils::error("File content is too small for rom!");
-
-    std::array <u8, Cartridge::romSize_> rom;
-
-    for (uint32_t i = 0; i < romSize_; i++) {
-        rom[i] = fileContent[i];
-    }
-
-    return rom;
 }

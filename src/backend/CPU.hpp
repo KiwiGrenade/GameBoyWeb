@@ -49,7 +49,6 @@ private:
     bool diSet_{false};
 
     bool useBranchCycles_{false};
-    bool doubleSpeed_{false}; // CGB only
 
     std::function<u8(u16)> read{[this](u16 adr) { return memory_.read(adr); }};
     std::function<void(u8, u16)> write{[this](u8 b, u16 a) { memory_.write(b, a); }};
