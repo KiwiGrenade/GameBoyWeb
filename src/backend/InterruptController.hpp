@@ -22,7 +22,7 @@ public:
     u8 getIF();
     void reset();
 
-protected:
+private:
     // Address: 0xFFFF
     u8 IE_;
     // Address: 0xFF0F

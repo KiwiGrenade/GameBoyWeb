@@ -14,7 +14,7 @@ void QtRenderer::clear() {
 }
 
 QImage QtRenderer::getImage() const {
-    const std::lock_guard <std::mutex> lock(buf_mutex_);
+    const std::lock_guard <std::mutex> lock(bufMutex_);
     QImage img(buf_.data(), width_, height_, QImage::Format_RGB555);
     return img;
 }
@@ -27,7 +27,7 @@ void QtRenderer::drawTexture(const Texture &tex, u16 xOffset, u16 yOffset) {
     const u16 w{tex.width()};
     const u16 h{tex.height()};
     {
-        const std::lock_guard <std::mutex> lock(buf_mutex_);
+        const std::lock_guard <std::mutex> lock(bufMutex_);
         for (uint32_t i = 0; i < w * h; ++i) {
             int x = xOffset + i % w;
             int y = yOffset + i / w;

@@ -19,7 +19,6 @@ public:
 
 protected:
     InterruptController &ic_;
-    /*InterruptController& ic_;*/
     std::vector<char> testOutput_;
     u8 SB_; // serial transfer data
     u8 SC_; // serial control

@@ -6,7 +6,7 @@
 MainWindow::MainWindow(QWidget *parent,
                        const QString &title)
         : QMainWindow{parent},
-          gameBoy_{std::make_shared<GameBoy>()},
+          gameBoy_{std::make_unique<GameBoy>()},
           display_{new QLabel(this)},
           renderer_{new QtRenderer(160, 144, this)},
           title_{title} {
@@ -23,11 +23,10 @@ MainWindow::MainWindow(QWidget *parent,
 }
 
 
-void MainWindow::loadRom(const QString &fileName) {
+void MainWindow::loadRom() {
     auto fileContentReady = [this](const QString &fileName, const QByteArray &fileContent) {
         if (fileName.isEmpty()) {
-            std::cout << "No file was selected! Exiting!" << std::endl;
-            exit(1);
+            Utils::error("File is empty!");
         }
         gameBoy_->reset();
         std::shared_ptr <Cartridge> car = std::make_shared<Cartridge>(fileContent);
@@ -35,7 +34,7 @@ void MainWindow::loadRom(const QString &fileName) {
         gameBoy_->runConcurrently();
     };
 
-    QFileDialog::getOpenFileContent(" ROMs (*.ch8)", fileContentReady);
+    QFileDialog::getOpenFileContent(" ROMs (*.gb)", fileContentReady);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event) {
@@ -90,21 +89,6 @@ void MainWindow::updateDisplay() {
             transformation_mode));
 }
 
-void MainWindow::openRom() {
-    auto fileContentReady = [this](const QString &fileName, const QByteArray &fileContent) {
-        if (fileName.isEmpty()) {
-            std::cout << "No file was selected! Exiting!" << std::endl;
-            exit(1);
-        }
-        gameBoy_->reset();
-        std::shared_ptr <Cartridge> car = std::make_shared<Cartridge>(fileContent);
-        gameBoy_->loadCartridge(car);
-        gameBoy_->runConcurrently();
-    };
-
-    QFileDialog::getOpenFileContent(" ROMs (*.gb)", fileContentReady);
-}
-
 void MainWindow::pause() {
     gameBoy_->pause();
 }
@@ -141,8 +125,9 @@ QAction *MainWindow::createCheckableAction(const QString &name,
 
 void MainWindow::createActions() {
     // File menu
+
     QMenu *fileMenu = createMenu(tr("&File"));
-    QAction *openAct = createSingleAction(tr("&Open"), fileMenu, &MainWindow::openRom);
+    QAction *openAct = createSingleAction(tr("&Open"), fileMenu, &MainWindow::loadRom);
     openAct->setShortcuts(QKeySequence::Open);
 
     QAction *pauseAct = createSingleAction(tr("&Pause"), fileMenu, &MainWindow::pause);

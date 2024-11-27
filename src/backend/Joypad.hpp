@@ -24,7 +24,7 @@ public:
     u8 read();
     void write(u8 byte);
 
-protected:
+private:
     void update(const Button b, const bool isPressed);
 
     InterruptController &ic_;

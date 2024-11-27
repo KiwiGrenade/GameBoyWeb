@@ -18,11 +18,11 @@ public:
     QImage getImage() const;
     QPixmap getPixmap() const;
 
-    signals:
-            void showScreen() override;
+signals:
+    void showScreen() override;
 
 private:
-    mutable std::mutex buf_mutex_;
+    mutable std::mutex bufMutex_;
     u16 width_;
     u16 height_;
     std::vector <u8> buf_;

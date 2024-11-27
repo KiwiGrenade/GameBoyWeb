@@ -40,7 +40,7 @@ public:
     std::string getCPUDebugDump();
     std::string getSerialOutput();
 
-protected:
+private:
     void run();
     void executeNCycles(uint64_t cycles);
 

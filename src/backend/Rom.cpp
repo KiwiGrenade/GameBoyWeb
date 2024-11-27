@@ -41,7 +41,6 @@ Rom::Rom(const std::string &filePathStr) {
             data_.push_back(buf);
     }
     file.close();
-    Utils::warning("Initialized rom!");
 }
 
 u8 Rom::read(u8 bank, u16 addr) const {

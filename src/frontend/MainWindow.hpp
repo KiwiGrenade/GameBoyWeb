@@ -44,18 +44,13 @@ private
     // Update the display to show the most recent frame in the renderer.
     // This is called by the PPU on VBLANK.
     void updateDisplay();
-
-    // Open file dialog to choose a ROM file
-    void openRom();
-
+    // load the cartridge at fileName onto the Gameboy.
+    void loadRom();
     void pause();
-
     // options menu slots
     void toggleAntiAlias(bool);
 
 private:
-    // load the cartridge at fileName onto the Gameboy.
-    void loadRom(const QString &fileName);
 
     // Create a new menu in the toolbar.
     QMenu *createMenu(const QString &name);
@@ -74,7 +69,7 @@ private:
     // Create all the actions performed by the buttons in the toolbar.
     void createActions();
 
-    std::shared_ptr <GameBoy> gameBoy_;
+    std::unique_ptr <GameBoy> gameBoy_;
 
     // Display for the Gameboy. Displays the contents output by the renderer.
     QLabel *display_;

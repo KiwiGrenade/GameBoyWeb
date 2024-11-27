@@ -1,0 +1,101 @@
+@startuml
+class Cartridge
+class CPU
+struct CPUClock
+struct CPUDump
+class GameBoy
+struct Instruction
+class InterruptController
+class Joypad
+class Memory
+abstract class MemoryBankController
+class MBC1
+class PPU
+class Ram
+class RegisterPair
+abstract class Renderer
+class QtRenderer
+class SerialDataTransfer
+class Timer
+struct Preferences
+struct Controls
+class MainWindow
+class Texture
+struct Sprite
+class WorkRam
+class ERam
+class VRam
+class QObject
+
+enum Type
+enum Flags
+enum Layer
+
+GameBoy o-- Renderer
+GameBoy *-- InterruptController
+GameBoy *-- CPUClock
+GameBoy *-- Timer
+GameBoy *-- Joypad
+GameBoy *-- SerialDataTransfer
+GameBoy *-- PPU
+GameBoy *-- Memory
+GameBoy *-- CPU
+GameBoy --* MainWindow
+
+CPU o-- InterruptController
+CPU o-- CPUClock
+CPU o-- Memory
+CPU *-- Flags
+CPU *-- CPUDump
+CPU *-- RegisterPair 
+CPU *-- Instruction
+
+Memory o-- Cartridge
+Memory o-- InterruptController
+Memory o-- Timer
+Memory o-- Joypad
+Memory o-- SerialDataTransfer
+Memory o-- PPU
+Memory o-- CPUClock
+Memory *-- WorkRam
+
+Cartridge *-- Rom
+Cartridge *-- ERam
+Cartridge *-- MemoryBankController
+
+MemoryBankController <|-- MBC1
+
+MBC1 o-- Rom
+MBC1 o-- ERam
+
+InterruptController o-- Type
+SerialDataTransfer o-- InterruptController
+Timer o-- InterruptController
+
+PPU o-- InterruptController
+PPU o-- CPUClock
+PPU o-- Renderer
+PPU o-- Texture
+PPU *-- Layer
+PPU *-- VRam
+PPU *-- Sprite
+
+Ram <|-- ERam
+Ram <|-- WorkRam
+Ram <|-- VRam
+
+QtRenderer o-- Texture
+
+MainWindow *-- QtRenderer
+MainWindow *-- Preferences
+MainWindow *-- Controls
+
+QMainWindow <|-- MainWindow
+
+Renderer o-- Texture
+
+Renderer <|-- QtRenderer
+
+QObject <|-- QtRenderer
+
+@enduml

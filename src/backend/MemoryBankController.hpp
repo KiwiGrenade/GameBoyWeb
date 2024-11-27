@@ -5,8 +5,9 @@
 #include "Rom.hpp"
 #include "Ram.hpp"
 
-struct MemoryBankController 
+class MemoryBankController 
 {
+public:
 	virtual uint8_t read(uint16_t adr) const = 0;
 	virtual void write(uint8_t b, uint16_t adr) = 0; 
     virtual uint8_t getRomBank() const { return 0; }
