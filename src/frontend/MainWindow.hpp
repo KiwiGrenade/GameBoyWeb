@@ -24,8 +24,7 @@ struct Controls {
             left{Qt::Key_Left},
             right{Qt::Key_Right},
             select{Qt::Key_Shift},
-            start{Qt::Key_Return},
-            turbo{Qt::Key_Space};
+            start{Qt::Key_Return};
 };
 
 class MainWindow : public QMainWindow {
