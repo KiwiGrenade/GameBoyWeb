@@ -1,5 +1,6 @@
 #include "Rom.hpp"
 #include "utils.hpp"
+#include <filesystem>
 #include <cmath>
 #include <fstream>
 #include <qstringview.h>

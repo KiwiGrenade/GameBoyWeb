@@ -99,11 +99,10 @@ void PPU::writeReg(u8 b, u16 adr) {
             LCDC_ = b;
             break;
         case 0xFF41: {
-            // lower 3 bits of STAT are read only,
-            // only write to upper 4 bits
-            // clear upper 4 bits
+            // only write to upper nibble (4bits)
+            // clear upper nibble 
             STAT_ &= ~0xF8;
-            // set upper 4 bits
+            // set upper nibble 
             STAT_ |= b & 0xF8;
         }
             break;
@@ -136,9 +135,7 @@ void PPU::writeReg(u8 b, u16 adr) {
             WX_ = b;
             break;
         default:
-            break;
-            /*throw qtboy::Exception("Attempted to write invalid PPU register.",*/
-            /*                         __FILE__, __LINE__);*/
+            Utils::error("WRITE to unrecognized PPU register!");
     }
 }
 
@@ -180,9 +177,7 @@ u8 PPU::readReg(u16 adr) {
             b = WX_;
             break;
         default:
-            break;
-            /*throw qtboy::Exception("Attempted to read invalid PPU register.",*/
-            /*                         __FILE__, __LINE__);*/
+            Utils::error("READ from unrecognized PPU register!");
     }
     return b;
 }
@@ -192,7 +187,6 @@ Texture PPU::getFramebuffer(bool with_bg, bool with_win,
     Texture frame = with_bg ? getLayer(Layer::Background) : Texture(256, 256);
     if (with_win) {
         Texture window(getLayer(Layer::Window));
-        // copy window layer onto frame buffer layer in the correct position
         for (u16 y = 0; y < 256; ++y) {
             for (u16 x = 0; x < 256; ++x) {
                 u16 wx = WX_ - 7 - SCX_ + x;
@@ -221,7 +215,7 @@ Texture PPU::getTile(u16 i) const {
             Color c = dmgPalette_[color_i];
             u8 p = (byte / 2) * 8 + px;
             tex.set_pixel(p, c);
-            tex.set_pixel_priority(p, 0); // irrelevant
+            tex.set_pixel_priority(p, 0);
         }
     }
     return tex;
@@ -238,7 +232,7 @@ Texture PPU::getLayer(Layer l) const {
 }
 
 std::array<u8, 32 * 32> PPU::getRawBg() {
-    u16 bg_map = ((LCDC_ & (1 << 3)) ? 0x9c00 : 0x9800);
+    u16 bg_map = Utils::getBit(LCDC_, 3) ? 0x9c00 : 0x9800;
     std::array<u8, 32 * 32> raw{};
     for (int i = 0; i < 32 * 32; ++i)
         raw[i] = readVram(bg_map + i);
@@ -247,51 +241,48 @@ std::array<u8, 32 * 32> PPU::getRawBg() {
 
 void PPU::renderScanline() {
     Texture tex{160, 1};
-    // STOP mode: if LCD is on, set to all white, if off, all black
+    // STOP mode: LCD ON -> white, OFF -> black
     if (false && cpuClock_.isStopped_) {
         Color c = (LCDC_ & 0x80) ? 0xffff : 0;
         tex.fill(c);
     } else {
-        if (LCDC_ & 1) // bg/window enable
+        if (Utils::getBit(LCDC_, 0)) // bg/window enable
         {
             renderLayerLine(tex, PPU::Layer::Background);
-            if (LCDC_ & 1 << 5) // window display enable
+            if (Utils::getBit(LCDC_, 5)) // window display enable
                 renderLayerLine(tex, PPU::Layer::Window);
         }
-            // background and window appear white if lcdc bit 0 is cleared
         else {
             Color c(0xffff);
             tex.fill(c);
         }
-        if (LCDC_ & 1 << 1) // OBJ display enable
+        if (Utils::getBit(LCDC_, 1)) // OBJ display enable
             renderSpriteLine(tex);
     }
     renderer_->drawTexture(tex, 0, LY_);
 }
 
 void PPU::renderLayerLine(Texture &tex, PPU::Layer layer) {
-    // don't draw windo if the current line isn't a window line
+    // return if curr line is not a window
     if (layer == PPU::Layer::Window && LY_ < WY_)
         return;
-    // current y-coordinate of the 256x256 layer
+    // current Y 256x256 layer
     u8 y = 0;
     if (layer == PPU::Layer::Background)
         y = LY_ + SCY_;
     else if (layer == PPU::Layer::Window)
         y = scanline_;
-    // draw each pixel in the scanline
+    // draw scanline
     u8 window_pxs_drawn = 0;
     for (u8 x_px = 0; x_px < 160; ++x_px) {
-        // don't draw window if it doesn't appear yet
+        // window not visible yet
         if (layer == PPU::Layer::Window) {
-            // x: window could appear later in the line
             if (x_px < WX_ - 7)
                 continue;
-                // y: window does not appear at all in this line
             else if (WX_ < 7 || WX_ > 166 || WY_ > 143)
                 return;
         }
-        // current x-coordinate of the 256x256 layer
+        // current x of layer
         u8 x = (layer == PPU::Layer::Background)
                     ? x_px + SCX_
                     : x_px - (WX_ - 7);
@@ -302,72 +293,58 @@ void PPU::renderLayerLine(Texture &tex, PPU::Layer layer) {
         ++scanline_;
 }
 
-// render the layer pixel at (tex_x,tex_y) with the color at (x, y) in VRAM
+// Render the pixel at (tex_x, tex_y) in the texture using VRAM data for the layer at (x, y)
 void PPU::renderLayerPixel(Texture &tex, PPU::Layer layer,
                              u8 x, u8 y,
                              u8 tex_x, u8 tex_y) const {
-    u16 tile_map = 0x9800;
-    if (layer == PPU::Layer::Background) {
-        tile_map = ((LCDC_ & (1 << 3)) ? 0x9c00 : 0x9800);
+    // Determine the base address of the tile map based on the layer
+    u16 tile_map = (layer == PPU::Layer::Background) ?
+                   ((LCDC_ & (1 << 3)) ? 0x9c00 : 0x9800) :
+                   ((LCDC_ & (1 << 6)) ? 0x9c00 : 0x9800);
 
-    } else if (layer == PPU::Layer::Window) {
-        tile_map = ((LCDC_ & (1 << 6)) ? 0x9c00 : 0x9800);
-    }
-    // tile data offset in VRAM
-    u16 tile_base = (LCDC_ & 1 << 4) ? 0x8000 : 0x9000;
-    // x-index into the tile BG map (tile_map) of the tile to draw
-    u8 tile_x = x >> 3; // tiles are 8 px wide
-    // y tile index into the tile map
-    u8 tile_y = y >> 3; // tiles are 8 px tall
-    // index into tile BG map of the tile to draw
-    u16 tile_i = (tile_y * 32) + tile_x + tile_map;
-    // in VRAM bank 1
-    u8 tile_attribute = 0;
-    // index of the tile in tile data of the tile to draw
+    // Determine the base address of tile data in VRAM
+    u16 tile_base = (LCDC_ & (1 << 4)) ? 0x8000 : 0x9000;
+
+    // Calculate tile indices in the tile map
+    u8 tile_x = x / 8; // Tile column
+    u8 tile_y = y / 8; // Tile row
+    u16 tile_i = tile_map + tile_y * 32 + tile_x; // Tile index in the map
+
+    // Get the tile ID and attributes
     u8 tile_data_i = readVram(tile_i);
-    // bank containing the tile data
-    u8 bank = (tile_attribute & 1 << 3) ? 1 : 0;
-    // location to read tile data from
-    u16 adr = 0;
-    // 0x9000 base uses signed addressing
-    if (tile_base == 0x9000) {
-        // starting address of the data for the tile (1 tile is 16 bytes)
-        adr = tile_base + static_cast<int8_t>(tile_data_i) * 16;
-    }
-        // 0x8000 uses unsigned addressing
-    else {
-        // starting address of the data for the tile (1 tile is 16 bytes)
-        adr = tile_base + tile_data_i * 16;
-    }
-    // point address to the right byte in the tile data based on y pos
-    if (tile_attribute & 1 << 6) // vertical flip
-        adr += (7 - (y % 8)) * 2;
-    else
-        adr += (y % 8) * 2;
-    // get two bytes (one row of pixels) from the tile data
+    u8 tile_attribute = 0;
+
+    // Determine the VRAM bank based on tile attributes
+    u8 bank = (tile_attribute & (1 << 3)) ? 1 : 0;
+
+    // Calculate the address of the tile data
+    u16 adr = (tile_base == 0x9000) ?
+              tile_base + static_cast<int8_t>(tile_data_i) * 16 :
+              tile_base + tile_data_i * 16;
+
+    // Adjust address based on vertical flip and y position within the tile
+    adr += ((tile_attribute & (1 << 6)) ? (7 - (y % 8)) : (y % 8)) * 2;
+
+    // Read the row of pixels from tile data
     u8 lo_byte = readVram(adr);
     u8 hi_byte = readVram(adr + 1);
-    // get the pixel offset of the tile (0-7) (tiles are 8x8)
-    // take into account horizontal flip
-    u8 px_offset = (x % 8);
-    if (tile_attribute & 1 << 5)
-        px_offset = 7 - (x % 8);
-    // get 2 corresponding bits, 1 from each byte
-    // most significant bits of both bytes represent color of first
-    // (or last) pixel
-    bool hi_bit = (hi_byte & 1 << (7 - px_offset));
-    bool lo_bit = (lo_byte & 1 << (7 - px_offset));
+
+    // Determine the pixel offset in the tile (considering horizontal flip)
+    u8 px_offset = (tile_attribute & (1 << 5)) ? 7 - (x % 8) : (x % 8);
+
+    // Extract the pixel color bits
+    bool hi_bit = hi_byte & (1 << (7 - px_offset));
+    bool lo_bit = lo_byte & (1 << (7 - px_offset));
+
+    // Get the palette and calculate the color index
     Palette pal(getBgPalette(tile_attribute & 7));
-    // get pixel color index
-    // bit of hi byte is the hi bit of the 2-bit color index in the palette
-    // bit of lo byte is the lo bit of the 2-bit color index in the palette
-    u8 px_i = static_cast<u8>(hi_bit << 1 | lo_bit);
-    // 0 = highest priority (appears above everything else)
-    // px_index == 0 has lowest priority
+    u8 px_i = static_cast<u8>((hi_bit << 1) | lo_bit);
+
+    // Determine pixel priority (0 = highest priority)
     u8 priority = (px_i == 0) ? 2 : 1;
-    if (tile_attribute & 1 << 7) // ensure highest priority
-        priority = 0;
-    // index into texture
+    if (tile_attribute & (1 << 7)) priority = 0;
+
+    // Set the pixel color and priority in the texture
     unsigned tex_i = tex_x + tex_y * tex.width();
     tex.set_pixel(tex_i, pal[px_i]);
     tex.set_pixel_priority(tex_i, priority);
@@ -375,82 +352,87 @@ void PPU::renderLayerPixel(Texture &tex, PPU::Layer layer,
 
 void PPU::renderSpriteLine(Texture &tex) {
     const u16 tile_data = 0x8000;
-    // 0=8x8, 1=8x16
-    const u8 sprite_h = LCDC_ & 1 << 2 ? 16 : 8;
+    const u8 sprite_h = (LCDC_ & (1 << 2)) ? 16 : 8; // Sprite height: 8x8 or 8x16
     u8 sprites_drawn = 0;
-    // sprite priority list: get first 10 sprites, then reorder so the lowest
-    // priority is drawn first
+
+    // Select up to 10 sprites for the current scanline and sort by priority
     std::array<Sprite, 10> ordered_sprites{};
     for (u8 i = 0; i < 40; ++i) {
         Sprite &s = sprites_[i];
-        // skip if sprite is offscreen
-        if (s.y == 0 || s.y >= 160)
-            continue;
-        // stop drawing sprites if more than 10 are already on this scanline
-        if (sprites_drawn == 10)
-            break;
-        // line number relative to start of sprite
+        // Skip sprites that are offscreen vertically
+        if (s.y == 0 || s.y >= 160) continue;
+
+        // Stop if 10 sprites are already selected
+        if (sprites_drawn == 10) break;
+
+        // Determine the line number within the sprite relative to its top
         u8 ln = LY_ - (s.y - 16);
-        // ignore sprite if no part of it falls on this line
-        if (ln > sprite_h - 1 || LY_ < s.y - 16)
-            continue;
+
+        // Skip sprites that do not intersect the current scanline
+        if (ln >= sprite_h || LY_ < s.y - 16) continue;
+
         ordered_sprites[sprites_drawn] = s;
         ++sprites_drawn;
     }
-    // first object in OAM has highest priority, so draw first
+
+    // Reorder sprites: higher priority (lower OAM index) is drawn first
     orderSprites(ordered_sprites);
-    for (Sprite s: ordered_sprites) {
+
+    // Render each sprite in the sorted list
+    for (Sprite s : ordered_sprites) {
         u8 tile_i;
-        // line number relative to start of sprite
-        u8 ln = LY_ - (s.y - 16);
-        bool y_flip = s.attribute & 1 << 6;
-        if (ln > 7) // lower half of an 8x16 sprite
-        {
-            tile_i = (y_flip)
-                     ? s.tile & 0xfe
-                     : s.tile | 0x01;
+        u8 ln = LY_ - (s.y - 16); // Line number within the sprite
+        bool y_flip = s.attribute & (1 << 6);
+
+        // Determine the tile index for the current line, considering y-flip
+        if (ln > 7) { // Lower half of 8x16 sprite
+            tile_i = y_flip ? (s.tile & 0xfe) : (s.tile | 0x01);
         } else {
-            if (sprite_h == 16) // upper half of an 8x16 sprite
-            {
-                tile_i = (y_flip)
-                         ? s.tile | 0x01
-                         : s.tile & 0xfe;
-            } else // 8x8 sprite
-            {
-                tile_i = s.tile;
-            }
+            tile_i = (sprite_h == 16)
+                     ? (y_flip ? (s.tile | 0x01) : (s.tile & 0xfe))
+                     : s.tile; // 8x8 sprite
         }
+
+        // Calculate the address of the sprite tile data
         u16 adr = tile_data + tile_i * 16;
-        if (y_flip)
-            adr += (7 - (ln % 8)) * 2;
-        else
-            adr += (ln % 8) * 2;
+        adr += (y_flip ? (7 - (ln % 8)) : (ln % 8)) * 2;
+
+        // Read the tile row data
         u8 low_byte = readVram(adr);
         u8 high_byte = readVram(adr + 1);
-        u8 pal_idx = s.attribute & 1 << 4;
+
+        // Get the palette and priority settings
+        u8 pal_idx = s.attribute & (1 << 4);
         Palette pal = getSpritePalette(pal_idx);
-        bool ob_priority = s.attribute & 1 << 7;
+        bool ob_priority = s.attribute & (1 << 7);
+
+        // Render each pixel of the sprite row
         for (u8 px = 0; px < 8; ++px) {
-            u8 x = s.x - 8 + px;
+            u8 x = s.x - 8 + px; // Pixel position on the screen
             bool on_screen = (x < 160 && x > 0);
+
+            // Check the background pixel priority at the current position
             u8 bg_priority = tex.pixel_priority(x);
-            // only draw pixel if on screen and if priority is 0 and bg pixel priority
-            // IS NOT 0, or if priority is 1
-            // and bg pixel is >=2 (transparent)
-            if (on_screen
-                && ((ob_priority == 0 && bg_priority > 0)
-                    || (ob_priority < bg_priority))) {
-                bool x_flip = s.attribute & 1 << 5;
-                bool hi_bit = (high_byte & 1 << (x_flip ? px : 7 - px));
-                bool lo_bit = (low_byte & 1 << (x_flip ? px : 7 - px));
-                u8 p = static_cast<u8>(hi_bit << 1 | lo_bit);
-                if (p != 0) // only draw if not transparent
+
+            // Draw the pixel if it satisfies priority rules and is on-screen
+            if (on_screen &&
+                ((ob_priority == 0 && bg_priority > 0) || 
+                 (ob_priority < bg_priority))) {
+                bool x_flip = s.attribute & (1 << 5);
+
+                // Extract pixel color bits, considering x-flip
+                bool hi_bit = high_byte & (1 << (x_flip ? px : 7 - px));
+                bool lo_bit = low_byte & (1 << (x_flip ? px : 7 - px));
+                u8 p = static_cast<u8>((hi_bit << 1) | lo_bit);
+
+                // Only draw if the pixel is not transparent
+                if (p != 0) {
                     tex.set_pixel(x, pal[p]);
+                }
             }
         }
     }
 }
-
 std::array<Texture, 40> PPU::getSprites() const {
     std::array<Texture, 40> out{};
     int i = 0;

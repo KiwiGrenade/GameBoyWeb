@@ -21,8 +21,7 @@ namespace Utils {
         exit(2);
     }
 
-    /*static std::string jsonFilePath = "/home/desktop/GameBoyWeb/res/opcodes.json";*/
-    /*static std::string romsPath = "/home/desktop/GameBoyWeb/roms";*/
+    static std::string romsPath = "/home/desktop/GameBoyWeb/roms";
 
 // bits
     inline static u8 setBit(u8 &number, const u8 n, const bool x) {
